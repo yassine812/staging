@@ -898,7 +898,7 @@ def reclamation_update_8d(request, pk):
 
 @login_required
 def reclamation_d4_arbre_api(request, pk, axe):
-    """Save one Doc.83 D4 tree using the same JSON contract as AT."""
+    """Save one Doc.83 D4 cause tree for this reclamation."""
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "Méthode non autorisée"}, status=405)
     if axe not in {"non_detection", "technique"}:

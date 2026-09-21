@@ -498,7 +498,7 @@
 
                         <div class="mb-4">
                             <h5 class="text-info border-bottom pb-2">D4.1 - Axe Non Détection</h5>
-                            {% include "accident_travail/includes/arbre_causes_widget.html" with widget_id="doc83-d41" arbre_title="D4.1 — Non Détection" arbre_data_json=pourquoi_non_detection_json save_url=d4_nd_api_url hidden_input_id="pourquoi-nd-json-field" export_filename=reclamation.reference|add:"_D41_5Pourquoi" can_edit=True show_pdf_selection=True hide_json_export=True %}
+                            {% include "reclamation_client/includes/arbre_causes_widget.html" with widget_id="doc83-d41" arbre_title="D4.1 — Non Détection" arbre_data_json=pourquoi_non_detection_json save_url=d4_nd_api_url hidden_input_id="pourquoi-nd-json-field" export_filename=reclamation.reference|add:"_D41_5Pourquoi" can_edit=True show_pdf_selection=True hide_json_export=True %}
                             <div class="form-group mt-3">
                                 <label>Synthèse Cause Principale de Non-Détection :</label>
                                 {{ analyse_d4_form.cause_principale_non_detection }}
@@ -508,7 +508,7 @@
 
                         <div class="mb-3">
                             <h5 class="text-danger border-bottom pb-2">D4.2 - Axe Cause Technique / Occurrence</h5>
-                            {% include "accident_travail/includes/arbre_causes_widget.html" with widget_id="doc83-d42" arbre_title="D4.2 — Cause Technique" arbre_data_json=pourquoi_technique_json save_url=d4_tech_api_url hidden_input_id="pourquoi-tech-json-field" export_filename=reclamation.reference|add:"_D42_5Pourquoi" can_edit=True show_pdf_selection=True hide_json_export=True %}
+                            {% include "reclamation_client/includes/arbre_causes_widget.html" with widget_id="doc83-d42" arbre_title="D4.2 — Cause Technique" arbre_data_json=pourquoi_technique_json save_url=d4_tech_api_url hidden_input_id="pourquoi-tech-json-field" export_filename=reclamation.reference|add:"_D42_5Pourquoi" can_edit=True show_pdf_selection=True hide_json_export=True %}
                             <div class="form-group mt-3">
                                 <label>Synthèse Cause Principale Technique / Non-conformité :</label>
                                 {{ analyse_d4_form.cause_principale_technique }}

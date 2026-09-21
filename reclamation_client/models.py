@@ -262,7 +262,7 @@ class AnalyseCausesDoubleAxeD4(models.Model):
     cause_principale_non_detection = models.TextField(blank=True, verbose_name="Synthèse cause principale de non-détection (D4.1)")
     cause_principale_technique = models.TextField(blank=True, verbose_name="Synthèse cause principale technique / non-conformité (D4.2)")
 
-    # Même contrat que AT.arbre_causes : {"causes": [{"label": str,
+    # Structure JSON des arbres de causes D4 : {"causes": [{"label": str,
     # "branches": [{"pourquoi": [p1, p2, p3, p4, p5]}]}]}
     pourquoi_non_detection = models.JSONField(default=dict, blank=True, verbose_name="5 Pourquoi Non-Détection (D4.1)")
     pourquoi_technique = models.JSONField(default=dict, blank=True, verbose_name="5 Pourquoi Cause Technique (D4.2)")

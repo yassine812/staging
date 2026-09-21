@@ -1,0 +1,573 @@
+{% comment %}
+Widget autonome D4 Doc.83, dérivé du composant d'arbre des causes.
+Paramètres : arbre_data_json, save_url, arbre_title, widget_id, can_edit, show_pdf_selection.
+{% endcomment %}
+
+
+<style>
+    .arbre-causes-widget {
+        width: 100%;
+        overflow-x: hidden;
+        background: white;
+        padding: 20px;
+        position: relative;
+    }
+
+    .arbre-causes-widget .arbre-title {
+        text-align: center;
+        color: white;
+        background: #4a90e2;
+        padding: 12px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 25px;
+        border-radius: 5px;
+    }
+
+    .arbre-causes-widget .cause-group {
+        margin-bottom: 50px;
+        position: relative;
+    }
+
+    .arbre-causes-widget .cause-principale {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+        border: 2px solid #e74c3c;
+        border-radius: 10px;
+        padding: 12px 20px;
+        font-weight: 600;
+        color: #333;
+        text-align: center;
+        display: inline-block;
+        min-width: 130px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        cursor: pointer;
+        margin-bottom: 15px;
+        position: relative;
+    }
+
+    .arbre-causes-widget .branches-container {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+        margin-left: 40px;
+    }
+
+    .arbre-causes-widget .branch {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        position: relative;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .arbre-causes-widget .pourquoi-node {
+        background: white;
+        border: 2px solid #4a90e2;
+        border-radius: 8px;
+        padding: 10px 15px;
+        width: clamp(150px, 15vw, 240px);
+        min-width: 0;
+        max-width: 100%;
+        min-height: 55px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1 1 0;
+        font-size: 0.85rem;
+        position: relative;
+    }
+
+    .arbre-causes-widget .pourquoi-node textarea {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 34px;
+        height: auto;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        text-align: center;
+        font: inherit;
+        line-height: 1.35;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        overflow: auto;
+        resize: vertical;
+        outline: none;
+    }
+
+    .arbre-causes-widget .pourquoi-node textarea::placeholder {
+        color: #6c757d;
+        opacity: 1;
+    }
+
+    .arbre-causes-widget .pdf-selection-control {
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 6px;
+        margin-top: 8px;
+        width: auto;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+        color: #343a40;
+        font-size: 0.75rem;
+        line-height: 1.25;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .arbre-causes-widget .pdf-selection-control input[type="checkbox"] {
+        flex: 0 0 auto;
+        width: auto;
+        margin-top: 2px;
+    }
+
+    .arbre-causes-widget .pdf-selection-control span {
+        display: none;
+    }
+
+    .arbre-causes-widget .pdf-selection-info {
+        color: #17a2b8;
+        cursor: help;
+        font-size: 0.9rem;
+    }
+
+    .arbre-causes-widget .pourquoi-node:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .arbre-causes-widget .pourquoi-node.level-5 {
+        border-color: #ff9800;
+        background: linear-gradient(135deg, #fff4e6 0%, #ffe0b2 100%);
+        font-weight: 600;
+        flex: 1 1 0;
+        width: auto;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: center;
+    }
+
+    .arbre-causes-widget .pourquoi-node input {
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: center;
+        font-size: 0.85rem;
+        outline: none;
+    }
+
+    .arbre-causes-widget .arrow-connector {
+        width: 12px;
+        height: 2px;
+        background: #4a90e2;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .arbre-causes-widget .arrow-connector::after {
+        content: '';
+        position: absolute;
+        right: -5px;
+        top: -3px;
+        width: 0;
+        height: 0;
+        border-left: 8px solid #4a90e2;
+        border-top: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+    }
+
+    .arbre-causes-widget .btn-add-branch {
+        margin-left: 40px;
+        margin-top: 8px;
+        font-size: 0.8rem;
+    }
+
+    .arbre-causes-widget .node-actions {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        display: none;
+        z-index: 10;
+    }
+
+    .arbre-causes-widget .pourquoi-node:hover .node-actions,
+    .arbre-causes-widget .cause-principale:hover .node-actions {
+        display: block;
+    }
+
+    .arbre-causes-widget .btn-delete-node {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        font-size: 11px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .arbre-causes-widget .toolbar-arbre {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 991.98px) {
+        .arbre-causes-widget .branches-container {
+            margin-left: 0;
+        }
+
+        .arbre-causes-widget .branch {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
+        }
+
+        .arbre-causes-widget .arrow-connector {
+            display: none;
+        }
+
+        .arbre-causes-widget .pourquoi-node {
+            width: 100%;
+            max-width: none;
+        }
+    }
+</style>
+
+<div class="arbre-causes-widget" id="{{ widget_id|default:'arbre-widget-default' }}">
+    <div class="toolbar-arbre">
+        {% if can_edit %}
+        <button type="button" class="btn btn-danger btn-sm btn-add-cause-{{ widget_id|default:'arbre-widget-default' }}">
+            <i class="fas fa-plus mr-1"></i>Ajouter une cause
+        </button>
+        <button type="button" class="btn btn-success btn-sm btn-save-arbre-{{ widget_id|default:'arbre-widget-default' }}">
+            <i class="fas fa-save mr-1"></i>Sauvegarder
+        </button>
+        {% endif %}
+        {% if not hide_json_export %}
+        <button type="button" class="btn btn-secondary btn-sm btn-export-{{ widget_id|default:'arbre-widget-default' }}">
+            <i class="fas fa-download mr-1"></i>Exporter JSON
+        </button>
+        {% endif %}
+    </div>
+
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 5px;">
+        <div class="arbre-title">{{ arbre_title|default:"Arbre des causes" }}</div>
+        <div class="causes-container-{{ widget_id|default:'arbre-widget-default' }}"></div>
+        
+        <div class="text-center py-4 text-muted empty-state-{{ widget_id|default:'arbre-widget-default' }}" style="display: none;">
+            <i class="fas fa-project-diagram fa-2x mb-2 d-block" style="opacity: 0.3;"></i>
+            <p>Aucune cause définie</p>
+            <small>Cliquez sur "Ajouter une cause" pour commencer</small>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const WIDGET_ID = "{{ widget_id|default:'arbre-widget-default' }}";
+    const ARBRE_API_URL = "{{ save_url|default:''|escapejs }}";
+    const CAN_EDIT = {{ can_edit|default:True|yesno:"true,false" }};
+    const SHOW_PDF_SELECTION = {{ show_pdf_selection|default:False|yesno:"true,false" }};
+    
+    // Charger les données initiales
+    {% if arbre_data_json %}
+        let arbreData_{{ widget_id|default:'arbre-widget-default'|slugify|cut:"-" }} = {{ arbre_data_json|safe }};
+    {% else %}
+        let arbreData_{{ widget_id|default:'arbre-widget-default'|slugify|cut:"-" }} = { causes: [] };
+    {% endif %}
+    
+    // Référence globale pour faciliter l'accès
+    let arbreData = arbreData_{{ widget_id|default:'arbre-widget-default'|slugify|cut:"-" }};
+    
+    if (!arbreData.causes) {
+        arbreData = { causes: [] };
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function resizePourquoiField(field) {
+        if (!field) return;
+        field.style.height = 'auto';
+        field.style.height = Math.max(field.scrollHeight, 34) + 'px';
+    }
+
+    function renderArbre() {
+        const container = document.querySelector(`.causes-container-${WIDGET_ID}`);
+        const emptyState = document.querySelector(`.empty-state-${WIDGET_ID}`);
+        
+        if (!container) return;
+        
+        container.innerHTML = '';
+
+        if (!arbreData.causes || arbreData.causes.length === 0) {
+            emptyState.style.display = 'block';
+            return;
+        }
+        
+        emptyState.style.display = 'none';
+
+        arbreData.causes.forEach((cause, causeIndex) => {
+            const causeGroup = document.createElement('div');
+            causeGroup.className = 'cause-group';
+            
+            const causeMainDiv = document.createElement('div');
+            causeMainDiv.className = 'cause-principale';
+            causeMainDiv.textContent = cause.label || `Cause ${causeIndex + 1}`;
+            
+            if (CAN_EDIT) {
+                causeMainDiv.onclick = () => editCause(causeIndex);
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'node-actions';
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-delete-node';
+                deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+                deleteBtn.onclick = (e) => { e.stopPropagation(); deleteCause(causeIndex); };
+                actionsDiv.appendChild(deleteBtn);
+                causeMainDiv.appendChild(actionsDiv);
+            }
+            
+            causeGroup.appendChild(causeMainDiv);
+
+            const branchesContainer = document.createElement('div');
+            branchesContainer.className = 'branches-container';
+
+            cause.branches.forEach((branch, branchIndex) => {
+                const branchDiv = document.createElement('div');
+                branchDiv.className = 'branch';
+
+                for (let i = 0; i < 5; i++) {
+                    if (i > 0) {
+                        const arrow = document.createElement('div');
+                        arrow.className = 'arrow-connector';
+                        branchDiv.appendChild(arrow);
+                    }
+
+                    const node = document.createElement('div');
+                    node.className = `pourquoi-node ${i === 4 ? 'level-5' : ''}`;
+                    const value = branch.pourquoi[i] || '';
+                    
+                    if (CAN_EDIT) {
+                        const textarea = document.createElement('textarea');
+                        textarea.rows = 2;
+                        textarea.value = value;
+                        textarea.placeholder = `Pourquoi ${i + 1} ?`;
+                        textarea.oninput = () => resizePourquoiField(textarea);
+                        textarea.onchange = () => updatePourquoi(causeIndex, branchIndex, i, textarea.value);
+                        textarea.onfocus = () => textarea.select();
+                        node.appendChild(textarea);
+                        requestAnimationFrame(() => resizePourquoiField(textarea));
+
+                        if (i === 4 && SHOW_PDF_SELECTION) {
+                            const selectionWrapper = document.createElement('label');
+                            selectionWrapper.className = 'pdf-selection-control';
+                            const selectionCheckbox = document.createElement('input');
+                            selectionCheckbox.type = 'checkbox';
+                            selectionCheckbox.checked = branch.pdf_selected === true;
+                            selectionCheckbox.addEventListener('change', () => {
+                                if (selectionCheckbox.checked) {
+                                    branch.pdf_selected = true;
+                                } else {
+                                    delete branch.pdf_selected;
+                                }
+                                syncHiddenInput();
+                            });
+                            const selectionText = document.createElement('span');
+                            selectionText.textContent = 'Faire remonter cette cause dans la synthèse PDF';
+                            const selectionInfo = document.createElement('i');
+                            selectionInfo.className = 'fas fa-info-circle pdf-selection-info';
+                            selectionInfo.title = 'Faire remonter cette cause dans la synthèse PDF';
+                            selectionInfo.setAttribute('aria-label', 'Faire remonter cette cause dans la synthèse PDF');
+                            selectionWrapper.appendChild(selectionCheckbox);
+                            selectionWrapper.appendChild(selectionInfo);
+                            selectionWrapper.appendChild(selectionText);
+                            node.appendChild(selectionWrapper);
+                        }
+                        
+                        if (i === 0) {
+                            const actionsDiv = document.createElement('div');
+                            actionsDiv.className = 'node-actions';
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.className = 'btn-delete-node';
+                            deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+                            deleteBtn.onclick = (e) => { e.stopPropagation(); deleteBranch(causeIndex, branchIndex); };
+                            actionsDiv.appendChild(deleteBtn);
+                            node.appendChild(actionsDiv);
+                        }
+                    } else {
+                        node.textContent = value || `Pourquoi ${i + 1} ?`;
+                    }
+                    
+                    branchDiv.appendChild(node);
+                }
+
+                branchesContainer.appendChild(branchDiv);
+            });
+
+            causeGroup.appendChild(branchesContainer);
+
+            if (CAN_EDIT) {
+                const addBranchBtn = document.createElement('button');
+                addBranchBtn.type = 'button';
+                addBranchBtn.className = 'btn btn-sm btn-outline-primary btn-add-branch';
+                addBranchBtn.innerHTML = '<i class="fas fa-plus mr-1"></i>Ajouter une branche';
+                addBranchBtn.onclick = () => addBranch(causeIndex);
+                causeGroup.appendChild(addBranchBtn);
+            }
+
+            container.appendChild(causeGroup);
+        });
+    }
+
+    function addCause() {
+        const newCause = {
+            label: `Cause ${arbreData.causes.length + 1}`,
+            branches: [
+                { pourquoi: ['', '', '', '', ''] }
+            ]
+        };
+        arbreData.causes.push(newCause);
+        renderArbre();
+        syncHiddenInput();
+    }
+
+    function addBranch(causeIndex) {
+        const newBranch = { pourquoi: ['', '', '', '', ''] };
+        arbreData.causes[causeIndex].branches.push(newBranch);
+        renderArbre();
+        syncHiddenInput();
+    }
+
+    function editCause(causeIndex) {
+        if (!CAN_EDIT) return;
+        const newLabel = prompt('Nom de la cause :', arbreData.causes[causeIndex].label);
+        if (newLabel !== null && newLabel.trim()) {
+            arbreData.causes[causeIndex].label = newLabel.trim();
+            renderArbre();
+        }
+    }
+
+    function deleteCause(causeIndex) {
+        if (!confirm('Supprimer cette cause et toutes ses branches ?')) return;
+        arbreData.causes.splice(causeIndex, 1);
+        renderArbre();
+        syncHiddenInput();
+    }
+
+    function deleteBranch(causeIndex, branchIndex) {
+        if (!confirm('Supprimer cette branche ?')) return;
+        arbreData.causes[causeIndex].branches.splice(branchIndex, 1);
+        renderArbre();
+        syncHiddenInput();
+    }
+
+    function updatePourquoi(causeIndex, branchIndex, pourquoiIndex, value) {
+        arbreData.causes[causeIndex].branches[branchIndex].pourquoi[pourquoiIndex] = value;
+        syncHiddenInput();
+    }
+
+    function syncHiddenInput() {
+        const field = document.getElementById("{{ hidden_input_id|default:'' }}");
+        if (field) {
+            const serialised = JSON.stringify(arbreData || { causes: [] });
+            field.value = serialised || '{"causes":[]}';
+        }
+    }
+
+    function saveArbre() {
+        syncHiddenInput();
+        if (!ARBRE_API_URL) return;
+        fetch(ARBRE_API_URL, {
+            method: 'POST',
+            body: JSON.stringify(arbreData),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('Arbre des causes sauvegardé avec succès');
+                } else {
+                    alert('Arbre des causes sauvegardé avec succès');
+                }
+            } else {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Erreur : ' + data.message);
+                } else {
+                    alert('Erreur : ' + data.message);
+                }
+            }
+        })
+        .catch(err => {
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Erreur de connexion');
+            } else {
+                alert('Erreur de connexion : ' + err);
+            }
+        });
+    }
+
+    function exportArbre() {
+        const dataStr = JSON.stringify(arbreData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        const exportFileDefaultName = '{% if export_filename %}{{ export_filename|escapejs }}{% else %}arbre_causes{% endif %}.json';
+
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+    }
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+        renderArbre();
+        syncHiddenInput();
+
+        if (CAN_EDIT) {
+            const btnAddCause = document.querySelector('.btn-add-cause-' + WIDGET_ID);
+            if (btnAddCause) btnAddCause.addEventListener('click', addCause);
+            
+            const btnSave = document.querySelector('.btn-save-arbre-' + WIDGET_ID);
+            if (btnSave) btnSave.addEventListener('click', saveArbre);
+        }
+        
+        const btnExport = document.querySelector('.btn-export-' + WIDGET_ID);
+        if (btnExport) btnExport.addEventListener('click', exportArbre);
+    });
+    
+    // Exposer la fonction de rendu pour les usages externes
+    window['renderArbre_' + WIDGET_ID.replace(/-/g, '_')] = renderArbre;
+})();
+</script>
