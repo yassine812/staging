@@ -30,6 +30,7 @@ from .forms import (
     MesureConservatoireD3FormSet,
     Participant8DFormSet,
     ReclamationHeaderForm,
+    ReclamationNumeroForm,
     ReclamationQuickCreateForm,
 )
 from .models import (
@@ -38,12 +39,111 @@ from .models import (
     AnalyseCausesDoubleAxeD4,
     CapitalisationSMQSD7,
     ClotureRecevabiliteD8,
+    DocumentSMQSD7,
     DescriptionQQOQCCP,
     FicheIncidentDoc05,
     MesureConservatoireD3,
     Participant8D,
     ReclamationClient,
 )
+from .pourquoi import normalise_arbre, selected_root_causes
+
+
+def _normalise_documents_d7(value):
+    """Nettoie le format persistant des documents libres de l'étape D7."""
+    if not isinstance(value, list):
+        return []
+
+    documents = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        nom_reference = str(item.get("nom_reference", item.get("nom", "")) or "").strip()
+        commentaire = str(item.get("commentaire", item.get("pilote_delai", "")) or "").strip()
+        mis_a_jour = item.get("mis_a_jour", False) in (True, 1, "1", "true", "True", "oui", "Oui")
+        if nom_reference or commentaire or mis_a_jour:
+            documents.append({
+                "nom_reference": nom_reference,
+                "mis_a_jour": mis_a_jour,
+                "commentaire": commentaire,
+            })
+    return documents
+
+
+def _serialise_document_d7(document):
+    return {
+        "id": document.pk,
+        "nom_reference": document.nom_reference,
+        "mis_a_jour": document.mis_a_jour,
+        "commentaire": document.commentaire,
+        "fichier_nom": os.path.basename(document.fichier.name) if document.fichier else "",
+    }
+
+
+def _documents_d7_for_display(capitalisation_d7):
+    """Retourne les documents D7 sans créer de lignes par défaut."""
+    if not capitalisation_d7:
+        return []
+    documents = list(capitalisation_d7.documents_d7.all().order_by("pk"))
+    if documents:
+        return [_serialise_document_d7(document) for document in documents]
+    if capitalisation_d7.documents_smqs is not None:
+        return [
+            {"id": None, "fichier_nom": "", **document}
+            for document in _normalise_documents_d7(capitalisation_d7.documents_smqs)
+        ]
+    return []
+
+
+def _save_documents_d7(capitalisation_d7, rows, uploaded_files):
+    """Synchronise les lignes D7 et leurs fichiers avec le formulaire 8D."""
+    existing_documents = {
+        str(document.pk): document
+        for document in capitalisation_d7.documents_d7.all()
+    }
+    submitted_ids = set()
+
+    for item in rows:
+        if not isinstance(item, dict):
+            continue
+        document_id = str(item.get("id") or "").strip()
+        document = existing_documents.get(document_id) if document_id else None
+        if document is not None:
+            submitted_ids.add(document_id)
+        elif document_id:
+            continue
+        else:
+            document = DocumentSMQSD7(capitalisation_d7=capitalisation_d7)
+
+        nom_reference = str(item.get("nom_reference", "") or "").strip()
+        commentaire = str(item.get("commentaire", "") or "").strip()
+        mis_a_jour = item.get("mis_a_jour", False) is True
+        file_key = str(item.get("file_key") or "").strip()
+        if not file_key and document_id:
+            file_key = f"d7_file_{document_id}"
+        uploaded_file = uploaded_files.get(file_key) if file_key else None
+
+        if document.pk is None and not (nom_reference or commentaire or mis_a_jour or uploaded_file):
+            continue
+
+        document.nom_reference = nom_reference
+        document.commentaire = commentaire
+        document.mis_a_jour = mis_a_jour
+        previous_file_name = document.fichier.name if document.pk and document.fichier else ""
+        if uploaded_file:
+            document.fichier = uploaded_file
+        document.save()
+        if uploaded_file and previous_file_name and previous_file_name != document.fichier.name:
+            document.fichier.storage.delete(previous_file_name)
+
+    for document_id, document in existing_documents.items():
+        if document_id not in submitted_ids:
+            document.delete()
+
+    # Le JSON historique ne sert plus de source active après synchronisation.
+    capitalisation_d7.documents_smqs = []
+    capitalisation_d7.save(update_fields=["documents_smqs"])
+
 
 class ReclamationDashboardView(LoginRequiredMixin, TemplateView):
     """Dashboard de pilotage QSE des Réclamations Client & Incidents (Industrial Quality Management)."""
@@ -588,15 +688,78 @@ class ReclamationDetailView(LoginRequiredMixin, DetailView):
         context["qqoqccp"] = getattr(rec, "qqoqccp", None)
         context["mesures_d3"] = rec.mesures_conservatoires.all()
         context["analyse_d4"] = getattr(rec, "analyse_causes_d4", None)
+        if context["analyse_d4"]:
+            context["pourquoi_non_detection_json"] = json.dumps(
+                normalise_arbre(
+                    context["analyse_d4"].pourquoi_non_detection,
+                    context["analyse_d4"].cause_principale_non_detection,
+                ),
+                ensure_ascii=False,
+            )
+            context["pourquoi_technique_json"] = json.dumps(
+                normalise_arbre(
+                    context["analyse_d4"].pourquoi_technique,
+                    context["analyse_d4"].cause_principale_technique,
+                ),
+                ensure_ascii=False,
+            )
         context["actions_tests"] = rec.actions_tests.all()
         actions_permanentes = rec.actions_correctives.all()
         if not actions_permanentes.exists():
             actions_permanentes = rec.actions_permanentes.all()
         context["actions_permanentes"] = actions_permanentes
         context["capitalisation_d7"] = getattr(rec, "capitalisation_d7", None)
+        context["d7_documents"] = _documents_d7_for_display(context["capitalisation_d7"])
         context["cloture_d8"] = getattr(rec, "cloture_d8", None)
         context["fiche_doc05"] = getattr(rec, "fiche_doc05", None)
+        context["is_header_admin"] = self.request.user.is_superuser or self.request.user.is_staff
+        if context["is_header_admin"]:
+            context["edit_header_form"] = ReclamationQuickCreateForm(
+                instance=rec,
+                is_admin=True,
+                editing_header=True,
+            )
         return context
+
+
+@login_required
+def reclamation_edit_header(request, pk):
+    """Admin-only update of creation-modal header fields; related workflow data is untouched."""
+    from django.http import HttpResponseForbidden, HttpResponseNotAllowed
+
+    if not (request.user.is_superuser or request.user.is_staff):
+        return HttpResponseForbidden("Accès refusé. Droits administrateur requis.")
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    reclamation = get_object_or_404(ReclamationClient, pk=pk)
+    form = ReclamationQuickCreateForm(
+        request.POST,
+        instance=reclamation,
+        is_admin=True,
+        editing_header=True,
+    )
+    if form.is_valid():
+        updated_reclamation = form.save(commit=False)
+        updated_reclamation.updated_by = request.user
+        updated_reclamation.save()
+        messages.success(request, "L’en-tête du dossier a été mis à jour.")
+        return_to = request.POST.get("return_to")
+        allowed_return_urls = {
+            reverse("reclamation:update_8d", kwargs={"pk": reclamation.pk}),
+            reverse("reclamation:update_doc05", kwargs={"pk": reclamation.pk}),
+        }
+        if return_to in allowed_return_urls:
+            return redirect(return_to)
+        return redirect("reclamation:detail", pk=reclamation.pk)
+
+    detail_view = ReclamationDetailView()
+    detail_view.setup(request, pk=pk)
+    detail_view.object = reclamation
+    context = detail_view.get_context_data(object=reclamation)
+    context["edit_header_form"] = form
+    context["show_edit_header_modal"] = True
+    return render(request, detail_view.template_name, context, status=400)
 
 
 @login_required
@@ -613,6 +776,7 @@ def reclamation_update_8d(request, pk):
     analyse_d4, _ = AnalyseCausesDoubleAxeD4.objects.get_or_create(reclamation=reclamation)
     capitalisation_d7, _ = CapitalisationSMQSD7.objects.get_or_create(reclamation=reclamation)
     cloture_d8, _ = ClotureRecevabiliteD8.objects.get_or_create(reclamation=reclamation)
+    d7_documents = _documents_d7_for_display(capitalisation_d7)
 
     # Assurer présence des 4 mesures conservatoires D3
     for t in ["tri_interne", "tri_externe", "repere_unitaire", "autre"]:
@@ -631,14 +795,39 @@ def reclamation_update_8d(request, pk):
         actions_tests_formset = ActionTestD5FormSet(request.POST, instance=reclamation, prefix="actions_tests")
         actions_permanentes_formset = ActionPermanenteD6FormSet(request.POST, instance=reclamation, prefix="actions_perm")
 
-        # Sauvegarde 5 Pourquoi JSON (depuis formulaire dynamique)
-        pourquoi_non_detection_raw = request.POST.get("pourquoi_non_detection_json", "[]")
-        pourquoi_technique_raw = request.POST.get("pourquoi_technique_json", "[]")
-        try:
-            analyse_d4.pourquoi_non_detection = json.loads(pourquoi_non_detection_raw)
-            analyse_d4.pourquoi_technique = json.loads(pourquoi_technique_raw)
-        except Exception:
-            pass
+        d7_documents_raw = request.POST.get("d7_documents_json")
+        d7_documents_payload = None
+        d7_documents_valid = d7_documents_raw is None
+        if d7_documents_raw is not None:
+            try:
+                d7_documents_payload = json.loads(d7_documents_raw)
+                if not isinstance(d7_documents_payload, list):
+                    raise ValueError("Format D7 invalide")
+                d7_documents = d7_documents_payload
+                d7_documents_valid = True
+            except (TypeError, ValueError, json.JSONDecodeError):
+                d7_documents_valid = False
+
+        # Sauvegarde 5 Pourquoi : même arbre JSON que le module AT.
+        # L'absence du champ ne doit jamais effacer une analyse existante.
+        pourquoi_non_detection_raw = request.POST.get("pourquoi_non_detection_json")
+        pourquoi_technique_raw = request.POST.get("pourquoi_technique_json")
+        if pourquoi_non_detection_raw is not None:
+            try:
+                analyse_d4.pourquoi_non_detection = normalise_arbre(
+                    json.loads(pourquoi_non_detection_raw),
+                    analyse_d4.cause_principale_non_detection,
+                )
+            except (TypeError, ValueError, json.JSONDecodeError):
+                pass
+        if pourquoi_technique_raw is not None:
+            try:
+                analyse_d4.pourquoi_technique = normalise_arbre(
+                    json.loads(pourquoi_technique_raw),
+                    analyse_d4.cause_principale_technique,
+                )
+            except (TypeError, ValueError, json.JSONDecodeError):
+                pass
 
         if (
             header_form.is_valid() and qqoqccp_form.is_valid() and
@@ -657,6 +846,8 @@ def reclamation_update_8d(request, pk):
             mesures_d3_formset.save()
             actions_tests_formset.save()
             actions_permanentes_formset.save()
+            if d7_documents_raw is not None and d7_documents_valid:
+                _save_documents_d7(capitalisation_d7, d7_documents_payload, request.FILES)
 
             messages.success(request, f"Dossier 8D {reclamation.reference} enregistré avec succès.")
             return redirect("reclamation:liste")
@@ -676,6 +867,13 @@ def reclamation_update_8d(request, pk):
 
     context = {
         "reclamation": reclamation,
+        "is_header_admin": is_admin,
+        "edit_header_form": ReclamationQuickCreateForm(
+            instance=reclamation,
+            is_admin=True,
+            editing_header=True,
+        ) if is_admin else None,
+        "header_modal_return_url": reverse("reclamation:update_8d", kwargs={"pk": reclamation.pk}),
         "header_form": header_form,
         "qqoqccp_form": qqoqccp_form,
         "analyse_d4_form": analyse_d4_form,
@@ -685,10 +883,39 @@ def reclamation_update_8d(request, pk):
         "mesures_d3_formset": mesures_d3_formset,
         "actions_tests_formset": actions_tests_formset,
         "actions_permanentes_formset": actions_permanentes_formset,
-        "pourquoi_non_detection_json": json.dumps(analyse_d4.pourquoi_non_detection),
-        "pourquoi_technique_json": json.dumps(analyse_d4.pourquoi_technique),
+        "d7_documents_json": json.dumps(d7_documents, ensure_ascii=False),
+        "pourquoi_non_detection_json": json.dumps(
+            normalise_arbre(analyse_d4.pourquoi_non_detection, analyse_d4.cause_principale_non_detection),
+            ensure_ascii=False,
+        ),
+        "pourquoi_technique_json": json.dumps(
+            normalise_arbre(analyse_d4.pourquoi_technique, analyse_d4.cause_principale_technique),
+            ensure_ascii=False,
+        ),
     }
     return render(request, "reclamation_client/form_8d.html", context)
+
+
+@login_required
+def reclamation_d4_arbre_api(request, pk, axe):
+    """Save one Doc.83 D4 tree using the same JSON contract as AT."""
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Méthode non autorisée"}, status=405)
+    if axe not in {"non_detection", "technique"}:
+        return JsonResponse({"status": "error", "message": "Axe invalide"}, status=400)
+
+    reclamation = get_object_or_404(ReclamationClient, pk=pk)
+    analyse_d4, _ = AnalyseCausesDoubleAxeD4.objects.get_or_create(reclamation=reclamation)
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return JsonResponse({"status": "error", "message": "JSON invalide"}, status=400)
+
+    field_name = "pourquoi_non_detection" if axe == "non_detection" else "pourquoi_technique"
+    cause_field = "cause_principale_non_detection" if axe == "non_detection" else "cause_principale_technique"
+    setattr(analyse_d4, field_name, normalise_arbre(payload, getattr(analyse_d4, cause_field)))
+    analyse_d4.save(update_fields=[field_name])
+    return JsonResponse({"status": "ok", "message": "Arbre des causes sauvegardé avec succès"})
 
 
 @login_required
@@ -713,6 +940,7 @@ def reclamation_update_doc05(request, pk):
 
     if request.method == "POST":
         doc05_form = FicheIncidentDoc05Form(request.POST, instance=fiche_doc05)
+        numero_form = ReclamationNumeroForm(request.POST, instance=reclamation)
 
         pourquoi_json = request.POST.get("pourquoi_chains_json", "[]")
         mesures_immediates_json = request.POST.get("mesures_immediates_json", "[]")
@@ -725,22 +953,36 @@ def reclamation_update_doc05(request, pk):
         except Exception:
             pass
 
-        if doc05_form.is_valid():
-            doc05_form.save()
+        if doc05_form.is_valid() and numero_form.is_valid():
+            fiche = doc05_form.save(commit=False)
+            fiche.pourquoi_chains = fiche_doc05.pourquoi_chains
+            fiche.mesures_immediates = fiche_doc05.mesures_immediates
+            fiche.actions_correctives = fiche_doc05.actions_correctives
+            fiche.save()
+            numero_form.save()
             messages.success(request, f"Fiche Doc.05 {reclamation.reference} enregistrée avec succès.")
             return redirect("reclamation:liste")
         else:
             messages.error(request, "Certains champs contiennent des erreurs. Veuillez vérifier.")
     else:
         doc05_form = FicheIncidentDoc05Form(instance=fiche_doc05)
+        numero_form = ReclamationNumeroForm(instance=reclamation)
 
     context = {
         "reclamation": reclamation,
+        "is_header_admin": request.user.is_superuser or request.user.is_staff,
+        "edit_header_form": ReclamationQuickCreateForm(
+            instance=reclamation,
+            is_admin=True,
+            editing_header=True,
+        ) if request.user.is_superuser or request.user.is_staff else None,
+        "header_modal_return_url": reverse("reclamation:update_doc05", kwargs={"pk": reclamation.pk}),
         "fiche_doc05": fiche_doc05,
         "doc05_form": doc05_form,
-        "pourquoi_chains_json": json.dumps(fiche_doc05.pourquoi_chains),
-        "mesures_immediates_json": json.dumps(fiche_doc05.mesures_immediates),
-        "actions_correctives_json": json.dumps(fiche_doc05.actions_correctives),
+        "numero_form": numero_form,
+        "pourquoi_chains_json": json.dumps(fiche_doc05.pourquoi_chains, ensure_ascii=False),
+        "mesures_immediates_json": json.dumps(fiche_doc05.mesures_immediates, ensure_ascii=False),
+        "actions_correctives_json": json.dumps(fiche_doc05.actions_correctives, ensure_ascii=False),
     }
     return render(request, "reclamation_client/form_doc05.html", context)
 
@@ -767,7 +1009,6 @@ from django.template.loader import render_to_string
 from xhtml2pdf import pisa
 
 
-from .pdf_d4_generator import generate_d4_diagram_base64
 
 
 @login_required
@@ -779,8 +1020,6 @@ def reclamation_export_pdf_8d(request, pk):
         return redirect("reclamation:export_pdf_doc05", pk=reclamation.pk)
 
     d4 = getattr(reclamation, "analyse_causes_d4", None)
-    d4_diagram_png = generate_d4_diagram_base64(d4)
-
     logo_path = os.path.join(settings.BASE_DIR, "assets", "ab_serve_logo.png")
     logo_base64 = ""
     if os.path.exists(logo_path):
@@ -797,11 +1036,15 @@ def reclamation_export_pdf_8d(request, pk):
         "qqoqccp": getattr(reclamation, "qqoqccp", None),
         "mesures_d3": reclamation.mesures_conservatoires.all(),
         "analyse_d4": d4,
-        "d4_diagram_png": d4_diagram_png,
+        "d4_selected_causes": {
+            "non_detection": selected_root_causes(d4.pourquoi_non_detection if d4 else {}),
+            "technique": selected_root_causes(d4.pourquoi_technique if d4 else {}),
+        },
         "logo_base64": logo_base64,
         "actions_tests": reclamation.actions_tests.all(),
         "actions_permanentes": actions_permanentes,
         "capitalisation_d7": getattr(reclamation, "capitalisation_d7", None),
+        "d7_documents": _documents_d7_for_display(getattr(reclamation, "capitalisation_d7", None)),
         "cloture_d8": getattr(reclamation, "cloture_d8", None),
     }
 
@@ -862,13 +1105,60 @@ def reclamation_export_pdf_doc05(request, pk):
 
 
 @login_required
+def reclamation_changer_support(request, pk):
+    """Bascule le support d'analyse (mode_traitement) entre Rapport 8D et Fiche d'incident.
+
+    Action réservée aux administrateurs (is_staff / is_superuser).
+    Disponible pour tous les types de signalement (R, I, AI).
+    Toutes les données existantes (D1-D8, FicheDoc05) sont conservées.
+    """
+    if not (request.user.is_superuser or request.user.is_staff):
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Accès refusé. Droits administrateur requis.")
+
+    if request.method != "POST":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["POST"])
+
+    reclamation = get_object_or_404(ReclamationClient, pk=pk)
+
+    nouveau_support = request.POST.get("nouveau_support", "").strip()
+
+    # Valider que le nouveau support est autorisé
+    supports_autorises = {ReclamationClient.MODE_8D, ReclamationClient.MODE_DOC05}
+    if nouveau_support not in supports_autorises:
+        messages.error(
+            request,
+            f"Support '{nouveau_support}' non autorisé."
+        )
+        return redirect("reclamation:detail", pk=pk)
+
+    # Vérifier que le support change réellement
+    if nouveau_support == reclamation.mode_traitement:
+        messages.info(request, "Le support d'analyse est déjà sur cette valeur. Aucune modification effectuée.")
+        return redirect("reclamation:detail", pk=pk)
+
+    ancien_label = reclamation.get_mode_traitement_display()
+    reclamation.mode_traitement = nouveau_support
+    reclamation.updated_by = request.user
+    reclamation.save(update_fields=["mode_traitement", "updated_by"])
+    nouveau_label = reclamation.get_mode_traitement_display()
+
+    messages.success(
+        request,
+        f"Support d'analyse du dossier {reclamation.reference} changé : "
+        f"{ancien_label} → {nouveau_label}. Toutes les données sont conservées."
+    )
+
+    if reclamation.mode_traitement == ReclamationClient.MODE_8D:
+        return redirect("reclamation:update_8d", pk=pk)
+    else:
+        return redirect("reclamation:update_doc05", pk=pk)
+
+
+@login_required
 def api_evolution_chart_data(request):
     """API endpoint AJAX pour la mise à jour dynamique du graphique Évolution."""
     view = ReclamationDashboardView()
     view.request = request
     return view.get(request)
-
-
-
-
-

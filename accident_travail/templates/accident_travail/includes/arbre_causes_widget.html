@@ -1,8 +1,11 @@
 {% comment %}
 Widget réutilisable pour afficher et éditer l'arbre des causes.
 
-Usage dans un template:
-{% include "accident_travail/includes/arbre_causes_widget.html" with accident=accident can_edit=True widget_id="arbre-widget-1" %}
+ Usage AT:
+ {% include "accident_travail/includes/arbre_causes_widget.html" with accident=accident can_edit=True widget_id="arbre-widget-1" %}
+
+ Usage générique (par exemple Doc.83):
+ {% include "accident_travail/includes/arbre_causes_widget.html" with arbre_data_json=data_json save_url=api_url export_filename=filename %}
 
 Paramètres :
 - accident : l'objet AccidentTravail
@@ -15,7 +18,7 @@ Paramètres :
 <style>
     .arbre-causes-widget {
         width: 100%;
-        overflow-x: auto;
+        overflow-x: hidden;
         background: white;
         padding: 20px;
         position: relative;
@@ -62,9 +65,11 @@ Paramètres :
 
     .arbre-causes-widget .branch {
         display: flex;
-        align-items: center;
-        gap: 15px;
+        align-items: flex-start;
+        gap: 10px;
         position: relative;
+        width: 100%;
+        min-width: 0;
     }
 
     .arbre-causes-widget .pourquoi-node {
@@ -72,7 +77,9 @@ Paramètres :
         border: 2px solid #4a90e2;
         border-radius: 8px;
         padding: 10px 15px;
-        min-width: 130px;
+        width: clamp(150px, 15vw, 240px);
+        min-width: 0;
+        max-width: 100%;
         min-height: 55px;
         text-align: center;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -81,8 +88,68 @@ Paramètres :
         display: flex;
         align-items: center;
         justify-content: center;
+        flex: 1 1 0;
         font-size: 0.85rem;
         position: relative;
+    }
+
+    .arbre-causes-widget .pourquoi-node textarea {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 34px;
+        height: auto;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        text-align: center;
+        font: inherit;
+        line-height: 1.35;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        overflow: auto;
+        resize: vertical;
+        outline: none;
+    }
+
+    .arbre-causes-widget .pourquoi-node textarea::placeholder {
+        color: #6c757d;
+        opacity: 1;
+    }
+
+    .arbre-causes-widget .pdf-selection-control {
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 6px;
+        margin-top: 8px;
+        width: auto;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+        color: #343a40;
+        font-size: 0.75rem;
+        line-height: 1.25;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .arbre-causes-widget .pdf-selection-control input[type="checkbox"] {
+        flex: 0 0 auto;
+        width: auto;
+        margin-top: 2px;
+    }
+
+    .arbre-causes-widget .pdf-selection-control span {
+        display: none;
+    }
+
+    .arbre-causes-widget .pdf-selection-info {
+        color: #17a2b8;
+        cursor: help;
+        font-size: 0.9rem;
     }
 
     .arbre-causes-widget .pourquoi-node:hover {
@@ -94,6 +161,11 @@ Paramètres :
         border-color: #ff9800;
         background: linear-gradient(135deg, #fff4e6 0%, #ffe0b2 100%);
         font-weight: 600;
+        flex: 1 1 0;
+        width: auto;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: center;
     }
 
     .arbre-causes-widget .pourquoi-node input {
@@ -166,6 +238,27 @@ Paramètres :
         margin-bottom: 1rem;
         flex-wrap: wrap;
     }
+
+    @media (max-width: 991.98px) {
+        .arbre-causes-widget .branches-container {
+            margin-left: 0;
+        }
+
+        .arbre-causes-widget .branch {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
+        }
+
+        .arbre-causes-widget .arrow-connector {
+            display: none;
+        }
+
+        .arbre-causes-widget .pourquoi-node {
+            width: 100%;
+            max-width: none;
+        }
+    }
 </style>
 
 <div class="arbre-causes-widget" id="{{ widget_id|default:'arbre-widget-default' }}">
@@ -178,13 +271,15 @@ Paramètres :
             <i class="fas fa-save mr-1"></i>Sauvegarder
         </button>
         {% endif %}
+        {% if not hide_json_export %}
         <button type="button" class="btn btn-secondary btn-sm btn-export-{{ widget_id|default:'arbre-widget-default' }}">
             <i class="fas fa-download mr-1"></i>Exporter JSON
         </button>
+        {% endif %}
     </div>
 
     <div style="background: #f8f9fa; padding: 20px; border-radius: 5px;">
-        <div class="arbre-title">Arbre des causes</div>
+        <div class="arbre-title">{{ arbre_title|default:"Arbre des causes" }}</div>
         <div class="causes-container-{{ widget_id|default:'arbre-widget-default' }}"></div>
         
         <div class="text-center py-4 text-muted empty-state-{{ widget_id|default:'arbre-widget-default' }}" style="display: none;">
@@ -198,11 +293,14 @@ Paramètres :
 <script>
 (function() {
     const WIDGET_ID = "{{ widget_id|default:'arbre-widget-default' }}";
-    const ARBRE_API_URL = "{% url 'at:at_arbre_causes_api' accident.pk %}";
+    const ARBRE_API_URL = "{{ save_url|default:''|escapejs }}" || "{% if accident %}{% url 'at:at_arbre_causes_api' accident.pk %}{% endif %}";
     const CAN_EDIT = {{ can_edit|default:True|yesno:"true,false" }};
+    const SHOW_PDF_SELECTION = {{ show_pdf_selection|default:False|yesno:"true,false" }};
     
     // Charger les données initiales
-    {% if accident.analyse_48h and accident.analyse_48h.arbre_causes %}
+    {% if arbre_data_json %}
+        let arbreData_{{ widget_id|default:'arbre-widget-default'|slugify|cut:"-" }} = {{ arbre_data_json|safe }};
+    {% elif accident.analyse_48h and accident.analyse_48h.arbre_causes %}
         let arbreData_{{ widget_id|default:'arbre-widget-default'|slugify|cut:"-" }} = {{ accident.analyse_48h.arbre_causes|safe }};
     {% else %}
         let arbreData_{{ widget_id|default:'arbre-widget-default'|slugify|cut:"-" }} = { causes: [] };
@@ -228,6 +326,12 @@ Paramètres :
             }
         }
         return cookieValue;
+    }
+
+    function resizePourquoiField(field) {
+        if (!field) return;
+        field.style.height = 'auto';
+        field.style.height = Math.max(field.scrollHeight, 34) + 'px';
     }
 
     function renderArbre() {
@@ -286,13 +390,41 @@ Paramètres :
                     const value = branch.pourquoi[i] || '';
                     
                     if (CAN_EDIT) {
-                        const input = document.createElement('input');
-                        input.type = 'text';
-                        input.value = value;
-                        input.placeholder = `Pourquoi ${i + 1} ?`;
-                        input.onchange = () => updatePourquoi(causeIndex, branchIndex, i, input.value);
-                        input.onfocus = () => input.select();
-                        node.appendChild(input);
+                        const textarea = document.createElement('textarea');
+                        textarea.rows = 2;
+                        textarea.value = value;
+                        textarea.placeholder = `Pourquoi ${i + 1} ?`;
+                        textarea.oninput = () => resizePourquoiField(textarea);
+                        textarea.onchange = () => updatePourquoi(causeIndex, branchIndex, i, textarea.value);
+                        textarea.onfocus = () => textarea.select();
+                        node.appendChild(textarea);
+                        requestAnimationFrame(() => resizePourquoiField(textarea));
+
+                        if (i === 4 && SHOW_PDF_SELECTION) {
+                            const selectionWrapper = document.createElement('label');
+                            selectionWrapper.className = 'pdf-selection-control';
+                            const selectionCheckbox = document.createElement('input');
+                            selectionCheckbox.type = 'checkbox';
+                            selectionCheckbox.checked = branch.pdf_selected === true;
+                            selectionCheckbox.addEventListener('change', () => {
+                                if (selectionCheckbox.checked) {
+                                    branch.pdf_selected = true;
+                                } else {
+                                    delete branch.pdf_selected;
+                                }
+                                syncHiddenInput();
+                            });
+                            const selectionText = document.createElement('span');
+                            selectionText.textContent = 'Faire remonter cette cause dans la synthèse PDF';
+                            const selectionInfo = document.createElement('i');
+                            selectionInfo.className = 'fas fa-info-circle pdf-selection-info';
+                            selectionInfo.title = 'Faire remonter cette cause dans la synthèse PDF';
+                            selectionInfo.setAttribute('aria-label', 'Faire remonter cette cause dans la synthèse PDF');
+                            selectionWrapper.appendChild(selectionCheckbox);
+                            selectionWrapper.appendChild(selectionInfo);
+                            selectionWrapper.appendChild(selectionText);
+                            node.appendChild(selectionWrapper);
+                        }
                         
                         if (i === 0) {
                             const actionsDiv = document.createElement('div');
@@ -338,12 +470,14 @@ Paramètres :
         };
         arbreData.causes.push(newCause);
         renderArbre();
+        syncHiddenInput();
     }
 
     function addBranch(causeIndex) {
         const newBranch = { pourquoi: ['', '', '', '', ''] };
         arbreData.causes[causeIndex].branches.push(newBranch);
         renderArbre();
+        syncHiddenInput();
     }
 
     function editCause(causeIndex) {
@@ -359,19 +493,32 @@ Paramètres :
         if (!confirm('Supprimer cette cause et toutes ses branches ?')) return;
         arbreData.causes.splice(causeIndex, 1);
         renderArbre();
+        syncHiddenInput();
     }
 
     function deleteBranch(causeIndex, branchIndex) {
         if (!confirm('Supprimer cette branche ?')) return;
         arbreData.causes[causeIndex].branches.splice(branchIndex, 1);
         renderArbre();
+        syncHiddenInput();
     }
 
     function updatePourquoi(causeIndex, branchIndex, pourquoiIndex, value) {
         arbreData.causes[causeIndex].branches[branchIndex].pourquoi[pourquoiIndex] = value;
+        syncHiddenInput();
+    }
+
+    function syncHiddenInput() {
+        const field = document.getElementById("{{ hidden_input_id|default:'' }}");
+        if (field) {
+            const serialised = JSON.stringify(arbreData || { causes: [] });
+            field.value = serialised || '{"causes":[]}';
+        }
     }
 
     function saveArbre() {
+        syncHiddenInput();
+        if (!ARBRE_API_URL) return;
         fetch(ARBRE_API_URL, {
             method: 'POST',
             body: JSON.stringify(arbreData),
@@ -408,7 +555,7 @@ Paramètres :
     function exportArbre() {
         const dataStr = JSON.stringify(arbreData, null, 2);
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        const exportFileDefaultName = 'arbre_causes_{{ accident.reference }}.json';
+        const exportFileDefaultName = '{% if export_filename %}{{ export_filename|escapejs }}{% else %}arbre_causes_{{ accident.reference|escapejs }}{% endif %}.json';
 
         const linkElement = document.createElement('a');
         linkElement.setAttribute('href', dataUri);
@@ -419,6 +566,7 @@ Paramètres :
     // Initialisation
     document.addEventListener('DOMContentLoaded', function() {
         renderArbre();
+        syncHiddenInput();
 
         if (CAN_EDIT) {
             const btnAddCause = document.querySelector('.btn-add-cause-' + WIDGET_ID);

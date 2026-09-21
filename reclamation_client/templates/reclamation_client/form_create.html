@@ -88,18 +88,66 @@
 document.addEventListener('DOMContentLoaded', function() {
     var typeSel = document.querySelector('select[name="type_signalement"]');
     var modeSel = document.querySelector('select[name="mode_traitement"]');
+    var isAdminUser = {% if request.user.is_superuser or request.user.is_staff %}true{% else %}false{% endif %};
     if (typeSel && modeSel) {
-        function updateSupportFromType() {
-            if (typeSel.value === 'R') {
-                modeSel.value = '8D';
-            } else if (typeSel.value === 'AI') {
+        function updateSupportFromType(typeChanged) {
+            var val = typeSel.value;
+            var currentVal = modeSel.value;
+            if (val === 'R') {
+                modeSel.innerHTML = '<option value="8D">Rapport 8D</option><option value="DOC05">Fiche d\'incident (Doc 05)</option>';
+                if (currentVal === '8D' || currentVal === 'DOC05') {
+                    modeSel.value = currentVal;
+                } else {
+                    modeSel.value = '8D';
+                }
+                if (isAdminUser) {
+                    modeSel.disabled = false;
+                    modeSel.style.backgroundColor = '';
+                    modeSel.style.cursor = '';
+                } else {
+                    modeSel.value = '8D';
+                    modeSel.disabled = true;
+                    modeSel.style.backgroundColor = '#e9ecef';
+                    modeSel.style.cursor = 'not-allowed';
+                }
+            } else if (val === 'I') {
+                if (isAdminUser) {
+                    modeSel.innerHTML = '<option value="8D">Rapport 8D</option><option value="DOC05">Fiche d\'incident (Doc 05)</option>';
+                    if (typeChanged) {
+                        modeSel.value = 'DOC05';
+                    } else if (currentVal === '8D' || currentVal === 'DOC05') {
+                        modeSel.value = currentVal;
+                    } else {
+                        modeSel.value = 'DOC05';
+                    }
+                    modeSel.disabled = false;
+                    modeSel.style.backgroundColor = '';
+                    modeSel.style.cursor = '';
+                } else {
+                    modeSel.innerHTML = '<option value="DOC05">Fiche d\'incident (Doc 05)</option>';
+                    modeSel.value = 'DOC05';
+                    modeSel.disabled = true;
+                    modeSel.style.backgroundColor = '#e9ecef';
+                    modeSel.style.cursor = 'not-allowed';
+                }
+            } else if (val === 'AI') {
+                modeSel.innerHTML = '<option value="DOC05_FAI">Fiche d\'incident / FAI</option>';
                 modeSel.value = 'DOC05_FAI';
+                modeSel.disabled = true;
+                modeSel.style.backgroundColor = '#e9ecef';
+                modeSel.style.cursor = 'not-allowed';
             } else {
+                modeSel.innerHTML = '<option value="DOC05">Fiche d\'incident (Doc 05)</option>';
                 modeSel.value = 'DOC05';
+                modeSel.disabled = true;
+                modeSel.style.backgroundColor = '#e9ecef';
+                modeSel.style.cursor = 'not-allowed';
             }
         }
-        typeSel.addEventListener('change', updateSupportFromType);
-        updateSupportFromType();
+        typeSel.addEventListener('change', function() {
+            updateSupportFromType(true);
+        });
+        updateSupportFromType(false);
     }
 });
 </script>

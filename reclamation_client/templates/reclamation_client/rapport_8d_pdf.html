@@ -133,6 +133,59 @@
 
     <table class="main-doc-table">
         <colgroup>
+            <col width="145pt">
+            <col width="90pt">
+            <col width="125pt">
+            <col width="180pt">
+        </colgroup>
+        <tbody>
+            <!-- Metadata Rows -->
+            <tr>
+                <td class="bg-blue">Numéro de rapport AB Serve :</td>
+                <td class="font-bold">{{ reclamation.reference }}</td>
+                <td class="bg-blue">Numéro de réclamation :</td>
+                <td>{{ reclamation.numero_reclamation_client|default:"—" }}</td>
+            </tr>
+            <tr>
+                <td class="bg-blue">Date d'alerte client</td>
+                <td>{{ reclamation.date_alerte_client|date:"d/m/Y"|default:"—" }}</td>
+                <td class="bg-blue">Client</td>
+                <td>{{ reclamation.client_nom|default:"—" }}</td>
+            </tr>
+            <tr>
+                <td class="bg-blue">Date d'ouverture fiche</td>
+                <td>{{ reclamation.date_ouverture|date:"d/m/Y"|default:"—" }}</td>
+                <td class="bg-blue">Contact client :</td>
+                <td>{{ reclamation.contact_client|default:"—" }}</td>
+            </tr>
+            <tr>
+                <td class="bg-blue">Site concerné</td>
+                <td colspan="3">{{ reclamation.site.nom|default:reclamation.societe.nom|default:"—" }}</td>
+            </tr>
+            <tr>
+                <td class="bg-blue">Description pièce :</td>
+                <td colspan="3">{{ reclamation.description_piece|default:"—" }}</td>
+            </tr>
+            <tr>
+                <td class="bg-blue">Référence pièce :</td>
+                <td colspan="3">{{ reclamation.reference_piece|default:"—" }}</td>
+            </tr>
+            <tr>
+                <td class="bg-blue">Est-ce un problème répétitif ?</td>
+                <td colspan="3">
+                    OUI {% if reclamation.est_probleme_repetitif %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbElEQVR4nKWTUQrAIAxDl7L7XzljYMfWRWxtP0TEvDRSQfLo1HkvALYoJGEte+/AKxsHwLO3lEIIywAMcYRY1TnGtI5YAiByzsQ/AELOGWwK4Mtl1boEqMur2TB16KLMYH0mMWYuv8FOofudL35+KCgl5RaFAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% else %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQklEQVR4nGP8//8/AyWABUQwMjKSZcr///8ZmSiyHuYCGCDWO4yMjHA2EwOFgGnUAIbRMGBATYnIKYxuCYmR0uwMAGnoDSK9jTCJAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% endif %} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    NON {% if not reclamation.est_probleme_repetitif %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbElEQVR4nKWTUQrAIAxDl7L7XzljYMfWRWxtP0TEvDRSQfLo1HkvALYoJGEte+/AKxsHwLO3lEIIywAMcYRY1TnGtI5YAiByzsQ/AELOGWwK4Mtl1boEqMur2TB16KLMYH0mMWYuv8FOofudL35+KCgl5RaFAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% else %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQklEQVR4nGP8//8/AyWABUQwMjKSZcr///8ZmSiyHuYCGCDWO4yMjHA2EwOFgGnUAIbRMGBATYnIKYxuCYmR0uwMAGnoDSK9jTCJAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="bg-blue font-bold">Date de mise à jour :</td>
+                <td colspan="3">{{ reclamation.date_mise_a_jour|date:"d/m/Y"|default:"—" }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="main-doc-table">
+        <colgroup>
             <col width="200pt">
             <col width="35pt">
             <col width="35pt">
@@ -140,67 +193,25 @@
             <col width="135pt">
         </colgroup>
         <tbody>
-            <!-- Metadata Rows -->
-            <tr>
-                <td width="200pt" class="bg-blue">Numéro de rapport AB Serve :</td>
-                <td colspan="2" class="font-bold">{{ reclamation.reference }}</td>
-                <td width="135pt" class="bg-blue">Numéro de réclamation :</td>
-                <td width="135pt">{{ reclamation.numero_reclamation_client|default:"—" }}</td>
-            </tr>
-            <tr>
-                <td class="bg-blue">Date d'alerte client</td>
-                <td colspan="2">{{ reclamation.date_alerte_client|date:"d/m/Y"|default:"—" }}</td>
-                <td class="bg-blue">Client</td>
-                <td>{{ reclamation.client_nom|default:"—" }}</td>
-            </tr>
-            <tr>
-                <td class="bg-blue">Date d'ouverture fiche</td>
-                <td colspan="2">{{ reclamation.date_ouverture|date:"d/m/Y"|default:"—" }}</td>
-                <td class="bg-blue">Contact client :</td>
-                <td>{{ reclamation.contact_client|default:"—" }}</td>
-            </tr>
-            <tr>
-                <td class="bg-blue">Site concerné</td>
-                <td colspan="4">{{ reclamation.site.nom|default:reclamation.societe.nom|default:"—" }}</td>
-            </tr>
-            <tr>
-                <td class="bg-blue">Description pièce :</td>
-                <td colspan="4">{{ reclamation.description_piece|default:"—" }}</td>
-            </tr>
-            <tr>
-                <td class="bg-blue">Référence pièce :</td>
-                <td colspan="4">{{ reclamation.reference_piece|default:"—" }}</td>
-            </tr>
-            <tr>
-                <td class="bg-blue">Est-ce un problème répétitif ?</td>
-                <td colspan="4">
-                    OUI {% if reclamation.est_probleme_repetitif %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbElEQVR4nKWTUQrAIAxDl7L7XzljYMfWRWxtP0TEvDRSQfLo1HkvALYoJGEte+/AKxsHwLO3lEIIywAMcYRY1TnGtI5YAiByzsQ/AELOGWwK4Mtl1boEqMur2TB16KLMYH0mMWYuv8FOofudL35+KCgl5RaFAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% else %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQklEQVR4nGP8//8/AyWABUQwMjKSZcr///8ZmSiyHuYCGCDWO4yMjHA2EwOFgGnUAIbRMGBATYnIKYxuCYmR0uwMAGnoDSK9jTCJAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% endif %} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    NON {% if not reclamation.est_probleme_repetitif %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbElEQVR4nKWTUQrAIAxDl7L7XzljYMfWRWxtP0TEvDRSQfLo1HkvALYoJGEte+/AKxsHwLO3lEIIywAMcYRY1TnGtI5YAiByzsQ/AELOGWwK4Mtl1boEqMur2TB16KLMYH0mMWYuv8FOofudL35+KCgl5RaFAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% else %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQklEQVR4nGP8//8/AyWABUQwMjKSZcr///8ZmSiyHuYCGCDWO4yMjHA2EwOFgGnUAIbRMGBATYnIKYxuCYmR0uwMAGnoDSK9jTCJAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% endif %}
-                </td>
-            </tr>
-            <tr>
-                <td colspan="3" class="bg-blue font-bold">Date de mise à jour :</td>
-                <td colspan="2">{{ reclamation.date_mise_a_jour|date:"d/m/Y"|default:"—" }}</td>
-            </tr>
-
             <!-- D1 Section Header -->
             <tr>
                 <td colspan="5" class="sec-header-td-center">D1 - Groupe 8D</td>
             </tr>
-            <tr>
-                <td class="bg-blue">Participants :</td>
-                <td colspan="2">
-                    {% for p in participants %}
-                    <div>{{ p.user.get_full_name|default:p.nom_externe }}</div>
-                    {% empty %}<div>—</div>{% endfor %}
-                </td>
-                <td class="bg-blue">Fonction :</td>
-                <td>
-                    {% for p in participants %}
-                    <div>{{ p.fonction }} {% if p.est_pilote %}(PILOTE){% endif %}</div>
-                    {% empty %}<div>—</div>{% endfor %}
-                </td>
+            <tr class="bg-blue">
+                <td colspan="3" class="font-bold" style="text-align:left;">Nom / Prénom</td>
+                <td colspan="2" class="font-bold" style="text-align:left;">Fonction</td>
             </tr>
+            {% for p in participants %}
+            <tr>
+                <td colspan="3" style="vertical-align:top;">{{ p.user.get_full_name|default:p.nom_externe|default:"—" }}</td>
+                <td colspan="2" style="vertical-align:top;">{{ p.fonction|default:"—" }}{% if p.est_pilote %} (PILOTE){% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">—</td>
+                <td colspan="2">—</td>
+            </tr>
+            {% endfor %}
 
             <!-- D2 Section Header -->
             <tr>
@@ -341,10 +352,18 @@
             </tr>
             <tr>
                 <td colspan="5" class="d2-cell">
-                    <div class="d2-label">D4.1 Cause principale de non détection :</div>
-                    <div class="d2-val" style="margin-bottom:3pt;">{{ analyse_d4.cause_principale_non_detection|default:"—" }}</div>
-                    <div class="d2-label">D4.2 Cause principale technique - Non-conformité :</div>
-                    <div class="d2-val">{{ analyse_d4.cause_principale_technique|default:"—" }}</div>
+                    <div class="d2-label">D4.1 — Causes retenues de non-détection :</div>
+                    {% for cause in d4_selected_causes.non_detection %}
+                    <div class="d2-val">• {{ cause }}</div>
+                    {% empty %}
+                    <div class="d2-val">Aucune cause retenue.</div>
+                    {% endfor %}
+                    <div class="d2-label" style="margin-top:3pt;">D4.2 — Causes retenues technique / occurrence :</div>
+                    {% for cause in d4_selected_causes.technique %}
+                    <div class="d2-val">• {{ cause }}</div>
+                    {% empty %}
+                    <div class="d2-val">Aucune cause retenue.</div>
+                    {% endfor %}
                 </td>
             </tr>
             <tr>
@@ -408,7 +427,29 @@
                 </td>
             </tr>
 
-            <!-- D7 Section Header avec Cases à Cocher Image Unifiées -->
+            <!-- D7 documents SMQS ajoutés par l'utilisateur -->
+            <tr>
+                <td colspan="5" class="sec-header-td-left">D7 - Capitaliser</td>
+            </tr>
+            <tr class="bg-blue">
+                <td width="270pt" class="font-bold" style="text-align:left;">Document SMQS</td>
+                <td colspan="2" width="70pt" class="font-bold font-italic" style="text-align:center;">Mis à jour ?</td>
+                <td width="120pt" class="font-bold" style="text-align:left;">Commentaire</td>
+                <td width="80pt" class="font-bold" style="text-align:left;">Fichier</td>
+            </tr>
+            {% for document in d7_documents %}
+            <tr>
+                <td width="270pt">{{ document.nom_reference|default:"—" }}</td>
+                <td colspan="2" width="70pt" align="center">{% if document.mis_a_jour %}Oui{% else %}Non{% endif %}</td>
+                <td width="120pt">{{ document.commentaire|default:"—" }}</td>
+                <td width="80pt">{{ document.fichier_nom|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align:center;">Aucun document SMQS ajouté.</td></tr>
+            {% endfor %}
+
+            {% if False %}
+            <!-- Anciennes lignes fixes conservées uniquement pour compatibilité source. -->
             <tr>
                 <td colspan="5" class="sec-header-td-left">D7 - Capitaliser</td>
             </tr>
@@ -476,6 +517,8 @@
                 <td width="100pt">—</td>
             </tr>
 
+            {% endif %}
+
             <!-- D8 Section Header & Rows -->
             <tr>
                 <td colspan="5" class="sec-header-td-left">D8 - Fermeture du 8 D</td>
@@ -490,15 +533,6 @@
     </table>
 
     <div class="footer-note">8D 4 à 8</div>
-
-    <pdf:nextpage/>
-
-    <!-- ══════════════════════════════════════════════════════════════════════ -->
-    <!-- PAGE 3 : D 4.1 à D 4.2 (Official High-Fidelity 5-Pourquoi Diagram)     -->
-    <!-- ══════════════════════════════════════════════════════════════════════ -->
-    <div style="width:540pt; text-align:center;">
-        <img src="{{ d4_diagram_png }}" width="540pt" style="width:540pt; height:auto;" />
-    </div>
 
 </div>
 

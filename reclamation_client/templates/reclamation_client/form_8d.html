@@ -25,19 +25,20 @@
         min-width: max-content !important;
     }
     .card-tabs .card-header .nav-tabs .nav-item {
-        flex: 1 1 0px !important;
-        min-width: 0 !important;
+        flex: 1 1 auto !important;
+        min-width: max-content !important;
         text-align: center !important;
         white-space: nowrap !important;
         margin-bottom: 0 !important;
     }
     .card-tabs .card-header .nav-tabs .nav-link {
         display: block !important;
+        width: 100% !important;
         white-space: nowrap !important;
-        padding: 0.6rem 0.5rem !important;
+        padding: 0.65rem 1.15rem !important;
         font-size: 0.84rem !important;
         font-weight: 600 !important;
-        color: rgba(255, 255, 255, 0.9) !important;
+        color: rgba(255, 255, 255, 0.95) !important;
         border: none !important;
         border-top: 3px solid transparent !important;
         border-radius: 0 !important;
@@ -61,41 +62,240 @@
             font-size: 0.8rem !important;
         }
     }
+
+    /* ── 5 Pourquoi Textarea Responsive Styles ── */
+    .pq-textarea {
+        min-height: 72px;
+        font-size: 0.875rem;
+        line-height: 1.35;
+        resize: vertical;
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 4px;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .pq-textarea:focus {
+        outline: none;
+    }
+    .pq-nd-field:focus {
+        border-color: #17a2b8 !important;
+        box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25) !important;
+    }
+    .pq-tech-field:focus {
+        border-color: #17a2b8 !important;
+        box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25) !important;
+    }
+    .pq-conclusion-field {
+        min-height: 72px;
+        height: auto;
+        line-height: 1.35;
+        resize: vertical;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        overflow: auto;
+    }
+    /* ── D7 documents: full-width layout without horizontal scrolling ── */
+    #table-d7-documents {
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+        margin-bottom: 0;
+    }
+    #table-d7-documents th,
+    #table-d7-documents td {
+        box-sizing: border-box;
+        vertical-align: middle;
+        padding: 0.75rem 0.6rem;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+    #table-d7-documents th:nth-child(1),
+    #table-d7-documents td:nth-child(1) { width: 26%; }
+    #table-d7-documents th:nth-child(2),
+    #table-d7-documents td:nth-child(2) { width: 11%; }
+    #table-d7-documents th:nth-child(3),
+    #table-d7-documents td:nth-child(3) { width: 26%; }
+    #table-d7-documents th:nth-child(4),
+    #table-d7-documents td:nth-child(4) { width: 27%; }
+    #table-d7-documents th:nth-child(5),
+    #table-d7-documents td:nth-child(5) { width: 10%; }
+    #table-d7-documents input.form-control,
+    #table-d7-documents .d7-file-input {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    #table-d7-documents .d7-file-input {
+        display: none !important;
+    }
+    #table-d7-documents .d7-file-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2rem;
+        padding: 0;
+        line-height: 1;
+    }
+    #table-d7-documents td.d7-status-cell {
+        vertical-align: middle;
+        text-align: center;
+    }
+    #table-d7-documents td.d7-status-cell input[type="checkbox"] {
+        position: static;
+        display: block;
+        margin: 0 auto;
+        float: none;
+        vertical-align: middle;
+    }
+    #table-d7-documents td:nth-child(4) small {
+        display: block;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+    #table-d7-documents td:last-child .btn {
+        display: block;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    #table-d7-documents th:last-child,
+    #table-d7-documents td:last-child {
+        white-space: nowrap;
+        overflow-wrap: normal;
+        word-break: normal;
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+    }
+    #table-d7-documents th:last-child {
+        font-size: 0.75rem;
+    }
+    #tab-d7-d8 .d7-documents-table-wrapper {
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    /* ── Palette Rapport 8D : sobre, Bootstrap-compatible, rouge réservé ── */
+    .rapport-8d-page {
+        background: #f5f6f8;
+        min-height: 100%;
+    }
+    .rapport-8d-page .card-tabs .card-header {
+        background-color: #1976d2 !important;
+    }
+    .rapport-8d-page .card-tabs .nav-item:nth-child(2) .nav-link {
+        background-color: #17a2b8;
+    }
+    .rapport-8d-page .card-tabs .nav-item:nth-child(3) .nav-link {
+        background-color: #28a745;
+    }
+    .rapport-8d-page .card-tabs .nav-item:nth-child(4) .nav-link {
+        background-color: #f0ad4e;
+        color: #343a40 !important;
+    }
+    .rapport-8d-page .card-tabs .card-header .nav-tabs .nav-link.active {
+        background-color: #fff !important;
+        color: #343a40 !important;
+        border-top-color: #1976d2 !important;
+    }
+    .rapport-8d-page .card-tabs,
+    .rapport-8d-page .card.card-danger {
+        border-color: #1976d2 !important;
+    }
+    .rapport-8d-page h1 .text-danger,
+    .rapport-8d-page h5.text-danger,
+    .rapport-8d-page h5 .text-danger {
+        color: #1976d2 !important;
+    }
+    .rapport-8d-page #form-8d > .row .btn-danger,
+    .rapport-8d-page #form-8d .btn-danger.btn-lg {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+    }
+    .rapport-8d-page #btn-add-action-perm {
+        background-color: #17a2b8 !important;
+        border-color: #17a2b8 !important;
+    }
+    .rapport-8d-page .table thead.bg-dark,
+    .rapport-8d-page .table thead.bg-dark th {
+        background-color: #343a40 !important;
+    }
+    .rapport-8d-page #tab-d7-d8 .card.card-danger {
+        border-color: #f0ad4e !important;
+    }
+    .rapport-8d-page #tab-d7-d8 h5.text-danger {
+        color: #f0ad4e !important;
+    }
+    .rapport-8d-page .arbre-causes-widget .arbre-title {
+        background: #1976d2;
+    }
+    .rapport-8d-page .arbre-causes-widget .cause-principale {
+        background: #e3f2fd;
+        border-color: #1976d2;
+    }
+    .rapport-8d-page .arbre-causes-widget .btn-add-cause-doc83-d41,
+    .rapport-8d-page .arbre-causes-widget .btn-add-cause-doc83-d42 {
+        background-color: #1976d2;
+        border-color: #1976d2;
+    }
 </style>
 
-<div class="container-fluid pt-3">
-    <form method="post" id="form-8d" novalidate>
+<div class="container-fluid pt-3 rapport-8d-page">
+    <form method="post" id="form-8d" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
-        <div class="row mb-2">
-            <div class="col-sm-6">
+        <div class="row mb-2 align-items-center">
+            <div class="col-md-8">
                 <h1 class="m-0"><i class="fas fa-edit text-danger mr-2"></i>Rapport 8D (Doc 83) — {{ reclamation.reference }}</h1>
                 <small class="text-muted">Client: {{ reclamation.client_nom }} | Type: {{ reclamation.get_type_signalement_display }}</small>
             </div>
-            <div class="col-sm-6 text-right">
+            <div class="col-md-4 text-md-right mt-2 mt-md-0">
+                {% if request.user.is_superuser or request.user.is_staff %}
+                {% if reclamation.type_signalement == 'R' or reclamation.type_signalement == 'I' %}
+                <span class="badge badge-light border px-2 py-1 text-muted align-middle" style="font-size: 0.85rem;">
+                    Support d'analyse : <strong class="text-danger">Rapport 8D</strong>
+                </span>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        <div class="d-flex flex-wrap justify-content-end align-items-center mb-2">
+            {% if request.user.is_superuser or request.user.is_staff %}
+            {% if reclamation.type_signalement == 'R' or reclamation.type_signalement == 'I' %}
+                <button type="button" class="btn btn-outline-secondary mr-1"
+                        data-toggle="modal" data-target="#modalChangerSupport8D"
+                        title="Changer le support d'analyse (admin)">
+                    <i class="fas fa-exchange-alt mr-1"></i> Changer le support
+                </button>
+            {% endif %}
+            {% endif %}
+            {% if is_header_admin %}
+            <button type="button" class="btn btn-outline-primary mr-1" data-toggle="modal" data-target="#modal-edit-reclamation-header">
+                <i class="fas fa-pen mr-1"></i> Modifier l’en-tête
+            </button>
+            {% endif %}
                 <a href="{% url 'reclamation:detail' reclamation.pk %}" class="btn btn-default mr-2">Voir Synthèse</a>
                 <button type="submit" class="btn btn-danger font-weight-bold shadow-xs">
                     <i class="fas fa-save mr-1"></i> Enregistrer le Dossier 8D
                 </button>
-            </div>
         </div>
 
         <div class="card card-danger card-tabs">
             <div class="card-header p-0 pt-1">
                 <ul class="nav nav-tabs" id="editor-tabs" role="tablist">
                     <li class="nav-item">
-                        <a class="nav-link active" id="tab-d1-d3-tab" data-toggle="pill" href="#tab-d1-d3" role="tab">D1 - D3 : En-tête &amp; Sécurisation {% if header_form.errors or participants_formset.errors %}<span class="badge badge-warning ml-1">!</span>{% endif %}</a>
+                        <a class="nav-link active" id="tab-d1-d3-tab" data-toggle="pill" href="#tab-d1-d3" role="tab">D1 – D2 – D3 : Équipe, Description du problème &amp; Sécurisation {% if header_form.errors or participants_formset.errors or qqoqccp_form.errors or mesures_d3_formset.errors %}<span class="badge badge-warning ml-1">!</span>{% endif %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="tab-d2-tab" data-toggle="pill" href="#tab-d2" role="tab">D2 : QQOQCCP (EST / N'EST PAS) {% if qqoqccp_form.errors %}<span class="badge badge-warning ml-1">!</span>{% endif %}</a>
+                        <a class="nav-link" id="tab-d4-tab" data-toggle="pill" href="#tab-d4" role="tab">D4 : 5 Pourquoi Double Axe {% if analyse_d4_form.errors or cloture_d8_form.errors %}<span class="badge badge-warning ml-1">!</span>{% endif %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="tab-d4-tab" data-toggle="pill" href="#tab-d4" role="tab">D4 : 5 Pourquoi Double Axe {% if analyse_d4_form.errors %}<span class="badge badge-warning ml-1">!</span>{% endif %}</a>
+                        <a class="nav-link" id="tab-d5-d6-tab" data-toggle="pill" href="#tab-d5-d6" role="tab">D5 – D6 : Actions, Tests &amp; Permanentes {% if actions_tests_formset.errors or actions_permanentes_formset.errors %}<span class="badge badge-warning ml-1">!</span>{% endif %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="tab-d5-d6-tab" data-toggle="pill" href="#tab-d5-d6" role="tab">D5 - D6 : Actions Tests &amp; Permanentes {% if actions_tests_formset.errors or actions_permanentes_formset.errors %}<span class="badge badge-warning ml-1">!</span>{% endif %}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="tab-d7-d8-tab" data-toggle="pill" href="#tab-d7-d8" role="tab">D7 - D8 : Capitalisation &amp; Recevabilité {% if capitalisation_d7_form.errors or cloture_d8_form.errors %}<span class="badge badge-warning ml-1">!</span>{% endif %}</a>
+                        <a class="nav-link" id="tab-d7-d8-tab" data-toggle="pill" href="#tab-d7-d8" role="tab">D7 – D8 : Capitalisation &amp; Fermeture {% if capitalisation_d7_form.errors %}<span class="badge badge-warning ml-1">!</span>{% endif %}</a>
                     </li>
                 </ul>
             </div>
@@ -129,7 +329,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-4 form-group">
-                                <label>Société *</label>
+                                <label>Section *</label>
                                 {{ header_form.societe }}
                                 {% if header_form.societe.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ header_form.societe.errors|striptags }}</div>{% endif %}
                             </div>
@@ -242,6 +442,29 @@
                             </tr>
                         </template>
 
+                        <!-- ── D2 : QQOQCCP — Matrice Comparative EST / N'EST PAS ── -->
+                        <h5 class="text-danger border-bottom pb-2 mt-4">D2 - Description du Problème (Matrice Comparative EST / N'EST PAS)</h5>
+                        <div class="form-group mb-4">
+                            <label>Description synthétique transmise par le client :</label>
+                            {{ qqoqccp_form.description_client }}
+                            {% if qqoqccp_form.description_client.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ qqoqccp_form.description_client.errors|striptags }}</div>{% endif %}
+                        </div>
+                        <table class="table table-bordered">
+                            <thead class="bg-dark text-white">
+                                <tr><th style="width: 20%;">Dimension QQOQCCP</th><th style="width: 40%;">Le problème EST...</th><th style="width: 40%;">Le problème N'EST PAS...</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><strong>QUOI ?</strong> (Objet / Défaillance)</td><td>{{ qqoqccp_form.quoi_est }}</td><td>{{ qqoqccp_form.quoi_nest_pas }}</td></tr>
+                                <tr><td><strong>QUI ?</strong> (Rencontre le problème)</td><td>{{ qqoqccp_form.qui_est }}</td><td>{{ qqoqccp_form.qui_nest_pas }}</td></tr>
+                                <tr><td><strong>OÙ ?</strong> (Secteur / Site)</td><td>{{ qqoqccp_form.ou_est }}</td><td>{{ qqoqccp_form.ou_nest_pas }}</td></tr>
+                                <tr><td><strong>QUAND ?</strong> (Détecté quand / par qui)</td><td>{{ qqoqccp_form.quand_est }}</td><td>{{ qqoqccp_form.quand_nest_pas }}</td></tr>
+                                <tr><td><strong>COMMENT ?</strong> (Se manifeste)</td><td>{{ qqoqccp_form.comment_est }}</td><td>{{ qqoqccp_form.comment_nest_pas }}</td></tr>
+                                <tr><td><strong>COMBIEN ?</strong> (Nombre de pièces)</td><td>{{ qqoqccp_form.combien_est }}</td><td>{{ qqoqccp_form.combien_nest_pas }}</td></tr>
+                                <tr><td><strong>POURQUOI ?</strong> (Est-ce un problème)</td><td>{{ qqoqccp_form.pourquoi_est }}</td><td>{{ qqoqccp_form.pourquoi_nest_pas }}</td></tr>
+                            </tbody>
+                        </table>
+
+                        <!-- ── D3 : Mesures Conservatoires ou de Sécurisation ── -->
                         <h5 class="text-danger border-bottom pb-2 mt-4">D3 - Mesures Conservatoires ou de Sécurisation</h5>
                         {{ mesures_d3_formset.management_form }}
                         {% if mesures_d3_formset.non_form_errors %}
@@ -263,104 +486,50 @@
                         </table>
                     </div>
 
-                    <!-- ── TAB 2 : D2 QQOQCCP ────────────────────────────────── -->
-                    <div class="tab-pane fade" id="tab-d2" role="tabpanel">
-                        <h5 class="text-danger border-bottom pb-2">D2 - Description du Problème (Matrice Comparative EST / N'EST PAS)</h5>
-                        <div class="form-group mb-4">
-                            <label>Description synthétique transmise par le client :</label>
-                            {{ qqoqccp_form.description_client }}
-                            {% if qqoqccp_form.description_client.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ qqoqccp_form.description_client.errors|striptags }}</div>{% endif %}
-                        </div>
-                        <table class="table table-bordered">
-                            <thead class="bg-dark text-white">
-                                <tr><th style="width: 20%;">Dimension QQOQCCP</th><th style="width: 40%;">Le problème EST...</th><th style="width: 40%;">Le problème N'EST PAS...</th></tr>
-                            </thead>
-                            <tbody>
-                                <tr><td><strong>QUOI ?</strong> (Objet / Défaillance)</td><td>{{ qqoqccp_form.quoi_est }}</td><td>{{ qqoqccp_form.quoi_nest_pas }}</td></tr>
-                                <tr><td><strong>QUI ?</strong> (Rencontre le problème)</td><td>{{ qqoqccp_form.qui_est }}</td><td>{{ qqoqccp_form.qui_nest_pas }}</td></tr>
-                                <tr><td><strong>OÙ ?</strong> (Secteur / Site)</td><td>{{ qqoqccp_form.ou_est }}</td><td>{{ qqoqccp_form.ou_nest_pas }}</td></tr>
-                                <tr><td><strong>QUAND ?</strong> (Détecté quand / par qui)</td><td>{{ qqoqccp_form.quand_est }}</td><td>{{ qqoqccp_form.quand_nest_pas }}</td></tr>
-                                <tr><td><strong>COMMENT ?</strong> (Se manifeste)</td><td>{{ qqoqccp_form.comment_est }}</td><td>{{ qqoqccp_form.comment_nest_pas }}</td></tr>
-                                <tr><td><strong>COMBIEN ?</strong> (Nombre de pièces)</td><td>{{ qqoqccp_form.combien_est }}</td><td>{{ qqoqccp_form.combien_nest_pas }}</td></tr>
-                                <tr><td><strong>POURQUOI ?</strong> (Est-ce un problème)</td><td>{{ qqoqccp_form.pourquoi_est }}</td><td>{{ qqoqccp_form.pourquoi_nest_pas }}</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- ── TAB 3 : D4 5 Pourquoi Double Axe ────────────────── -->
+                    <!-- ── TAB 2 : D4 5 Pourquoi Double Axe ────────────────── -->
                     <div class="tab-pane fade" id="tab-d4" role="tabpanel">
                         <h5 class="text-danger border-bottom pb-2">D4 - Analyse des Causes (Double Axe 5 Pourquoi Doc.83)</h5>
-                        <p class="text-muted"><i class="fas fa-info-circle mr-1"></i>Déroulez les 5 Pourquoi horizontalement pour chaque axe. La 5ème réponse (Cause racine) alimente automatiquement la synthèse.</p>
-                        
-                        <input type="hidden" name="pourquoi_non_detection_json" id="pourquoi-nd-json-field" value="{{ pourquoi_non_detection_json|default:'[]' }}">
-                        <input type="hidden" name="pourquoi_technique_json" id="pourquoi-tech-json-field" value="{{ pourquoi_technique_json|default:'[]' }}">
+                        <p class="text-muted"><i class="fas fa-info-circle mr-1"></i>Les deux axes utilisent exactement l’arbre 5 Pourquoi du module Accident de Travail : causes, branches, cinq champs, cause racine au Pourquoi 5, sauvegarde et export JSON.</p>
 
-                        <!-- D4.1 Axe Non-Détection -->
-                        <div class="card card-info card-outline mb-4">
-                            <div class="card-header d-flex align-items-center justify-content-between">
-                                <h3 class="card-title m-0"><i class="fas fa-search-minus mr-2"></i>D4.1 - Axe Non Détection (Pourquoi le problème n'a-t-il pas été détecté ?)</h3>
-                                <button type="button" class="btn btn-sm btn-info text-white font-weight-bold shadow-sm" id="btn-add-branch-nd"><i class="fas fa-plus mr-1"></i>Ajouter une branche</button>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-borderless mb-2" style="table-layout:fixed;min-width:800px">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center text-info font-weight-bold" style="width:18%">Pourquoi 1</th>
-                                                <th style="width:1%" class="text-center"><i class="fas fa-arrow-right text-muted"></i></th>
-                                                <th class="text-center text-info font-weight-bold" style="width:18%">Pourquoi 2</th>
-                                                <th style="width:1%" class="text-center"><i class="fas fa-arrow-right text-muted"></i></th>
-                                                <th class="text-center text-info font-weight-bold" style="width:18%">Pourquoi 3</th>
-                                                <th style="width:1%" class="text-center"><i class="fas fa-arrow-right text-muted"></i></th>
-                                                <th class="text-center text-info font-weight-bold" style="width:18%">Pourquoi 4</th>
-                                                <th style="width:1%" class="text-center"><i class="fas fa-arrow-right text-muted"></i></th>
-                                                <th class="text-center text-danger font-weight-bold" style="width:18%"><i class="fas fa-bullseye mr-1"></i>Cause racine (P5)</th>
-                                                <th style="width:4%" class="text-center"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tbody-nd-branches">
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="form-group mt-3">
-                                    <label>Synthèse Cause Principale de Non-Détection :</label>
-                                    {{ analyse_d4_form.cause_principale_non_detection }}
-                                    {% if analyse_d4_form.cause_principale_non_detection.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ analyse_d4_form.cause_principale_non_detection.errors|striptags }}</div>{% endif %}
-                                </div>
+                        <input type="hidden" name="pourquoi_non_detection_json" id="pourquoi-nd-json-field" value="{{ pourquoi_non_detection_json }}">
+                        <input type="hidden" name="pourquoi_technique_json" id="pourquoi-tech-json-field" value="{{ pourquoi_technique_json }}">
+                        {% url 'reclamation:d4_arbre_api' reclamation.pk 'non_detection' as d4_nd_api_url %}
+                        {% url 'reclamation:d4_arbre_api' reclamation.pk 'technique' as d4_tech_api_url %}
+
+                        <div class="mb-4">
+                            <h5 class="text-info border-bottom pb-2">D4.1 - Axe Non Détection</h5>
+                            {% include "accident_travail/includes/arbre_causes_widget.html" with widget_id="doc83-d41" arbre_title="D4.1 — Non Détection" arbre_data_json=pourquoi_non_detection_json save_url=d4_nd_api_url hidden_input_id="pourquoi-nd-json-field" export_filename=reclamation.reference|add:"_D41_5Pourquoi" can_edit=True show_pdf_selection=True hide_json_export=True %}
+                            <div class="form-group mt-3">
+                                <label>Synthèse Cause Principale de Non-Détection :</label>
+                                {{ analyse_d4_form.cause_principale_non_detection }}
+                                {% if analyse_d4_form.cause_principale_non_detection.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ analyse_d4_form.cause_principale_non_detection.errors|striptags }}</div>{% endif %}
                             </div>
                         </div>
 
-                        <!-- D4.2 Axe Cause Technique -->
-                        <div class="card card-danger card-outline mb-3">
-                            <div class="card-header d-flex align-items-center justify-content-between">
-                                <h3 class="card-title m-0"><i class="fas fa-cogs mr-2"></i>D4.2 - Axe Cause Technique / Occurrence (Pourquoi le problème est-il survenu ?)</h3>
-                                <button type="button" class="btn btn-sm btn-danger text-white font-weight-bold shadow-sm" id="btn-add-branch-tech"><i class="fas fa-plus mr-1"></i>Ajouter une branche</button>
+                        <div class="mb-3">
+                            <h5 class="text-danger border-bottom pb-2">D4.2 - Axe Cause Technique / Occurrence</h5>
+                            {% include "accident_travail/includes/arbre_causes_widget.html" with widget_id="doc83-d42" arbre_title="D4.2 — Cause Technique" arbre_data_json=pourquoi_technique_json save_url=d4_tech_api_url hidden_input_id="pourquoi-tech-json-field" export_filename=reclamation.reference|add:"_D42_5Pourquoi" can_edit=True show_pdf_selection=True hide_json_export=True %}
+                            <div class="form-group mt-3">
+                                <label>Synthèse Cause Principale Technique / Non-conformité :</label>
+                                {{ analyse_d4_form.cause_principale_technique }}
+                                {% if analyse_d4_form.cause_principale_technique.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ analyse_d4_form.cause_principale_technique.errors|striptags }}</div>{% endif %}
                             </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-borderless mb-2" style="table-layout:fixed;min-width:800px">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center text-danger font-weight-bold" style="width:18%">Pourquoi 1</th>
-                                                <th style="width:1%" class="text-center"><i class="fas fa-arrow-right text-muted"></i></th>
-                                                <th class="text-center text-danger font-weight-bold" style="width:18%">Pourquoi 2</th>
-                                                <th style="width:1%" class="text-center"><i class="fas fa-arrow-right text-muted"></i></th>
-                                                <th class="text-center text-danger font-weight-bold" style="width:18%">Pourquoi 3</th>
-                                                <th style="width:1%" class="text-center"><i class="fas fa-arrow-right text-muted"></i></th>
-                                                <th class="text-center text-danger font-weight-bold" style="width:18%">Pourquoi 4</th>
-                                                <th style="width:1%" class="text-center"><i class="fas fa-arrow-right text-muted"></i></th>
-                                                <th class="text-center text-danger font-weight-bold" style="width:18%"><i class="fas fa-bullseye mr-1"></i>Cause racine (P5)</th>
-                                                <th style="width:4%" class="text-center"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tbody-tech-branches">
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="form-group mt-3">
-                                    <label>Synthèse Cause Principale Technique / Non-conformité :</label>
-                                    {{ analyse_d4_form.cause_principale_technique }}
-                                    {% if analyse_d4_form.cause_principale_technique.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ analyse_d4_form.cause_principale_technique.errors|striptags }}</div>{% endif %}
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top" id="d4-recevabilite">
+                            <h5 class="text-warning border-bottom pb-2">Recevabilité (P05 §5)</h5>
+                            <div class="card card-outline card-warning">
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label class="font-weight-bold">Statut de Recevabilité (P05 §5) :</label>
+                                        {{ cloture_d8_form.statut_recevabilite }}
+                                        {% if cloture_d8_form.statut_recevabilite.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ cloture_d8_form.statut_recevabilite.errors|striptags }}</div>{% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="font-weight-bold">Motif de la décision &amp; Défense factuelle (Obligatoire si refus) :</label>
+                                        {{ cloture_d8_form.motif_decision_factuel }}
+                                        {% if cloture_d8_form.motif_decision_factuel.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ cloture_d8_form.motif_decision_factuel.errors|striptags }}</div>{% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -491,85 +660,38 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <h5 class="text-danger border-bottom pb-2">D7 - Capitaliser (Mise à jour Documentation SMQS)</h5>
-                                <p class="text-muted small mb-2"><i class="fas fa-info-circle mr-1"></i>Cochez la case "Mis à jour ?" pour indiquer qu'un document SMQS a été révisé/mis à jour dans le cadre de ce 8D. Renseignez le pilote et délai associé.</p>
-                                <table class="table table-sm table-bordered">
+                                <p class="text-muted small mb-2"><i class="fas fa-info-circle mr-1"></i>Ajoutez uniquement les documents SMQS réellement concernés par ce 8D, puis renseignez leur statut et un commentaire libre.</p>
+                                <input type="hidden" name="d7_documents_json" id="d7-documents-json" value="{{ d7_documents_json|escape }}">
+                                <div class="d7-documents-table-wrapper">
+                                <table class="table table-sm table-bordered" id="table-d7-documents">
                                     <thead class="bg-light">
                                         <tr>
-                                            <th>Document SMQS</th>
-                                            <th class="text-center" style="width: 120px;">Mis à jour ?</th>
-                                            <th>Pilote - Délai</th>
+                                            <th style="width: 26%;">Nom / Référence du document</th>
+                                            <th class="text-center" style="width: 11%;">Mis à jour ?</th>
+                                            <th style="width: 26%;">Commentaire</th>
+                                            <th style="width: 27%;">Fichier</th>
+                                            <th class="text-center" style="width: 10%;">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>Doc.01 Instruction de travail</td>
-                                            <td class="text-center">{{ capitalisation_d7_form.doc01_instruction }}</td>
-                                            <td>{{ capitalisation_d7_form.doc01_pilote_delai }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Doc 12 Gamme de travail</td>
-                                            <td class="text-center">{{ capitalisation_d7_form.doc12_gammes }}</td>
-                                            <td>{{ capitalisation_d7_form.doc12_pilote_delai }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="3" class="bg-light">{{ capitalisation_d7_form.precisez_gammes }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Doc.21 Formation Nouvel arrivant</td>
-                                            <td class="text-center">{{ capitalisation_d7_form.doc21_formation }}</td>
-                                            <td>{{ capitalisation_d7_form.doc21_pilote_delai }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Doc 34 Habilitation individuelle</td>
-                                            <td class="text-center">{{ capitalisation_d7_form.doc34_habilitation_indiv }}</td>
-                                            <td>{{ capitalisation_d7_form.doc34_pilote_delai }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Doc 38 Habilitation au poste</td>
-                                            <td class="text-center">{{ capitalisation_d7_form.doc38_habilitation_poste }}</td>
-                                            <td>{{ capitalisation_d7_form.doc38_pilote_delai }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Doc 5-24 Tableau de compétences</td>
-                                            <td class="text-center">{{ capitalisation_d7_form.doc5_24_competences }}</td>
-                                            <td>{{ capitalisation_d7_form.doc5_24_pilote_delai }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Doc 50 OK Démarrage</td>
-                                            <td class="text-center">{{ capitalisation_d7_form.doc50_ok_demarrage }}</td>
-                                            <td>{{ capitalisation_d7_form.doc50_pilote_delai }}</td>
-                                        </tr>
-                                    </tbody>
+                                    <tbody id="tbody-d7-documents"></tbody>
                                 </table>
+                                </div>
+                                <div id="d7-documents-empty" class="text-muted small border rounded bg-light p-3 mb-2">
+                                    <i class="fas fa-info-circle mr-1"></i>Aucun document D7 ajouté.
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary font-weight-bold" id="btn-add-d7-document">
+                                    <i class="fas fa-plus mr-1"></i>Ajouter un document
+                                </button>
                             </div>
                             <div class="col-md-6">
-                                <h5 class="text-danger border-bottom pb-2">D8 - Fermeture du 8D &amp; Recevabilité (P05 §5)</h5>
+                                <h5 class="text-danger border-bottom pb-2">D8 - Fermeture du 8D</h5>
                                 <div class="card card-outline card-danger">
                                     <div class="card-body">
-                                        <div class="form-group">
-                                            <label class="font-weight-bold">Statut de Recevabilité (P05 §5) :</label>
-                                            {{ cloture_d8_form.statut_recevabilite }}
-                                            {% if cloture_d8_form.statut_recevabilite.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ cloture_d8_form.statut_recevabilite.errors|striptags }}</div>{% endif %}
+                                        <div class="d-none">
+                                            {{ cloture_d8_form.feliciter_equipe.as_hidden }}
+                                            {{ cloture_d8_form.date_felicitations.as_hidden }}
                                         </div>
-                                        <div class="form-group">
-                                            <label class="font-weight-bold">Motif de la décision &amp; Défense factuelle (Obligatoire si refus) :</label>
-                                            {{ cloture_d8_form.motif_decision_factuel }}
-                                            {% if cloture_d8_form.motif_decision_factuel.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ cloture_d8_form.motif_decision_factuel.errors|striptags }}</div>{% endif %}
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-6 form-group">
-                                                <div class="form-check pt-2">
-                                                    {{ cloture_d8_form.feliciter_equipe }}
-                                                    <label class="form-check-label font-weight-bold">Féliciter l'équipe</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6 form-group">
-                                                <label>Date Félicitations</label>
-                                                {{ cloture_d8_form.date_felicitations }}
-                                                {% if cloture_d8_form.date_felicitations.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ cloture_d8_form.date_felicitations.errors|striptags }}</div>{% endif %}
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
+                                        <div class="form-group mb-0">
                                             <label>Date d'envoi du 8D final au client</label>
                                             {{ cloture_d8_form.date_envoi_8d_final }}
                                             {% if cloture_d8_form.date_envoi_8d_final.errors %}<div class="text-danger small mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ cloture_d8_form.date_envoi_8d_final.errors|striptags }}</div>{% endif %}
@@ -591,11 +713,271 @@
         </div>
     </form>
 </div>
+
+{% if request.user.is_superuser or request.user.is_staff %}
+{% if reclamation.type_signalement == 'R' or reclamation.type_signalement == 'I' %}
+<!-- ── Modale : Confirmation changement de support 8D → Doc05 (Admin) ── -->
+<div class="modal fade" id="modalChangerSupport8D" tabindex="-1" role="dialog"
+     aria-labelledby="modalChangerSupport8DLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title font-weight-bold" id="modalChangerSupport8DLabel">
+                    <i class="fas fa-exchange-alt mr-2"></i> Changer le support d'analyse
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Fermer">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body pt-4 pb-3">
+                <div class="alert alert-warning border-warning d-flex align-items-start mb-4">
+                    <i class="fas fa-exclamation-triangle mt-1 mr-2 text-warning"></i>
+                    <div>
+                        <strong>Action administrateur</strong><br>
+                        <small>Les données existantes (D1–D8, Fiche Doc 05) seront conservées. Les modifications non enregistrées du formulaire actuel seront perdues.</small>
+                    </div>
+                </div>
+                <div class="row text-center mb-3">
+                    <div class="col-5">
+                        <div class="p-3 border rounded bg-light">
+                            <small class="text-muted d-block mb-1">Support actuel</small>
+                            <strong class="text-danger">
+                                <i class="fas fa-file-alt mr-1"></i> Rapport 8D
+                            </strong>
+                        </div>
+                    </div>
+                    <div class="col-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-long-arrow-alt-right fa-2x text-muted"></i>
+                    </div>
+                    <div class="col-5">
+                        <div class="p-3 border rounded bg-light">
+                            <small class="text-muted d-block mb-1">Nouveau support</small>
+                            <strong class="text-success">
+                                <i class="fas fa-file-alt mr-1"></i> Fiche d'incident (Doc 05)
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-muted small text-center mb-0">
+                    Dossier : <strong>{{ reclamation.reference }}</strong> — {{ reclamation.client_nom }}
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Annuler
+                </button>
+                <form method="post" action="{% url 'reclamation:changer_support' reclamation.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="nouveau_support" value="DOC05">
+                    <button type="submit" class="btn btn-danger font-weight-bold">
+                        <i class="fas fa-check-circle mr-1"></i> Confirmer le changement
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+{% if is_header_admin %}
+    {% include "reclamation_client/includes/reclamation_header_modal.html" with form=edit_header_form modal_id="modal-edit-reclamation-header" %}
+{% endif %}
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // D7 : liste libre des documents SMQS, vide par défaut.
+        var d7DocumentsInput = document.getElementById('d7-documents-json');
+        var d7DocumentsBody = document.getElementById('tbody-d7-documents');
+        var d7DocumentsEmpty = document.getElementById('d7-documents-empty');
+        var d7AddDocumentButton = document.getElementById('btn-add-d7-document');
+        var d7Documents = [];
+        var d7PendingFiles = {};
+
+        try {
+            var parsedD7Documents = JSON.parse(d7DocumentsInput ? d7DocumentsInput.value || '[]' : '[]');
+            if (Array.isArray(parsedD7Documents)) {
+                d7Documents = parsedD7Documents.map(function(documentItem) {
+                    return {
+                        id: documentItem.id || null,
+                        nom_reference: String(documentItem.nom_reference || ''),
+                        mis_a_jour: documentItem.mis_a_jour === true,
+                        commentaire: String(documentItem.commentaire || ''),
+                        fichier_nom: String(documentItem.fichier_nom || ''),
+                        file_key: documentItem.file_key || null
+                    };
+                });
+            }
+        } catch (e) {
+            d7Documents = [];
+        }
+
+        function syncD7Documents() {
+            if (d7DocumentsInput) {
+                d7DocumentsInput.value = JSON.stringify(d7Documents);
+            }
+        }
+
+        function makeD7Input(type, value, placeholder) {
+            var input = document.createElement('input');
+            input.type = type;
+            input.className = 'form-control form-control-sm';
+            if (placeholder) input.placeholder = placeholder;
+            if (type !== 'checkbox') input.value = value || '';
+            else input.checked = value === true;
+            return input;
+        }
+
+        function makeD7FileKey() {
+            return 'd7_new_file_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        }
+
+        function getD7FileInputName(documentItem) {
+            return documentItem.id ? 'd7_file_' + documentItem.id : (documentItem.file_key || '');
+        }
+
+        function restoreD7PendingFiles() {
+            if (!d7DocumentsBody) return;
+            Object.keys(d7PendingFiles).forEach(function(fileKey) {
+                var fileInput = d7DocumentsBody.querySelector('input[name="' + fileKey + '"]');
+                var file = d7PendingFiles[fileKey];
+                if (!fileInput || !file) return;
+                var transfer = new DataTransfer();
+                transfer.items.add(file);
+                fileInput.files = transfer.files;
+            });
+        }
+
+        function renderD7Documents() {
+            if (!d7DocumentsBody) return;
+            d7DocumentsBody.innerHTML = '';
+            if (d7DocumentsEmpty) {
+                d7DocumentsEmpty.style.display = d7Documents.length ? 'none' : 'block';
+            }
+
+            d7Documents.forEach(function(documentItem, index) {
+                var row = document.createElement('tr');
+                var nameCell = document.createElement('td');
+                var statusCell = document.createElement('td');
+                var commentCell = document.createElement('td');
+                var fileCell = document.createElement('td');
+                var actionCell = document.createElement('td');
+                var nameInput = makeD7Input('text', documentItem.nom_reference, 'Nom ou référence du document');
+                var statusInput = makeD7Input('checkbox', documentItem.mis_a_jour);
+                var commentInput = makeD7Input('text', documentItem.commentaire, 'Commentaire libre');
+                var fileInput = document.createElement('input');
+                var fileButton = document.createElement('button');
+                var fileLabel = document.createElement('small');
+                var removeButton = document.createElement('button');
+
+                var fieldPrefix = 'd7-document-' + index;
+                nameInput.id = fieldPrefix + '-nom-reference';
+                nameInput.name = 'd7_document_' + index + '_nom_reference';
+                statusInput.id = fieldPrefix + '-mis-a-jour';
+                statusInput.name = 'd7_document_' + index + '_mis_a_jour';
+                commentInput.id = fieldPrefix + '-commentaire';
+                commentInput.name = 'd7_document_' + index + '_commentaire';
+
+                nameInput.addEventListener('input', function() {
+                    d7Documents[index].nom_reference = nameInput.value;
+                    syncD7Documents();
+                });
+                statusInput.classList.add('form-check-input');
+                statusInput.addEventListener('change', function() {
+                    d7Documents[index].mis_a_jour = statusInput.checked;
+                    syncD7Documents();
+                });
+                commentInput.addEventListener('input', function() {
+                    d7Documents[index].commentaire = commentInput.value;
+                    syncD7Documents();
+                });
+
+                fileInput.type = 'file';
+                fileInput.className = 'd7-file-input';
+                fileInput.name = getD7FileInputName(documentItem);
+                fileInput.id = fieldPrefix + '-fichier';
+                fileInput.addEventListener('change', function() {
+                    if (fileInput.files && fileInput.files[0]) {
+                        d7PendingFiles[fileInput.name] = fileInput.files[0];
+                        d7Documents[index].fichier_nom = fileInput.files[0].name;
+                        fileLabel.textContent = fileInput.files[0].name;
+                        fileLabel.style.display = 'block';
+                        syncD7Documents();
+                    }
+                });
+                fileLabel.className = 'd-block text-muted small mt-1';
+                fileLabel.textContent = documentItem.fichier_nom || 'Aucun fichier sélectionné';
+                fileLabel.style.display = documentItem.fichier_nom ? 'block' : 'none';
+
+                fileButton.type = 'button';
+                fileButton.className = 'btn btn-sm btn-outline-primary d7-file-button';
+                fileButton.title = 'Choisir un fichier';
+                fileButton.setAttribute('aria-label', 'Choisir un fichier');
+                fileButton.innerHTML = '<i class="fas fa-plus"></i>';
+                fileButton.addEventListener('click', function() {
+                    fileInput.click();
+                });
+
+                removeButton.type = 'button';
+                removeButton.className = 'btn btn-sm btn-outline-danger';
+                removeButton.title = 'Supprimer le document';
+                removeButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                removeButton.addEventListener('click', function() {
+                    delete d7PendingFiles[getD7FileInputName(d7Documents[index])];
+                    d7Documents.splice(index, 1);
+                    renderD7Documents();
+                    syncD7Documents();
+                });
+
+                nameCell.appendChild(nameInput);
+                statusCell.className = 'text-center align-middle d7-status-cell';
+                statusCell.appendChild(statusInput);
+                commentCell.appendChild(commentInput);
+                fileCell.className = 'text-center align-middle';
+                fileCell.appendChild(fileButton);
+                fileCell.appendChild(fileInput);
+                fileCell.appendChild(fileLabel);
+                actionCell.className = 'text-center align-middle';
+                actionCell.appendChild(removeButton);
+                row.appendChild(nameCell);
+                row.appendChild(statusCell);
+                row.appendChild(commentCell);
+                row.appendChild(fileCell);
+                row.appendChild(actionCell);
+                d7DocumentsBody.appendChild(row);
+            });
+            restoreD7PendingFiles();
+            syncD7Documents();
+        }
+
+        if (d7AddDocumentButton) {
+            d7AddDocumentButton.addEventListener('click', function() {
+                var fileKey = makeD7FileKey();
+                d7Documents.push({id: null, nom_reference: '', mis_a_jour: false, commentaire: '', fichier_nom: '', file_key: fileKey});
+                renderD7Documents();
+                var lastRow = d7DocumentsBody ? d7DocumentsBody.lastElementChild : null;
+                var lastNameInput = lastRow ? lastRow.querySelector('input[type="text"]') : null;
+                if (lastNameInput) lastNameInput.focus();
+            });
+        }
+        renderD7Documents();
+
+        function autoResizePourquoiConclusion(field) {
+            if (!field) return;
+            field.style.height = 'auto';
+            field.style.height = Math.max(field.scrollHeight, 72) + 'px';
+        }
+
+        document.querySelectorAll('.pq-conclusion-field').forEach(function(field) {
+            autoResizePourquoiConclusion(field);
+            field.addEventListener('input', function() {
+                autoResizePourquoiConclusion(field);
+            });
+        });
+
         // Auto-focus first tab containing validation errors if present
         var firstErrorField = document.querySelector('.tab-pane .text-danger, .tab-pane .is-invalid, .tab-pane .alert-danger');
         if (firstErrorField) {
@@ -609,128 +991,6 @@
                     tabPane.classList.add('show', 'active');
                 }
             }
-        }
-
-        var rawND = JSON.parse('{{ pourquoi_non_detection_json|escapejs }}') || [];
-        var rawTech = JSON.parse('{{ pourquoi_technique_json|escapejs }}') || [];
-
-        function normalizeBranches(data) {
-            if (!Array.isArray(data) || data.length === 0) return [["", "", "", "", ""]];
-            if (typeof data[0] === 'string') {
-                var branch = data.slice(0, 5);
-                while (branch.length < 5) branch.push('');
-                return [branch];
-            }
-            if (typeof data[0] === 'object' && !Array.isArray(data[0])) {
-                var normalized = [];
-                data.forEach(function(item) {
-                    if (item && Array.isArray(item.chain)) {
-                        var b = item.chain.map(function(node) {
-                            return (typeof node === 'object' && node.pourquoi) ? node.pourquoi : String(node || '');
-                        });
-                        while (b.length < 5) b.push('');
-                        if (item.justification && (!b[4] || !b[4].trim())) {
-                            b[4] = item.justification;
-                        }
-                        normalized.push(b.slice(0, 5));
-                    } else if (item && item.pourquoi) {
-                        normalized.push([item.pourquoi || '', '', '', '', item.justification || '']);
-                    }
-                });
-                return normalized.length > 0 ? normalized : [["", "", "", "", ""]];
-            }
-            if (Array.isArray(data[0])) {
-                return data.map(function(b) {
-                    var branch = Array.isArray(b) ? b.map(function(v) { return v != null ? String(v) : ''; }) : [];
-                    while (branch.length < 5) branch.push('');
-                    return branch.slice(0, 5);
-                });
-            }
-            return [["", "", "", "", ""]];
-        }
-
-        var branchesND = normalizeBranches(rawND);
-        var branchesTech = normalizeBranches(rawTech);
-
-        var tbodyND = document.getElementById('tbody-nd-branches');
-        var tbodyTech = document.getElementById('tbody-tech-branches');
-        var inputNDJson = document.getElementById('pourquoi-nd-json-field');
-        var inputTechJson = document.getElementById('pourquoi-tech-json-field');
-        var synthND = document.getElementById('id_cause_principale_non_detection');
-        var synthTech = document.getElementById('id_cause_principale_technique');
-
-        function renderBranches(tbody, branches, isTech) {
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            var themeColor = isTech ? '#dc3545' : '#17a2b8';
-            var fieldClass = isTech ? 'pq-tech-field' : 'pq-nd-field';
-
-            branches.forEach(function(branch, bIdx) {
-                var tr = document.createElement('tr');
-                var html = '';
-                for (var i = 0; i < 5; i++) {
-                    var val = (branch && branch[i]) ? branch[i] : '';
-                    var border = (i === 4) ? 'border-top:3px solid #dc3545;background:#fff5f5;' : 'border-top:3px solid ' + themeColor + ';background:#fff;';
-                    var ph = (i === 4) ? 'Cause racine P5…' : ('Pourquoi ' + (i + 1) + '…');
-                    html += '<td style="padding:4px"><input type="text" class="form-control form-control-sm ' + fieldClass + '" data-branch="' + bIdx + '" data-idx="' + i + '" style="' + border + '" placeholder="' + ph + '" value="' + val.replace(/"/g, '&quot;') + '"></td>';
-                    if (i < 4) {
-                        html += '<td style="width:1%"></td>';
-                    }
-                }
-                var delBtnHtml = (branches.length > 1) ? '<button type="button" class="btn btn-xs btn-outline-danger btn-del-branch" title="Supprimer la branche"><i class="fas fa-trash-alt"></i></button>' : '';
-                html += '<td style="padding:4px" class="text-center">' + delBtnHtml + '</td>';
-                tr.innerHTML = html;
-                tbody.appendChild(tr);
-
-                if (branches.length > 1) {
-                    var delBtn = tr.querySelector('.btn-del-branch');
-                    if (delBtn) {
-                        delBtn.addEventListener('click', function() {
-                            branches.splice(bIdx, 1);
-                            renderBranches(tbody, branches, isTech);
-                            syncJson();
-                        });
-                    }
-                }
-            });
-
-            tbody.querySelectorAll('.' + fieldClass).forEach(function(input) {
-                input.addEventListener('input', function() {
-                    var bIdx = parseInt(input.getAttribute('data-branch'), 10);
-                    var pIdx = parseInt(input.getAttribute('data-idx'), 10);
-                    if (!branches[bIdx]) branches[bIdx] = ['', '', '', '', ''];
-                    branches[bIdx][pIdx] = input.value;
-                    syncJson();
-
-                    if (pIdx === 4 && input.value.trim()) {
-                        if (isTech && synthTech) synthTech.value = input.value;
-                        else if (!isTech && synthND) synthND.value = input.value;
-                    }
-                });
-            });
-        }
-
-        function syncJson() {
-            if (inputNDJson) inputNDJson.value = JSON.stringify(branchesND);
-            if (inputTechJson) inputTechJson.value = JSON.stringify(branchesTech);
-        }
-
-        var btnAddND = document.getElementById('btn-add-branch-nd');
-        if (btnAddND) {
-            btnAddND.addEventListener('click', function() {
-                branchesND.push(['', '', '', '', '']);
-                renderBranches(tbodyND, branchesND, false);
-                syncJson();
-            });
-        }
-
-        var btnAddTech = document.getElementById('btn-add-branch-tech');
-        if (btnAddTech) {
-            btnAddTech.addEventListener('click', function() {
-                branchesTech.push(['', '', '', '', '']);
-                renderBranches(tbodyTech, branchesTech, true);
-                syncJson();
-            });
         }
 
         function bindFormsetAdd(btnId, templateId, tbodyId, prefix) {
@@ -795,9 +1055,6 @@
             }
         });
 
-        renderBranches(tbodyND, branchesND, false);
-        renderBranches(tbodyTech, branchesTech, true);
-        syncJson();
     });
 </script>
 {% endblock %}

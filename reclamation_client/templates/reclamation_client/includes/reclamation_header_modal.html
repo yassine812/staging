@@ -1,0 +1,116 @@
+<div class="modal fade" id="{{ modal_id }}" tabindex="-1" role="dialog" aria-labelledby="{{ modal_id }}-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document" style="max-width: 850px;">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-danger text-white py-3">
+                <h5 class="modal-title font-weight-bold" id="{{ modal_id }}-title">
+                    {% if modal_id == "modal-edit-reclamation-header" %}<i class="fas fa-pen mr-2"></i>Modifier l’en-tête du dossier{% else %}<i class="fas fa-plus-circle mr-2"></i>Nouveau Signalement Client{% endif %}
+                </h5>
+                <button type="button" class="close text-white opacity-100" data-dismiss="modal" aria-label="Fermer">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% if modal_id == "modal-edit-reclamation-header" %}{% url 'reclamation:edit_header' reclamation.pk %}{% else %}{% url 'reclamation:create' %}{% endif %}">
+                {% csrf_token %}
+                {% if header_modal_return_url %}<input type="hidden" name="return_to" value="{{ header_modal_return_url }}">{% endif %}
+                <div class="modal-body p-4" style="max-height: 78vh; overflow-y: auto;">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mb-3">
+                        {% for err in form.non_field_errors %}<div><i class="fas fa-exclamation-circle mr-1"></i>{{ err }}</div>{% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if modal_id == "modal-edit-reclamation-header" %}
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="font-weight-bold text-dark small">Type de Signalement</label>
+                            <div class="form-control bg-light">{{ reclamation.get_type_signalement_display }}</div>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="font-weight-bold text-dark small">Support d’Analyse</label>
+                            <div class="form-control bg-light">{{ reclamation.get_mode_traitement_display }}</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="row">
+                        <div class="col-12 col-md-6 form-group">
+                            <label class="font-weight-bold text-dark small">Type de Signalement *</label>
+                            {{ form.type_signalement }}
+                            {% if form.type_signalement.errors %}<div class="text-danger small mt-1">{{ form.type_signalement.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-12 col-md-6 form-group">
+                            <label class="font-weight-bold text-dark small">Support d’Analyse *</label>
+                            {{ form.mode_traitement }}
+                            {% if form.mode_traitement.errors %}<div class="text-danger small mt-1">{{ form.mode_traitement.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-12 col-md-6 form-group">
+                            <label class="font-weight-bold text-dark small">Section *</label>
+                            {{ form.societe }}
+                            {% if form.societe.errors %}<div class="text-danger small mt-1">{{ form.societe.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-12 col-md-6 form-group">
+                            <label class="font-weight-bold text-dark small">Site Concerné</label>
+                            {{ form.site }}
+                            {% if form.site.errors %}<div class="text-danger small mt-1">{{ form.site.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6 form-group">
+                            <label class="font-weight-bold text-dark small">Nom du Client *</label>
+                            {{ form.client_nom }}
+                            {% if form.client_nom.errors %}<div class="text-danger small mt-1">{{ form.client_nom.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-12 col-md-6 form-group">
+                            <label class="font-weight-bold text-dark small">Contact chez le Client</label>
+                            {{ form.contact_client }}
+                            {% if form.contact_client.errors %}<div class="text-danger small mt-1">{{ form.contact_client.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6 form-group">
+                            <label class="font-weight-bold text-dark small">Description Pièce / Prestation</label>
+                            {{ form.description_piece }}
+                            {% if form.description_piece.errors %}<div class="text-danger small mt-1">{{ form.description_piece.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-6 col-md-3 form-group">
+                            <label class="font-weight-bold text-dark small">Référence Pièce</label>
+                            {{ form.reference_piece }}
+                            {% if form.reference_piece.errors %}<div class="text-danger small mt-1">{{ form.reference_piece.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-6 col-md-3 form-group">
+                            <label class="font-weight-bold text-dark small">Quantité Impactée</label>
+                            {{ form.quantite_impactee }}
+                            {% if form.quantite_impactee.errors %}<div class="text-danger small mt-1">{{ form.quantite_impactee.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-md-6 form-group">
+                            <label class="font-weight-bold text-dark small">Date d’Alerte Client *</label>
+                            {{ form.date_alerte_client }}
+                            {% if form.date_alerte_client.errors %}<div class="text-danger small mt-1">{{ form.date_alerte_client.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-12 col-md-6 form-group pt-md-4">
+                            <div class="form-check">
+                                {{ form.accuse_reception_envoye }}
+                                <label class="form-check-label font-weight-bold text-dark small">Accusé de réception écrit envoyé au client</label>
+                            </div>
+                            {% if form.accuse_reception_envoye.errors %}<div class="text-danger small mt-1">{{ form.accuse_reception_envoye.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary font-weight-bold" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger font-weight-bold shadow-xs">
+                        <i class="fas fa-check-circle mr-1"></i>{% if modal_id == "modal-edit-reclamation-header" %}Enregistrer les modifications{% else %}Enregistrer le Signalement{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

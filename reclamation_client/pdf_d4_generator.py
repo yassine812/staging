@@ -4,22 +4,50 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 def _normalize_chains(raw, cause_principale=""):
-    """Normalize data from pourquoi JSON fields."""
+    """Normalize legacy values and the AT-compatible tree for PDF drawing."""
     if not raw:
         return []
+
+    if isinstance(raw, dict) and isinstance(raw.get("causes"), list):
+        chains = []
+        for cause in raw["causes"]:
+            if not isinstance(cause, dict):
+                continue
+            label = str(cause.get("label") or "").strip()
+            for branch in cause.get("branches", []):
+                values = branch.get("pourquoi", []) if isinstance(branch, dict) else branch
+                values = list(values) if isinstance(values, list) else [values]
+                values = [str(value or "") for value in values[:5]]
+                values.extend([""] * (5 - len(values)))
+                if any(value.strip() for value in values) or label:
+                    chains.append({
+                        "chain": [{"pourquoi": value} for value in values[:4]],
+                        "justification": values[4],
+                        "cause_label": label,
+                    })
+        return chains
 
     if isinstance(raw, list) and len(raw) > 0 and isinstance(raw[0], list):
         chains = []
         for branch in raw:
-            chain_nodes = [{"pourquoi": str(s)} for s in branch[:4] if str(s).strip()]
-            p5 = str(branch[4]).strip() if len(branch) >= 5 else ""
+            values = [str(s or "") for s in branch[:5]]
+            values.extend([""] * (5 - len(values)))
+            chain_nodes = [{"pourquoi": s} for s in values[:4]]
+            p5 = values[4].strip()
             justif = p5 or cause_principale
             if chain_nodes or justif:
                 chains.append({"chain": chain_nodes, "justification": justif})
         return chains
 
     if isinstance(raw, list) and len(raw) > 0 and isinstance(raw[0], dict) and "chain" in raw[0]:
-        return raw
+        result = []
+        for item in raw:
+            chain = item.get("chain") or []
+            result.append({
+                "chain": [{"pourquoi": str(node.get("pourquoi", "") if isinstance(node, dict) else node or "")} for node in chain[:4]],
+                "justification": str(item.get("justification") or ""),
+            })
+        return result
 
     if isinstance(raw, list) and len(raw) > 0 and isinstance(raw[0], dict) and "pourquoi" in raw[0]:
         chain = [{"pourquoi": d.get("pourquoi", "")} for d in raw if d.get("pourquoi")]
@@ -101,7 +129,8 @@ def _draw_chain_row(draw, item, col_x, col_w, row_y, box_h,
                     font_node_bold):
     """Draw a single horizontal chain row of up to 5 Pourquoi boxes + 1 conclusion box."""
     chain = item.get('chain', []) if isinstance(item, dict) else []
-    if not chain:
+    conc = item.get('justification', '') if isinstance(item, dict) else ''
+    if not chain and not conc:
         return
 
     cy = row_y
@@ -131,7 +160,6 @@ def _draw_chain_row(draw, item, col_x, col_w, row_y, box_h,
             draw_wrapped_text(draw, cx, cy, cw, box_h, txt, font_node_bold, fill=color_blue_text, line_spacing=26)
 
     # Conclusion box (column 4 - Pink/Orange Box)
-    conc = item.get('justification', '') if isinstance(item, dict) else ''
     if not conc and len(chain) >= 5:
         conc = chain[4].get('pourquoi', '') if isinstance(chain[4], dict) else str(chain[4])
 
@@ -141,177 +169,86 @@ def _draw_chain_row(draw, item, col_x, col_w, row_y, box_h,
         draw.rounded_rectangle([(cx, cy), (cx + cw, cy + box_h)], radius=14, fill=color_pink_bg, outline=color_pink_border, width=4)
         draw_wrapped_text(draw, cx, cy, cw, box_h, conc, font_node_bold, fill=color_pink_text, line_spacing=26)
 
-
 def generate_d4_diagram_base64(analyse_d4=None):
-    """Génère une image PNG HD (1400 x 1540) du diagramme 5 Pourquoi D4.1 & D4.2 avec contraste ultra-élevé et zéro débordement."""
-    w, h = 1400, 1540
-    img = Image.new("RGB", (w, h), (255, 255, 255))
-    draw = ImageDraw.Draw(img)
-
+    """Render every AT-shaped Doc.83 branch without dropping existing values."""
     try:
         font_title = ImageFont.truetype("arialbd.ttf", 38)
         font_sec = ImageFont.truetype("arialbd.ttf", 32)
         font_head = ImageFont.truetype("arialbd.ttf", 26)
-        font_node_bold = ImageFont.truetype("arialbd.ttf", 21)
+        font_node = ImageFont.truetype("arialbd.ttf", 21)
         font_small = ImageFont.truetype("arialbi.ttf", 21)
         font_footer = ImageFont.truetype("arialbd.ttf", 22)
     except Exception:
-        font_title = font_sec = font_head = font_node_bold = font_small = font_footer = ImageFont.load_default()
+        font_title = font_sec = font_head = font_node = font_small = font_footer = ImageFont.load_default()
 
-    # Column Positions & Geometry (Full Width 1400px)
     col_x = [25, 290, 545, 800, 1055]
     col_w = [230, 220, 220, 220, 320]
+    box_h = 175
+    row_step = 195
+    blue_bg, blue_border, blue_text = "#d9e1f2", "#305496", "#002060"
+    orange_bg, orange_border, orange_text = "#fce4d6", "#c65911", "#000000"
 
-    # Doc.83 High-Contrast Color Palette
-    color_blue_bg = "#d9e1f2"      # Soft Light Blue (Doc.83 Subheader Background)
-    color_blue_border = "#305496"  # Dark Steel Blue Border
-    color_blue_text = "#002060"    # Deep Navy Blue Text (Max Contrast & Clarity)
+    nd_raw = getattr(analyse_d4, "pourquoi_non_detection", []) if analyse_d4 else []
+    tech_raw = getattr(analyse_d4, "pourquoi_technique", []) if analyse_d4 else []
+    nd_synth = getattr(analyse_d4, "cause_principale_non_detection", "") if analyse_d4 else ""
+    tech_synth = getattr(analyse_d4, "cause_principale_technique", "") if analyse_d4 else ""
+    nd_rows = _normalize_chains(nd_raw, nd_synth)
+    tech_rows = _normalize_chains(tech_raw, tech_synth)
 
-    color_pink_bg = "#fce4d6"      # Soft Pastel Orange (Doc.83 Highlight)
-    color_pink_border = "#c65911"  # Dark Orange Border
-    color_pink_text = "#000000"    # Solid Black Text
+    nd_count = max(len(nd_rows), 1)
+    tech_count = max(len(tech_rows), 1)
+    d41_start = 265
+    d42_title_y = max(855, d41_start + nd_count * row_step + 60)
+    d42_header_y = d42_title_y + 125
+    d42_start = d42_header_y + 65
+    instruction_y = d42_start + tech_count * row_step + 30
+    footer_y = instruction_y + 95
+    img = Image.new("RGB", (1400, footer_y + 50), (255, 255, 255))
+    draw = ImageDraw.Draw(img)
 
-    # 1. Top Header Box
     draw.rectangle([(25, 15), (1375, 80)], outline="#000000", width=4)
     draw.text((700, 48), "D 4.1 à D 4.2", font=font_title, fill="#000000", anchor="mm")
 
-    # 2. Section D4.1 - Non Détection
-    draw.text((25, 100), "D 4.1 - NON DETECTION", font=font_sec, fill="#000000")
-    draw.rectangle([(25, 140), (1375, 195)], fill="#ffff00", outline="#000000", width=3)
-    draw.text((700, 168), "Cause favorite", font=font_head, fill="#000000", anchor="mm")
+    def draw_headers(y):
+        labels = ["1er POURQUOI?", "2ème POURQUOI?", "3ème POURQUOI?", "4ème POURQUOI?"]
+        for idx, label in enumerate(labels):
+            draw.text((col_x[idx] + col_w[idx] // 2, y), label, font=font_head, fill="#000000", anchor="mm")
+        draw.text((col_x[4] + col_w[4] // 2, y - 10), "5ème POURQUOI /", font=font_head, fill="#000000", anchor="mm")
+        draw.text((col_x[4] + col_w[4] // 2, y + 15), "CAUSE RACINE", font=font_head, fill="#000000", anchor="mm")
 
-    # 5 Column Headers D4.1
-    draw.text((140, 225), "1er POURQUOI?", font=font_head, fill="#000000", anchor="mm")
-    draw.text((400, 225), "2ème POURQUOI?", font=font_head, fill="#000000", anchor="mm")
-    draw.text((655, 225), "3ème POURQUOI?", font=font_head, fill="#000000", anchor="mm")
-    draw.text((910, 225), "4ème POURQUOI?", font=font_head, fill="#000000", anchor="mm")
-    draw.text((1215, 215), "5ème POURQUOI /", font=font_head, fill="#000000", anchor="mm")
-    draw.text((1215, 240), "RESULTAT", font=font_head, fill="#000000", anchor="mm")
+    def draw_empty_row(y):
+        for idx in range(4):
+            draw.rounded_rectangle([(col_x[idx], y), (col_x[idx] + col_w[idx], y + box_h)], radius=14, fill=blue_bg, outline=blue_border, width=3)
+        draw.rounded_rectangle([(col_x[4], y), (col_x[4] + col_w[4], y + box_h)], radius=14, fill=orange_bg, outline=orange_border, width=4)
 
-    row_y_d41 = [265, 460, 655]
-    box_h = 175
+    def draw_axis(title, title_y, header_y, rows, synth):
+        draw.text((25, title_y), title, font=font_sec, fill="#000000")
+        draw.rectangle([(25, title_y + 40), (1375, title_y + 95)], fill="#ffff00", outline="#000000", width=3)
+        cause_labels = []
+        for row in rows:
+            label = str(row.get("cause_label") or "").strip()
+            if label and label not in cause_labels:
+                cause_labels.append(label)
+        cause_text = " / ".join(cause_labels) or str(synth or "") or "Cause favorite"
+        draw.text((700, title_y + 68), cause_text, font=font_head, fill="#000000", anchor="mm")
+        draw_headers(header_y)
+        if not rows:
+            draw_empty_row(header_y + 40)
+        else:
+            for idx, item in enumerate(rows):
+                _draw_chain_row(
+                    draw, item, col_x, col_w, header_y + 40 + idx * row_step, box_h,
+                    blue_bg, blue_border, blue_text,
+                    orange_bg, orange_border, orange_text, font_node,
+                )
 
-    nd_cause_synth = getattr(analyse_d4, 'cause_principale_non_detection', '') if analyse_d4 else ''
-    nd_chains_raw = getattr(analyse_d4, 'pourquoi_non_detection', []) if analyse_d4 else []
-    nd_chains = _normalize_chains(nd_chains_raw, nd_cause_synth)
+    draw_axis("D 4.1 - NON DETECTION", 100, 225, nd_rows, nd_synth)
+    draw_axis("D 4.2 - CAUSE TECHNIQUE", d42_title_y, d42_header_y, tech_rows, tech_synth)
 
-    if nd_chains:
-        for idx, item in enumerate(nd_chains[:3]):
-            _draw_chain_row(
-                draw, item, col_x, col_w,
-                row_y_d41[idx], box_h,
-                color_blue_bg, color_blue_border, color_blue_text,
-                color_pink_bg, color_pink_border, color_pink_text,
-                font_node_bold
-            )
-    else:
-        # Default D4.1 Layout
-        draw_arrow_connector(draw, 255, 547, 290, 352, color=color_blue_border)
-        draw_arrow_connector(draw, 255, 547, 290, 547, color=color_blue_border)
-        draw_arrow_connector(draw, 255, 547, 290, 742, color=color_blue_border)
-
-        draw_arrow_connector(draw, 510, 352, 545, 352, color=color_blue_border)
-        draw_arrow_connector(draw, 765, 352, 800, 352, color=color_blue_border)
-        draw_arrow_connector(draw, 1020, 352, 1055, 352, color=color_blue_border)
-
-        draw_arrow_connector(draw, 510, 547, 545, 547, color=color_blue_border)
-        draw_arrow_connector(draw, 765, 547, 800, 547, color=color_blue_border)
-        draw_arrow_connector(draw, 1020, 547, 1055, 547, color=color_blue_border)
-
-        draw_arrow_connector(draw, 510, 742, 545, 742, color=color_blue_border)
-        draw_arrow_connector(draw, 765, 742, 800, 742, color=color_blue_border)
-        draw_arrow_connector(draw, 1020, 742, 1055, 742, color=color_blue_border)
-
-        boxes_d41 = [
-            (25, 460, 230, box_h, ""),
-            (290, 265, 220, box_h, ""),
-            (290, 460, 220, box_h, ""),
-            (290, 655, 220, box_h, ""),
-            (545, 265, 220, box_h, ""),
-            (545, 460, 220, box_h, ""),
-            (545, 655, 220, box_h, ""),
-            (800, 265, 220, box_h, ""),
-            (800, 460, 220, box_h, ""),
-            (800, 655, 220, box_h, ""),
-        ]
-        for x, y, bw, bh, text in boxes_d41:
-            draw.rounded_rectangle([(x, y), (x + bw, y + bh)], radius=14, fill=color_blue_bg, outline=color_blue_border, width=3)
-
-        conclusions_d41 = [
-            (1055, 265, 320, box_h, ""),
-            (1055, 460, 320, box_h, ""),
-            (1055, 655, 320, box_h, ""),
-        ]
-        for x, y, bw, bh, text in conclusions_d41:
-            draw.rounded_rectangle([(x, y), (x + bw, y + bh)], radius=14, fill=color_pink_bg, outline=color_pink_border, width=4)
-
-    # 3. Section D4.2 - Cause Technique
-    draw.text((25, 855), "D 4.2 - CAUSE TECHNIQUE", font=font_sec, fill="#000000")
-    draw.rectangle([(25, 895), (1375, 950)], fill="#ffff00", outline="#000000", width=3)
-    draw.text((700, 923), "Cause favorite", font=font_head, fill="#000000", anchor="mm")
-
-    draw.text((140, 980), "1er POURQUOI?", font=font_head, fill="#000000", anchor="mm")
-    draw.text((400, 980), "2ème POURQUOI?", font=font_head, fill="#000000", anchor="mm")
-    draw.text((655, 980), "3ème POURQUOI?", font=font_head, fill="#000000", anchor="mm")
-    draw.text((910, 980), "4ème POURQUOI?", font=font_head, fill="#000000", anchor="mm")
-    draw.text((1215, 980), "5ème POURQUOI / RESULTAT", font=font_head, fill="#000000", anchor="mm")
-
-    row_y_d42 = [1015, 1210]
-
-    tech_cause_synth = getattr(analyse_d4, 'cause_principale_technique', '') if analyse_d4 else ''
-    tech_chains_raw = getattr(analyse_d4, 'pourquoi_technique', []) if analyse_d4 else []
-    tech_chains = _normalize_chains(tech_chains_raw, tech_cause_synth)
-
-    if tech_chains:
-        for idx, item in enumerate(tech_chains[:2]):
-            _draw_chain_row(
-                draw, item, col_x, col_w,
-                row_y_d42[idx], box_h,
-                color_blue_bg, color_blue_border, color_blue_text,
-                color_pink_bg, color_pink_border, color_pink_text,
-                font_node_bold
-            )
-    else:
-        # Default D4.2 Layout
-        draw_arrow_connector(draw, 255, 1102, 290, 1102, color=color_blue_border)
-        draw_arrow_connector(draw, 510, 1102, 545, 1102, color=color_blue_border)
-        draw_arrow_connector(draw, 765, 1102, 800, 1102, color=color_blue_border)
-        draw_arrow_connector(draw, 1020, 1102, 1055, 1102, color=color_blue_border)
-
-        draw_arrow_connector(draw, 255, 1297, 290, 1297, color=color_blue_border)
-        draw_arrow_connector(draw, 510, 1297, 545, 1297, color=color_blue_border)
-        draw_arrow_connector(draw, 765, 1297, 800, 1297, color=color_blue_border)
-        draw_arrow_connector(draw, 1020, 1297, 1055, 1297, color=color_blue_border)
-
-        boxes_d42_r1 = [
-            (25, 1015, 230, box_h, ""),
-            (290, 1015, 220, box_h, ""),
-            (545, 1015, 220, box_h, ""),
-            (800, 1015, 220, box_h, ""),
-        ]
-        for x, y, bw, bh, text in boxes_d42_r1:
-            draw.rounded_rectangle([(x, y), (x + bw, y + bh)], radius=14, fill=color_blue_bg, outline=color_blue_border, width=3)
-
-        draw.rounded_rectangle([(1055, 1015), (1375, 1015 + box_h)], radius=14, fill=color_pink_bg, outline=color_pink_border, width=4)
-
-        boxes_d42_r2 = [
-            (25, 1210, 230, box_h, ""),
-            (290, 1210, 220, box_h, ""),
-            (545, 1210, 220, box_h, ""),
-            (800, 1210, 220, box_h, ""),
-        ]
-        for x, y, bw, bh, text in boxes_d42_r2:
-            draw.rounded_rectangle([(x, y), (x + bw, y + bh)], radius=14, fill=color_blue_bg, outline=color_blue_border, width=3)
-
-        draw.rounded_rectangle([(1055, 1210), (1375, 1210 + box_h)], radius=14, fill=color_pink_bg, outline=color_pink_border, width=4)
-
-    # 4. Instruction Box
-    draw.rectangle([(25, 1410), (1375, 1485)], fill="#ffffff", outline="#000000", width=3)
-    instruction_text = "A chaque étape du 5 pourquoi, vérifier avec les données que le lien de cause à effect soit effectif. Se demander pourquoi ? Autant de fois que nécessaire."
-    draw_wrapped_text(draw, 25, 1410, 1350, 75, instruction_text, font_small, fill="#000000", line_spacing=24)
-
-    # 5. Footer
-    draw.text((25, 1505), "D4.1 D4.2", font=font_footer, fill="#000000")
+    draw.rectangle([(25, instruction_y), (1375, instruction_y + 75)], fill="#ffffff", outline="#000000", width=3)
+    instruction_text = "A chaque étape du 5 pourquoi, vérifier avec les données que le lien de cause à effet soit effectif. Se demander pourquoi ? Autant de fois que nécessaire."
+    draw_wrapped_text(draw, 25, instruction_y, 1350, 75, instruction_text, font_small, fill="#000000", line_spacing=24)
+    draw.text((25, footer_y), "D4.1 D4.2", font=font_footer, fill="#000000")
 
     buf = BytesIO()
     img.save(buf, format="PNG")

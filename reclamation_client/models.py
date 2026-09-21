@@ -262,9 +262,10 @@ class AnalyseCausesDoubleAxeD4(models.Model):
     cause_principale_non_detection = models.TextField(blank=True, verbose_name="Synthèse cause principale de non-détection (D4.1)")
     cause_principale_technique = models.TextField(blank=True, verbose_name="Synthèse cause principale technique / non-conformité (D4.2)")
 
-    # 5 Pourquoi Double Axe : JSON structure [{"etape": 1, "pourquoi": str, "statut": "avere"|"non_avere", "justification": str}]
-    pourquoi_non_detection = models.JSONField(default=list, blank=True, verbose_name="5 Pourquoi Non-Détection (D4.1)")
-    pourquoi_technique = models.JSONField(default=list, blank=True, verbose_name="5 Pourquoi Cause Technique (D4.2)")
+    # Même contrat que AT.arbre_causes : {"causes": [{"label": str,
+    # "branches": [{"pourquoi": [p1, p2, p3, p4, p5]}]}]}
+    pourquoi_non_detection = models.JSONField(default=dict, blank=True, verbose_name="5 Pourquoi Non-Détection (D4.1)")
+    pourquoi_technique = models.JSONField(default=dict, blank=True, verbose_name="5 Pourquoi Cause Technique (D4.2)")
 
     class Meta:
         verbose_name = "Analyse des causes D4"
@@ -358,9 +359,49 @@ class CapitalisationSMQSD7(models.Model):
     doc50_ok_demarrage = models.BooleanField(default=False, verbose_name="Doc 50 OK démarrage")
     doc50_pilote_delai = models.CharField(max_length=150, blank=True)
 
+    # Liste libre des documents D7 ajoutés par l'utilisateur. Les anciens
+    # champs fixes restent conservés pour ne pas altérer les données existantes,
+    # mais ne sont plus affichés ni utilisés comme documents par défaut.
+    documents_smqs = models.JSONField(
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name="Documents SMQS D7 personnalisés",
+    )
+
     class Meta:
         verbose_name = "Capitalisation SMQS D7"
         verbose_name_plural = "Capitalisations SMQS D7"
+
+
+class DocumentSMQSD7(models.Model):
+    """Document libre ajouté dans l'étape D7 d'un Rapport 8D."""
+
+    capitalisation_d7 = models.ForeignKey(
+        CapitalisationSMQSD7,
+        on_delete=models.CASCADE,
+        related_name="documents_d7",
+        verbose_name="Capitalisation D7",
+    )
+    nom_reference = models.CharField(max_length=255, blank=True, verbose_name="Nom / Référence")
+    mis_a_jour = models.BooleanField(default=False, verbose_name="Mis à jour ?")
+    commentaire = models.TextField(blank=True, verbose_name="Commentaire")
+    fichier = models.FileField(
+        upload_to="reclamation_client/d7/%Y/%m/",
+        blank=True,
+        verbose_name="Fichier",
+    )
+
+    def __str__(self):
+        return self.nom_reference or self.fichier.name or f"Document D7 #{self.pk}"
+
+    def delete(self, *args, **kwargs):
+        fichier_name = self.fichier.name
+        storage = self.fichier.storage
+        result = super().delete(*args, **kwargs)
+        if fichier_name and storage.exists(fichier_name):
+            storage.delete(fichier_name)
+        return result
 
 
 class ClotureRecevabiliteD8(models.Model):
@@ -448,4 +489,3 @@ class FicheIncidentDoc05(models.Model):
 
     def __str__(self):
         return f"Doc.05 {self.reclamation.reference}"
-

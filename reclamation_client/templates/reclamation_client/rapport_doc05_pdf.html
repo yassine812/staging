@@ -52,12 +52,40 @@
             font-weight: bold;
         }
 
-        .title-red {
-            color: #c00000;
-            font-weight: bold;
-            font-size: 8.5pt;
+        .why-intro-table {
             margin-top: 4pt;
-            margin-bottom: 3pt;
+            margin-bottom: 4pt;
+        }
+
+        .why-instruction {
+            background-color: #eaf2f8;
+            border-left: 3pt solid #2f5597 !important;
+            color: #334155;
+            padding: 5pt 7pt !important;
+            line-height: 1.25;
+        }
+
+        .why-instruction-title {
+            color: #1f4e78;
+            font-size: 8.5pt;
+            font-weight: bold;
+            margin-right: 4pt;
+        }
+
+        .why-motif-label {
+            width: 21%;
+            background-color: #f2f2f2;
+            color: #1f4e78;
+            font-weight: bold;
+            vertical-align: top !important;
+        }
+
+        .why-motif-value {
+            width: 79%;
+            background-color: #ffffff;
+            color: #000000;
+            vertical-align: top !important;
+            word-wrap: break-word;
         }
 
         .qqoqcc-q {
@@ -117,18 +145,28 @@
                     </tr>
                     <tr>
                         <td width="45%" style="border: none; border-bottom: 0.75pt solid #00; border-right: 0.75pt solid #00; background-color: #f2f2f2;">Date de détection la non-conformité :</td>
-                        <td width="55%" style="border: none; border-bottom: 0.75pt solid #00;">{{ fiche.date_detection|date:"d/m/Y"|default:reclamation.date_alerte_client|date:"d/m/Y" }} &nbsp;&nbsp;<span style="background-color: #f2f2f2;">N° fiche :</span> <strong>{{ reclamation.reference }}</strong></td>
+                        <td width="55%" style="border: none; border-bottom: 0.75pt solid #00;">{% if fiche.date_detection %}{{ fiche.date_detection|date:"d/m/Y" }}{% elif reclamation.date_alerte_client %}{{ reclamation.date_alerte_client|date:"d/m/Y" }}{% else %}—{% endif %} &nbsp;&nbsp;<span style="background-color: #f2f2f2;">N° fiche :</span> <strong>{{ reclamation.reference }}</strong></td>
                     </tr>
                     <tr>
                         <td width="45%" style="border: none; border-bottom: 0.75pt solid #00; border-right: 0.75pt solid #00; background-color: #f2f2f2;">Date de l’ouverture de la fiche :</td>
-                        <td width="55%" style="border: none; border-bottom: 0.75pt solid #00;">{{ fiche.date_ouverture|date:"d/m/Y"|default:reclamation.date_ouverture|date:"d/m/Y" }} &nbsp;&nbsp;<span style="background-color: #f2f2f2;">Site :</span> <strong>{{ fiche.site_concerne|default:reclamation.site|default:"—" }}</strong></td>
+                        <td width="55%" style="border: none; border-bottom: 0.75pt solid #00;">{% if fiche.date_ouverture %}{{ fiche.date_ouverture|date:"d/m/Y" }}{% elif reclamation.date_ouverture %}{{ reclamation.date_ouverture|date:"d/m/Y" }}{% else %}—{% endif %} &nbsp;&nbsp;<span style="background-color: #f2f2f2;">Site :</span> <strong>{% if fiche.site_concerne %}{{ fiche.site_concerne }}{% elif reclamation.site %}{{ reclamation.site }}{% else %}—{% endif %}</strong></td>
                     </tr>
                     <tr>
-                        <td width="45%" style="border: none; border-right: 0.75pt solid #00; background-color: #f2f2f2;">Evènement :</td>
-                        <td width="55%" style="border: none;">
-                            {% if fiche.evenement_qualite %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbElEQVR4nKWTUQrAIAxDl7L7XzljYMfWRWxtP0TEvDRSQfLo1HkvALYoJGEte+/AKxsHwLO3lEIIywAMcYRY1TnGtI5YAiByzsQ/AELOGWwK4Mtl1boEqMur2TB16KLMYH0mMWYuv8FOofudL35+KCgl5RaFAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% else %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQklEQVR4nGP8//8/AyWABUQwMjKSZcr///8ZmSiyHuYCGCDWO4yMjHA2EwOFgGnUAIbRMGBATYnIKYxuCYmR0uwMAGnoDSK9jTCJAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% endif %} Qualité &nbsp;
-                            {% if fiche.evenement_securite %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbElEQVR4nKWTUQrAIAxDl7L7XzljYMfWRWxtP0TEvDRSQfLo1HkvALYoJGEte+/AKxsHwLO3lEIIywAMcYRY1TnGtI5YAiByzsQ/AELOGWwK4Mtl1boEqMur2TB16KLMYH0mMWYuv8FOofudL35+KCgl5RaFAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% else %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQklEQVR4nGP8//8/AyWABUQwMjKSZcr///8ZmSiyHuYCGCDWO4yMjHA2EwOFgGnUAIbRMGBATYnIKYxuCYmR0uwMAGnoDSK9jTCJAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% endif %} Sécurité &nbsp;
-                            {% if fiche.evenement_environnement %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbElEQVR4nKWTUQrAIAxDl7L7XzljYMfWRWxtP0TEvDRSQfLo1HkvALYoJGEte+/AKxsHwLO3lEIIywAMcYRY1TnGtI5YAiByzsQ/AELOGWwK4Mtl1boEqMur2TB16KLMYH0mMWYuv8FOofudL35+KCgl5RaFAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% else %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQklEQVR4nGP8//8/AyWABUQwMjKSZcr///8ZmSiyHuYCGCDWO4yMjHA2EwOFgGnUAIbRMGBATYnIKYxuCYmR0uwMAGnoDSK9jTCJAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% endif %} Environnement
+                        <td width="25%" style="border: none; border-right: 0.75pt solid #00; background-color: #f2f2f2; vertical-align: middle;">Evènement :</td>
+                        <td width="75%" style="border: none; padding: 1pt 2pt; vertical-align: middle;">
+                            <table width="100%" style="border: none; border-collapse: collapse; font-size: 8pt;">
+                                <tr>
+                                    <td width="30%" style="border: none; padding: 0; white-space: nowrap;">
+                                        {% if fiche.evenement_qualite %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbElEQVR4nKWTUQrAIAxDl7L7XzljYMfWRWxtP0TEvDRSQfLo1HkvALYoJGEte+/AKxsHwLO3lEIIywAMcYRY1TnGtI5YAiByzsQ/AELOGWwK4Mtl1boEqMur2TB16KLMYH0mMWYuv8FOofudL35+KCgl5RaFAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% else %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQklEQVR4nGP8//8/AyWABUQwMjKSZcr///8ZmSiyHuYCGCDWO4yMjHA2EwOFgGnUAIbRMGBATYnIKYxuCYmR0uwMAGnoDSK9jTCJAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% endif %} Qualité
+                                    </td>
+                                    <td width="30%" style="border: none; padding: 0; white-space: nowrap;">
+                                        {% if fiche.evenement_securite %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbElEQVR4nKWTUQrAIAxDl7L7XzljYMfWRWxtP0TEvDRSQfLo1HkvALYoJGEte+/AKxsHwLO3lEIIywAMcYRY1TnGtI5YAiByzsQ/AELOGWwK4Mtl1boEqMur2TB16KLMYH0mMWYuv8FOofudL35+KCgl5RaFAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% else %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQklEQVR4nGP8//8/AyWABUQwMjKSZcr///8ZmSiyHuYCGCDWO4yMjHA2EwOFgGnUAIbRMGBATYnIKYxuCYmR0uwMAGnoDSK9jTCJAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% endif %} Sécurité
+                                    </td>
+                                    <td width="40%" style="border: none; padding: 0; white-space: nowrap;">
+                                        {% if fiche.evenement_environnement %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbElEQVR4nKWTUQrAIAxDl7L7XzljYMfWRWxtP0TEvDRSQfLo1HkvALYoJGEte+/AKxsHwLO3lEIIywAMcYRY1TnGtI5YAiByzsQ/AELOGWwK4Mtl1boEqMur2TB16KLMYH0mMWYuv8FOofudL35+KCgl5RaFAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% else %}<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAQklEQVR4nGP8//8/AyWABUQwMjKSZcr///8ZmSiyHuYCGCDWO4yMjHA2EwOFgGnUAIbRMGBATYnIKYxuCYmR0uwMAGnoDSK9jTCJAAAAAElFTkSuQmCC" width="8.5pt" height="8.5pt" style="vertical-align:middle;" />{% endif %} Environnement
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
                 </table>
@@ -165,7 +203,7 @@
         <tr>
             <td width="20%" class="qqoqcc-q">QUAND ?</td>
             <td width="35%" class="qqoqcc-aide">Quand a-t-on détecté le problème ?<br>A quelle étape des opérations ?<br>Au moment de quel processus ?</td>
-            <td width="45%">{{ fiche.quand_reponse|default:reclamation.date_alerte_client|date:"d/m/Y"|linebreaksbr }}</td>
+            <td width="45%">{% if fiche.quand_reponse %}{{ fiche.quand_reponse|linebreaksbr }}{% elif reclamation.date_alerte_client %}{{ reclamation.date_alerte_client|date:"d/m/Y" }}{% else %}—{% endif %}</td>
         </tr>
         <tr>
             <td width="20%" class="qqoqcc-q">COMMENT ?</td>
@@ -191,9 +229,18 @@
     </table>
 
     <!-- 5 Pourquoi Section -->
-    <div class="title-red">
-        La méthode "5 Pourquoi" permet de remonter aux causes racines du problème. A partir du problème, posez-vous 5 fois la question "Pourquoi ?" &nbsp;&nbsp;• <span style="color:#000000; font-weight:normal;">Motif de la non-conformité :</span> <strong>{{ fiche.motif_non_conformite|default:"—" }}</strong>
-    </div>
+    <table class="table-doc05 why-intro-table" width="100%">
+        <tr>
+            <td class="why-instruction" colspan="2" width="100%">
+                <span class="why-instruction-title">Méthode des 5 Pourquoi :</span>
+                À partir du problème, demandez-vous cinq fois « Pourquoi ? » afin de remonter aux causes racines.
+            </td>
+        </tr>
+        <tr>
+            <td class="why-motif-label">Motif de la non-conformité</td>
+            <td class="why-motif-value">{{ fiche.motif_non_conformite|default:"—" }}</td>
+        </tr>
+    </table>
 
     <table class="table-doc05" width="100%" style="text-align: center;">
         <tr class="bg-light-grey" style="font-weight: bold; font-size: 7.5pt;">

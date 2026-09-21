@@ -13,6 +13,7 @@ from .models import (
     ActionTestD5,
     ActionPermanenteD6,
     CapitalisationSMQSD7,
+    DocumentSMQSD7,
     ClotureRecevabiliteD8,
     FicheIncidentDoc05,
 )
@@ -57,26 +58,35 @@ class ReclamationQuickCreateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.is_admin = kwargs.pop("is_admin", False)
+        self.editing_header = kwargs.pop("editing_header", False)
         super().__init__(*args, **kwargs)
-        self.fields["mode_traitement"].required = False
-        self.fields["mode_traitement"].disabled = False
-        self.fields["mode_traitement"].choices = [
-            (ReclamationClient.MODE_8D, "Rapport 8D"),
-            (ReclamationClient.MODE_DOC05, "Fiche d'incident (Doc 05)"),
-        ]
-        if self.is_admin:
-            self.fields["mode_traitement"].widget.attrs.pop("disabled", None)
-            self.fields["mode_traitement"].widget.attrs.pop("style", None)
+        if self.editing_header:
+            # A header edit must not alter the signalement classification or its workflow.
+            self.fields.pop("type_signalement", None)
+            self.fields.pop("mode_traitement", None)
         else:
-            self.fields["mode_traitement"].widget.attrs["disabled"] = "disabled"
-            self.fields["mode_traitement"].widget.attrs["style"] = "background-color: #e9ecef; cursor: not-allowed;"
+            self.fields["mode_traitement"].required = False
+            self.fields["mode_traitement"].disabled = False
+            self.fields["mode_traitement"].choices = [
+                (ReclamationClient.MODE_8D, "Rapport 8D"),
+                (ReclamationClient.MODE_DOC05, "Fiche d'incident (Doc 05)"),
+            ]
+            if self.is_admin:
+                self.fields["mode_traitement"].widget.attrs.pop("disabled", None)
+                self.fields["mode_traitement"].widget.attrs.pop("style", None)
+            else:
+                self.fields["mode_traitement"].widget.attrs["disabled"] = "disabled"
+                self.fields["mode_traitement"].widget.attrs["style"] = "background-color: #e9ecef; cursor: not-allowed;"
 
     def clean(self):
         cleaned_data = super().clean()
         type_sig = cleaned_data.get("type_signalement")
         raw_mode = cleaned_data.get("mode_traitement") or (self.data.get("mode_traitement") if hasattr(self, "data") else None)
         if type_sig == ReclamationClient.TYPE_INCIDENT:
-            cleaned_data["mode_traitement"] = ReclamationClient.MODE_DOC05
+            if self.is_admin and raw_mode in [ReclamationClient.MODE_8D, ReclamationClient.MODE_DOC05]:
+                cleaned_data["mode_traitement"] = raw_mode
+            else:
+                cleaned_data["mode_traitement"] = ReclamationClient.MODE_DOC05
         elif type_sig == ReclamationClient.TYPE_AMELIORATION:
             cleaned_data["mode_traitement"] = ReclamationClient.MODE_DOC05_FAI
         elif type_sig == ReclamationClient.TYPE_RECLAMATION:
@@ -87,6 +97,18 @@ class ReclamationQuickCreateForm(forms.ModelForm):
             else:
                 cleaned_data["mode_traitement"] = ReclamationClient.MODE_8D
         return cleaned_data
+
+
+class ReclamationNumeroForm(forms.ModelForm):
+    """Mini-formulaire pour saisir N° Interne et N° Réclamation Client depuis la fiche Doc 05."""
+
+    class Meta:
+        model = ReclamationClient
+        fields = ["numero_interne", "numero_reclamation_client"]
+        widgets = {
+            "numero_interne": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex : INT-2024-001"}),
+            "numero_reclamation_client": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex : RC-CLIENT-456"}),
+        }
 
 
 class ReclamationHeaderForm(forms.ModelForm):
@@ -150,7 +172,15 @@ class ReclamationHeaderForm(forms.ModelForm):
         type_sig = cleaned_data.get("type_signalement")
         raw_mode = cleaned_data.get("mode_traitement") or (self.data.get("mode_traitement") if hasattr(self, "data") else None)
         if type_sig == ReclamationClient.TYPE_INCIDENT:
-            cleaned_data["mode_traitement"] = ReclamationClient.MODE_DOC05
+            if self.is_admin and raw_mode in [ReclamationClient.MODE_8D, ReclamationClient.MODE_DOC05]:
+                cleaned_data["mode_traitement"] = raw_mode
+            elif self.instance and self.instance.pk and self.instance.mode_traitement in [
+                ReclamationClient.MODE_8D,
+                ReclamationClient.MODE_DOC05,
+            ]:
+                cleaned_data["mode_traitement"] = self.instance.mode_traitement
+            else:
+                cleaned_data["mode_traitement"] = ReclamationClient.MODE_DOC05
         elif type_sig == ReclamationClient.TYPE_AMELIORATION:
             cleaned_data["mode_traitement"] = ReclamationClient.MODE_DOC05_FAI
         elif type_sig == ReclamationClient.TYPE_RECLAMATION:
@@ -282,8 +312,8 @@ class AnalyseCausesDoubleAxeForm(forms.ModelForm):
         model = AnalyseCausesDoubleAxeD4
         fields = ["cause_principale_non_detection", "cause_principale_technique"]
         widgets = {
-            "cause_principale_non_detection": forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Synthèse de la cause principale de non-détection..."}),
-            "cause_principale_technique": forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "Synthèse de la cause principale technique..."}),
+            "cause_principale_non_detection": forms.Textarea(attrs={"class": "form-control pq-conclusion-field", "rows": 3, "placeholder": "Synthèse de la cause principale de non-détection..."}),
+            "cause_principale_technique": forms.Textarea(attrs={"class": "form-control pq-conclusion-field", "rows": 3, "placeholder": "Synthèse de la cause principale technique..."}),
         }
 
 
@@ -398,42 +428,19 @@ ActionPermanenteD6FormSet = inlineformset_factory(
 
 
 class CapitalisationSMQSD7Form(forms.ModelForm):
-    """Checklist Capitalisation SMQS D7."""
+    """Métadonnées D7 ; les documents sont gérés par la liste JSON dédiée."""
 
     class Meta:
         model = CapitalisationSMQSD7
-        fields = [
-            "doc01_instruction", "doc01_pilote_delai",
-            "doc5_24_competences", "doc5_24_pilote_delai",
-            "doc21_formation", "doc21_pilote_delai",
-            "doc34_habilitation_indiv", "doc34_pilote_delai",
-            "doc38_habilitation_poste", "doc38_pilote_delai",
-            "doc12_gammes", "doc12_pilote_delai", "precisez_gammes",
-            "doc50_ok_demarrage", "doc50_pilote_delai",
-        ]
-        widgets = {
-            "doc01_instruction": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "doc01_pilote_delai": forms.TextInput(attrs={"class": "form-control", "placeholder": "Pilote - Délai"}),
+        fields = []
 
-            "doc5_24_competences": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "doc5_24_pilote_delai": forms.TextInput(attrs={"class": "form-control", "placeholder": "Pilote - Délai"}),
 
-            "doc21_formation": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "doc21_pilote_delai": forms.TextInput(attrs={"class": "form-control", "placeholder": "Pilote - Délai"}),
+class DocumentSMQSD7Form(forms.ModelForm):
+    """Formulaire de référence pour un document D7 libre."""
 
-            "doc34_habilitation_indiv": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "doc34_pilote_delai": forms.TextInput(attrs={"class": "form-control", "placeholder": "Pilote - Délai"}),
-
-            "doc38_habilitation_poste": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "doc38_pilote_delai": forms.TextInput(attrs={"class": "form-control", "placeholder": "Pilote - Délai"}),
-
-            "doc12_gammes": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "doc12_pilote_delai": forms.TextInput(attrs={"class": "form-control", "placeholder": "Pilote - Délai"}),
-            "precisez_gammes": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Précisez les Gammes..."}),
-
-            "doc50_ok_demarrage": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            "doc50_pilote_delai": forms.TextInput(attrs={"class": "form-control", "placeholder": "Pilote - Délai"}),
-        }
+    class Meta:
+        model = DocumentSMQSD7
+        fields = ["nom_reference", "mis_a_jour", "commentaire", "fichier"]
 
 
 class ClotureRecevabiliteD8Form(forms.ModelForm):
@@ -492,4 +499,3 @@ class FicheIncidentDoc05Form(forms.ModelForm):
             "risque_similaire": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "risque_similaire_details": forms.TextInput(attrs={"class": "form-control", "placeholder": "Si OUI où"}),
         }
-
