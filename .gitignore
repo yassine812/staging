@@ -30,7 +30,6 @@ media/
 
 # Local temporary/test artifacts
 tmp/
-scratch/
 
 # ── IDE / Editor ─────────────────────────────────────────────────────────────
 .vscode/
