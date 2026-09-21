@@ -28,6 +28,10 @@ static_root/
 # Media files uploaded by users — do NOT commit user data or large binaries
 media/
 
+# Local temporary/test artifacts
+tmp/
+scratch/
+
 # ── IDE / Editor ─────────────────────────────────────────────────────────────
 .vscode/
 .idea/
