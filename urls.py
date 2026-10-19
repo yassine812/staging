@@ -33,6 +33,8 @@ urlpatterns = [
     path("prospection/", include(("prospection.urls", "prospection"), namespace="prospection")),
     # ── Logs d'Audit Centralisés ─────────────────────────────────────────────
     path("audit-logs/", include(("audit_logs.urls", "audit_logs"), namespace="audit_logs")),
+    # ── Security Auditor intégré ───────────────────────────────────────────
+    path("security-auditor/", include(("security_auditor.web.urls", "security_auditor"), namespace="security_auditor")),
     # Service Worker Firebase (doit être servi depuis la racine)
     path("firebase-messaging-sw.js", serve, {"path": "js/firebase-messaging-sw.js"}),
 ]

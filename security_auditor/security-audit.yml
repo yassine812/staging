@@ -1,0 +1,57 @@
+# security-audit.yml - audit platform configuration (spec 32)
+project:
+  framework: django
+
+scanning:
+  sast: true
+  dependencies: true
+  network: true
+  dast: true
+  requirements: true
+  security_tests: true
+
+network:
+  # ONLY these targets may be network-scanned. Default scope is loopback.
+  authorized_targets:
+    - 127.0.0.1
+    - localhost
+  # Add an explicitly authorized public hostname/IP only when you own it.
+  # Public targets also require allow_external_targets: true.
+  # - app.example.com
+  allow_external_targets: false
+  # common = bounded list; full TCP 1-65535 requires nmap and explicit opt-in.
+  scan_ports: common
+  allow_full_port_scan: false
+  expected_open_ports: [80, 443]
+  timeout: 120
+
+dast:
+  enabled: true
+  target: auto
+  allow_local_runserver: true      # Django runserver, loopback only
+  timeout: 300
+  # env:                            # injected into the sandboxed app process,
+  #   AUDIT_FORCE_SQLITE: "1"       # e.g. point it at a test database
+  # zap_api_url: http://zap:8090   # optional OWASP ZAP integration
+
+requirements:
+  total: 137
+
+severity:
+  critical: true
+  high: true
+  medium: true
+  low: true
+
+# Test accounts for authenticated DAST / authorization tests.
+# Fournir ces comptes de test (rôles distincts) permet d'exécuter les 3 tests qui
+# nécessitent une session : AUTHZ-V-001 (escalade verticale), AUTHZ-H-001 (escalade
+# horizontale / IDOR entre deux comptes) et UPLOAD-001 (upload authentifié).
+# Sans comptes, ces tests restent honnêtement « non exécutés » : les exigences
+# correspondantes sont alors couvertes par les contrôles anonymes équivalents
+# (ADMIN-ANON-001, BOLA-ANON-001, CFG-UPLOAD) ou en revue manuelle.
+# accounts:
+#   admin:   {username: admin@example.com, password: "...", login_url: /admin/login/}
+#   user:    {username: user@example.com,  password: "..."}
+#   user_a:  {username: a@example.com,     password: "..."}
+#   user_b:  {username: b@example.com,     password: "..."}

@@ -180,6 +180,15 @@
       <div class="module-arrow"><i class="fas fa-arrow-right"></i></div>
     </a>
 
+    <a href="{% url 'security_auditor:dashboard' %}" class="module-card">
+      <div class="module-icon icon-dark">
+        <i class="fas fa-shield-virus"></i>
+      </div>
+      <h3>Security Auditor</h3>
+      <p>Analyse SAST, DAST, dépendances, réseau et exigences de sécurité Django.</p>
+      <div class="module-arrow"><i class="fas fa-arrow-right"></i></div>
+    </a>
+
     {% if request.user.is_superuser or request.user.is_RS or request.user.is_RO %}
     <a href="{% url 'at:at_dashboard' %}" class="module-card">
       <div class="module-icon icon-red">

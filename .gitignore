@@ -28,6 +28,9 @@ static_root/
 # Media files uploaded by users — do NOT commit user data or large binaries
 media/
 
+# Security Auditor local scan history and credentials
+.security-audits/
+
 # Local temporary/test artifacts
 tmp/
 

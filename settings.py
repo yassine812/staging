@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
+    # ── Security Auditor intégré ───────────────────────────────────────────
+    "security_auditor.web.apps.SecurityAuditorConfig",
 ]
 
 MIDDLEWARE = [

@@ -24,6 +24,7 @@
 {% url 'audit:niveaux-list' as url_a_niv %}
 {% url 'audit:preuve-list' as url_a_prev %}
 {% url 'audit:preuve-type-list' as url_a_prev_type %}
+{% url 'security_auditor:dashboard' as url_security_auditor %}
 {% url 'at:at_dashboard' as url_t_dash %}
 {% url 'at:at_create_quick' as url_t_new %}
 {% url 'at:questionnaire_list' as url_t_quest %}
@@ -378,6 +379,16 @@
         </li>
         {% endif %}
       </ul>
+    </li>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- MODULE : SECURITY AUDITOR              -->
+    <!-- ══════════════════════════════════════ -->
+    <li class="nav-item">
+      <a href="{{ url_security_auditor }}" class="nav-link {% if ns == 'security_auditor' %}active{% endif %}">
+        <i class="nav-icon fas fa-shield-virus"></i>
+        <p>Security Auditor</p>
+      </a>
     </li>
 
     <!-- ══════════════════════════════════════ -->
