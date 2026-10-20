@@ -377,8 +377,16 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .detail-modal-body { overflow-y: auto; padding: 20px; }
 .security-auditor-app .detail-modal-summary { margin: 0 0 18px; padding: 12px 14px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; color: #495057; }
 .security-auditor-app .detail-modal-status-line { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-.security-auditor-app .status-info-button { display: inline-grid; place-items: center; width: 21px; height: 21px; padding: 0; border: 1px solid #f5c2c7; border-radius: 50%; background: #fff0f1; color: #b02a37; font-size: 11px; cursor: pointer; vertical-align: middle; }
-.security-auditor-app .status-info-button:hover { background: #fde8ea; border-color: #b02a37; }
+.security-auditor-app .status-info-button { display: inline-grid; place-items: center; width: 21px; height: 21px; margin-left: 6px; padding: 0; border: 1px solid #80bdff; border-radius: 50%; background: #e8f2ff; color: #0056b3; font-size: 11px; cursor: pointer; vertical-align: middle; }
+.security-auditor-app .status-info-button:hover { background: #d8ebff; border-color: #0056b3; }
+.security-auditor-app .status-info-button.status-info-FAIL { border-color: #f5c2c7; background: #fff0f1; color: #b02a37; }
+.security-auditor-app .status-info-button.status-info-FAIL:hover { background: #fde8ea; border-color: #b02a37; }
+.security-auditor-app .status-info-button.status-info-PASS { border-color: #a3e2bd; background: #dff5e9; color: #146c43; }
+.security-auditor-app .status-info-button.status-info-PASS:hover { background: #c9eed8; border-color: #146c43; }
+.security-auditor-app .status-info-button.status-info-PARTIAL { border-color: #ffda6a; background: #fff4d6; color: #856404; }
+.security-auditor-app .status-info-button.status-info-PARTIAL:hover { background: #ffedb5; border-color: #856404; }
+.security-auditor-app .status-info-button.status-info-MANUAL_REVIEW { border-color: #c8b6e9; background: #f1ecfb; color: #60419b; }
+.security-auditor-app .status-info-button.status-info-MANUAL_REVIEW:hover { background: #e6ddf7; border-color: #60419b; }
 .security-auditor-app .info-icon { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #e8f2ff; border: 1px solid #80bdff; color: #0056b3; font-size: 11px; font-weight: 800; cursor: help; }
 .security-auditor-app .detail-modal-explanation { display: flex; align-items: flex-start; gap: 8px; margin-top: 9px; padding: 9px 10px; color: #6c2b33; background: #fff0f1; border: 1px solid #f5c2c7; border-radius: 7px; line-height: 1.45; }
 .security-auditor-app .detail-modal-explanation .info-icon { flex: 0 0 18px; color: #b02a37; background: #fde8ea; border-color: #f5c2c7; }
@@ -652,11 +660,12 @@ function requirementDetailButton(r,label="Détails"){
   return `<button type="button" class="detail-button" onclick="openRequirementDetail('${key}')"><i class="fas fa-info-circle"></i> ${label}</button>`;
 }
 function requirementStatusInfoButton(r){
-  if(!r||r.status!=="FAIL")return "";
+  if(!r||!r.status)return "";
   const key=`req-${String(r.requirement_id||"detail").replace(/[^A-Za-z0-9_-]/g,"_")}`;
   window.__requirementDetailData=window.__requirementDetailData||{};
   window.__requirementDetailData[key]=r;
-  return `<button type="button" class="status-info-button" title="Pourquoi cet échec ?" aria-label="Pourquoi cet échec ?" onclick="openRequirementDetail('${key}')"><i class="fas fa-info-circle"></i></button>`;
+  const label=`Pourquoi le statut ${stFr(r.status)} ?`;
+  return `<button type="button" class="status-info-button status-info-${esc(r.status)}" title="${esc(label)}" aria-label="${esc(label)}" onclick="openRequirementDetail('${key}')"><i class="fas fa-info-circle"></i></button>`;
 }
 function reqDetail(r){
   return requirementDetailButton(r);
@@ -724,7 +733,7 @@ function openRequirementDetail(key){
     <div class="detail-modal-section"><h3>Problème détecté</h3><div class="detail-modal-problem">${esc(problem)}</div></div>
     <div class="detail-modal-section"><h3>Objectif de l’exigence</h3><p>${esc(r.description||"Objectif non renseigné")}</p></div>
     <div class="detail-modal-section"><h3>Fichier et ligne ou endpoint observé</h3><div class="detail-modal-locations">${reqLocationMarkup(r)}</div></div>
-    <div class="detail-modal-section"><h3>Preuve détaillée</h3><ul class="detail-modal-evidence-list">${proofItems}</ul></div>
+    <div class="detail-modal-section"><h3>Problème détecté et preuve détaillée</h3><div class="detail-modal-problem">${esc(problem)}</div><ul class="detail-modal-evidence-list">${proofItems}</ul></div>
     <div class="detail-modal-section"><h3>Action prochaine et correction recommandée</h3><p>${esc(r.status==="FAIL"?detailedAction(r,notes):frenchEvidence(r.remediation||"Revue manuelle nécessaire."))}</p><p class="detail-modal-followup"><strong>Étape suivante :</strong> ${esc(followup)}</p></div>`;
   modal.hidden=false;modal.setAttribute("aria-hidden","false");document.body.classList.add("modal-open");
 }
