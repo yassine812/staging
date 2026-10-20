@@ -383,6 +383,10 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .detail-modal-locations { padding: 10px 12px; background: #eef6ff; border: 1px solid #b8daff; border-radius: 8px; }
 .security-auditor-app .detail-button { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 7px 11px; border: 1px solid #80bdff; border-radius: 6px; background: #e8f2ff; color: #0056b3; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .security-auditor-app .detail-button:hover { background: #e8f2ff; border-color: #80bdff; color: #0056b3; }
+.security-auditor-app .requirements-filter-launch { position: fixed; right: 16px; top: 50%; transform: translateY(-50%); z-index: 18; display: block; padding: 0; }
+.security-auditor-app .filter-sidebar { top: 0; right: 0; left: auto; bottom: 0; width: min(410px, calc(100vw - 22px)); max-height: none; border-left: 1px solid #dee2e6; border-top: 0; border-right: 0; border-bottom: 0; border-radius: 14px 0 0 14px; opacity: 1; visibility: hidden; transform: translateX(105%); transition: transform .22s ease, visibility .22s ease; }
+.security-auditor-app .filter-sidebar.open { opacity: 1; visibility: visible; transform: translateX(0); }
+.security-auditor-app .filter-fab { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border: 0; border-radius: 10px; background: #007bff; color: #fff; font-size: 20px; line-height: 1; cursor: pointer; box-shadow: 0 10px 24px rgba(0,123,255,.3); }
 .security-auditor-app .audit-detail-hero { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:22px 24px; margin-bottom:14px; background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%); border:1px solid #dbe4ef; border-radius:12px; box-shadow:0 .25rem .75rem rgba(31,45,61,.08); }
 .security-auditor-app .audit-detail-copy { min-width:0; }
 .security-auditor-app .audit-detail-copy h1 { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:4px 0 8px; font-size:30px; color:#1f2d3d; }
@@ -1168,8 +1172,8 @@ function findingsToolbar(){
 }
 function findingsToolbar(){
   return `<section class="panel finding-filter-panel"><div class="table-toolbar" style="padding:0 0 12px;border-bottom:0">
-    <div><h2>Filtres des constats</h2><div class="small muted">Affinez l’affichage par sévérité, axe ou mot-clé.</div></div>
-    <button type="button" class="btn sec filter-trigger" onclick="toggleFindingFilters()"><i class="fas fa-filter"></i> Ouvrir les filtres</button></div>
+    <div><h2>Filtres des constats</h2><div class="small muted">Affinez l’affichage par sévérité, axe ou mot-clé.</div></div></div>
+    <div class="requirements-filter-launch"><button type="button" class="filter-fab" onclick="toggleFindingFilters()" title="Ouvrir les filtres" aria-label="Ouvrir les filtres"><i class="fas fa-filter"></i></button></div>
     <div id="findingFilterBackdrop" class="filter-backdrop" onclick="toggleFindingFilters(false)"></div>
     <aside id="findingFilterSidebar" class="filter-sidebar" aria-hidden="true"><div class="filter-sidebar-head"><div><div class="eyebrow">AFFICHAGE</div><h2>Filtrer les constats</h2></div><button type="button" class="filter-close" onclick="toggleFindingFilters(false)" aria-label="Fermer">×</button></div>
       <p class="small muted">Affinez l’affichage par sévérité, axe ou mot-clé.</p>
@@ -1249,8 +1253,8 @@ function clearRequirementFilters(){
 function requirementsPanel(d){
   const rr=d.requirement_results||[];
   return `<section class="panel requirements-filter-panel"><div class="eyebrow">CATALOGUE COMPLET</div>
-    <div class="req-filter-head"><div><h2>Exigences évaluées</h2><p class="small muted">${rr.length}/137 exigences présentes dans cet audit. Choisissez une vue sans perdre le détail fichier / ligne.</p></div>
-      <button type="button" class="btn sec filter-trigger" onclick="toggleRequirementFilters()"><i class="fas fa-filter"></i> Ouvrir les filtres</button></div>
+    <div class="req-filter-head"><div><h2>Exigences évaluées</h2><p class="small muted">${rr.length}/137 exigences présentes dans cet audit. Choisissez une vue sans perdre le détail fichier / ligne.</p></div></div>
+    <div class="requirements-filter-launch"><button type="button" class="filter-fab" onclick="toggleRequirementFilters()" title="Ouvrir les filtres" aria-label="Ouvrir les filtres"><i class="fas fa-filter"></i></button></div>
     <div id="reqFilterBackdrop" class="filter-backdrop" onclick="toggleRequirementFilters(false)"></div>
     <aside id="reqFilterSidebar" class="filter-sidebar" aria-hidden="true"><div class="filter-sidebar-head"><div><div class="eyebrow">AFFICHAGE</div><h2>Filtrer les exigences</h2></div><button type="button" class="filter-close" onclick="toggleRequirementFilters(false)" aria-label="Fermer">×</button></div>
       <p class="small muted">Choisissez une vue du catalogue, puis affinez par statut ou recherche.</p>
