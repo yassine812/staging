@@ -359,6 +359,18 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .axis-detail-block code { display: block; max-width: 100%; padding: 7px 9px; color: #334155; background: #f8f9fa; border: 1px solid #e5e9ef; border-radius: 7px; white-space: normal; word-break: break-word; }
 .security-auditor-app .axis-detail-block td b { color: #1f2d3d; font-size: 14px; }
 .security-auditor-app .axis-detail-block td .small.muted { display: block; margin-top: 5px; }
+.security-auditor-app .pill.sev-Critical { color: #b02a37; background: #fde8ea; border-color: #f5c2c7; }
+.security-auditor-app .pill.sev-High { color: #a23b00; background: #fff0e6; border-color: #ffc9a8; }
+.security-auditor-app .pill.sev-Medium { color: #856404; background: #fff4d6; border-color: #ffda6a; }
+.security-auditor-app .pill.sev-Low { color: #0056b3; background: #e8f2ff; border-color: #b8daff; }
+.security-auditor-app .pill.sev-Info { color: #526274; background: #eef1f4; border-color: #ced4da; }
+.security-auditor-app .engine-tag { display: inline-flex; align-items: center; gap: 5px; margin: 0 4px 4px 0; padding: 4px 8px; border: 1px solid #ced4da; border-radius: 6px; background: #f8f9fa; color: #495057; font-size: 11px; font-weight: 700; white-space: normal; }
+.security-auditor-app .engine-tag i { color: #007bff; font-size: 10px; }
+.security-auditor-app .engine-tag.engine-sast { color: #0056b3; background: #e8f2ff; border-color: #b8daff; }
+.security-auditor-app .engine-tag.engine-dast { color: #60419b; background: #f1ecfb; border-color: #c8b6e9; }
+.security-auditor-app .engine-tag.engine-settings { color: #856404; background: #fff4d6; border-color: #ffda6a; }
+.security-auditor-app .engine-tag.engine-dependencies { color: #146c43; background: #dff5e9; border-color: #a3e2bd; }
+.security-auditor-app .engine-tag.engine-network { color: #a23b00; background: #fff0e6; border-color: #ffc9a8; }
 .security-auditor-app .requirements-filter-launch { position: static; display: flex; justify-content: flex-end; transform: none; z-index: auto; }
 .security-auditor-app .filter-trigger { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
 .security-auditor-app .filter-sidebar { top: 50%; left: 50%; right: auto; bottom: auto; width: min(560px, calc(100vw - 32px)); max-height: min(78vh, 680px); border: 1px solid #dee2e6; border-radius: 14px; box-shadow: 0 22px 65px rgba(0,0,0,.35); opacity: 0; visibility: hidden; transform: translate(-50%, -46%) scale(.96); transition: opacity .18s ease, transform .18s ease, visibility .18s ease; }
@@ -638,7 +650,17 @@ function loc(f){
   if(src.includes("network")&&f.proof)return f.proof;
   return "\u2014";
 }
-function engines(f){return (f.sources||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join("");}
+const ENGINE_FR={
+  sast:{label:"Analyse statique du code (SAST)",icon:"fa-code"},
+  dast:{label:"Analyse dynamique de l’application (DAST)",icon:"fa-globe"},
+  settings:{label:"Configuration et secrets",icon:"fa-cog"},
+  dependencies:{label:"Dépendances et CVE",icon:"fa-box-open"},
+  network:{label:"Réseau et ports",icon:"fa-network-wired"},
+  security_tests:{label:"Tests de sécurité",icon:"fa-shield-alt"},
+  endpoints:{label:"Découverte des endpoints",icon:"fa-sitemap"},
+  correlation:{label:"Corrélation des résultats",icon:"fa-link"}
+};
+function engines(f){return (f.sources||[]).map(s=>{const e=ENGINE_FR[s]||{label:s,icon:"fa-cog"};return `<span class="engine-tag engine-${esc(s)}"><i class="fas ${e.icon}"></i>${esc(e.label)}</span>`;}).join("");}
 function pill(t,cls){return `<span class="pill ${cls||""}">${esc(t)}</span>`;}
 function sevPill(s){return `<span class="pill sev-${esc(s)}">${esc(sevFr(s))}</span>`;}
 function stPill(s){return `<span class="pill st-${esc(s)}">${esc(stFr(s))}</span>`;}
