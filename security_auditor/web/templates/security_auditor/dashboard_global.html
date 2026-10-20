@@ -635,9 +635,7 @@ function reqLocationMarkup(r){
   }).join("");
 }
 function reqStatusReason(r){
-  const note=(r.notes||[]).filter(Boolean)[0];
-  if(!note)return "";
-  return `<span class="status-reason"><i class="fas fa-info-circle" title="Une preuve explique ce statut"></i> Preuve détectée — voir Détails</span>`;
+  return "";
 }
 function requirementDetailButton(r,label="Détails"){
   const key=`req-${String(r.requirement_id||"detail").replace(/[^A-Za-z0-9_-]/g,"_")}`;
