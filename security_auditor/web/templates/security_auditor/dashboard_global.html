@@ -543,7 +543,13 @@ function dashboardHome(audits){
     <div class="card summary-card"><div class="num sev-High">${totalFindings}</div><div class="caption">Constats cumulés</div><div class="hint">${failed} audit(s) en échec</div></div>
     <div class="card summary-card"><div class="num">${rows[0]&&rows[0].requirements||0}/137</div><div class="caption">Dernière couverture</div><div class="hint">exigences évaluées</div></div>
     <div class="card summary-card"><div class="num">4</div><div class="caption">Axes disponibles</div><div class="hint">SAST · config · CVE · DAST</div></div>
-  </section>${auditChart(rows)}`;
+  </section>
+  <section class="panel table-panel"><div class="table-toolbar"><div><h2>Scans persistés</h2><div class="small muted">L'historique reste disponible après redémarrage du serveur.</div></div></div>
+    <div class="history-filters"><label>Recherche<input id="historyQ" placeholder="ID, projet, date…" oninput="filterHistory()"></label>
+      <label>Statut<select id="historyStatus" onchange="filterHistory()"><option value="">Tous les statuts</option><option value="COMPLETE">Terminé</option><option value="RUNNING">En cours</option><option value="QUEUED">En attente</option><option value="FAILED">Échec</option></select></label>
+      <label>Axe<select id="historyAxis" onchange="filterHistory()"><option value="">Tous les axes</option>${AXES.map(a=>`<option value="${a.id}">${a.id} · ${a.tools}</option>`).join("")}</select></label>
+    </div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Projet</th><th>Date</th><th>Statut</th><th>Score</th><th>Exigences</th><th>Constats</th><th>Axes</th><th></th></tr></thead>
+     <tbody id="historyRows">${historyRows(rows)}</tbody></table></div></section>`;
 }
 async function pageDashboard(){
   const a=await api("/api/audits");
