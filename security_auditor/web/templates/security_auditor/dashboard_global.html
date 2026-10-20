@@ -365,17 +365,23 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .evidence-file { display: inline; color: #1f4f87; font-weight: 600; }
 .security-auditor-app .evidence-file::before { content: "▣"; margin-right: 5px; color: #007bff; font-size: 11px; }
 .security-auditor-app .evidence-line { display: inline-block; margin-left: 6px; padding: 1px 6px; color: #495057; background: #eef1f4; border: 1px solid #d8dee5; border-radius: 5px; font-size: 11px; font-weight: 700; }
-.security-auditor-app .evidence-url { display: inline; color: #0070c9; font-weight: 600; }
+.security-auditor-app .evidence-endpoint { display: inline; color: #495057; font-weight: 600; font-family: ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size: 12px; }
+.security-auditor-app .evidence-endpoint::before { content: "Endpoint · "; color: #6f42c1; font-family: ui-sans-serif,system-ui,sans-serif; font-size: 11px; }
 .security-auditor-app .evidence-summary { color: #495057; line-height: 1.5; }
 .security-auditor-app .status-reason { display: block; margin-top: 7px; color: #b02a37; font-size: 11px; font-weight: 700; }
+.security-auditor-app .status-reason i { margin-right: 4px; }
 .security-auditor-app .detail-modal-dialog { width: min(820px, 100%); }
 .security-auditor-app .detail-modal-body { overflow-y: auto; padding: 20px; }
 .security-auditor-app .detail-modal-summary { margin: 0 0 18px; padding: 12px 14px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; color: #495057; }
+.security-auditor-app .detail-modal-status-line { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.security-auditor-app .info-icon { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #e8f2ff; border: 1px solid #80bdff; color: #0056b3; font-size: 11px; font-weight: 800; cursor: help; }
+.security-auditor-app .detail-modal-explanation { display: flex; align-items: flex-start; gap: 8px; margin-top: 9px; padding: 9px 10px; color: #6c2b33; background: #fff0f1; border: 1px solid #f5c2c7; border-radius: 7px; line-height: 1.45; }
+.security-auditor-app .detail-modal-explanation .info-icon { flex: 0 0 18px; color: #b02a37; background: #fde8ea; border-color: #f5c2c7; }
 .security-auditor-app .detail-modal-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid #dee2e6; }
 .security-auditor-app .detail-modal-section h3 { margin: 0 0 8px; color: #343a40; font-size: 14px; }
 .security-auditor-app .detail-modal-section p { margin: 0; color: #495057; line-height: 1.55; }
 .security-auditor-app .detail-modal-locations { padding: 10px 12px; background: #eef6ff; border: 1px solid #b8daff; border-radius: 8px; }
-.security-auditor-app .detail-button { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 10px; border: 1px solid #ced4da; border-radius: 6px; background: #f8f9fa; color: #1f4f87; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.security-auditor-app .detail-button { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 7px 11px; border: 1px solid #80bdff; border-radius: 6px; background: #e8f2ff; color: #0056b3; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .security-auditor-app .detail-button:hover { background: #e8f2ff; border-color: #80bdff; color: #0056b3; }
 .security-auditor-app .audit-detail-hero { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:22px 24px; margin-bottom:14px; background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%); border:1px solid #dbe4ef; border-radius:12px; box-shadow:0 .25rem .75rem rgba(31,45,61,.08); }
 .security-auditor-app .audit-detail-copy { min-width:0; }
@@ -557,13 +563,13 @@ function reqLocations(r){
 }
 function richEvidence(s){
   const value=esc(s||"");
-  return value.replace(/(https?:\/\/[^\s<]+)/gi,(url)=>`<span class="evidence-url">${url}</span>`);
+  return value.replace(/(https?:\/\/[^\s<]+)/gi,(url)=>`<span class="evidence-endpoint">${url}</span>`);
 }
 function reqLocationMarkup(r){
   const locations=Array.isArray(r.locations)&&r.locations.length?r.locations:["Fichier / ligne non disponible dans la preuve"];
   return locations.map(value=>{
     const raw=String(value||"").trim();
-    if(/^https?:\/\//i.test(raw))return `<span class="evidence-location"><span class="evidence-url">${esc(raw)}</span></span>`;
+    if(/^https?:\/\//i.test(raw))return `<span class="evidence-location"><span class="evidence-endpoint">${esc(raw)}</span></span>`;
     const match=raw.match(/^(.*?)(?::(\d+)(?::(\d+))?)$/);
     if(!match)return `<span class="evidence-location"><span class="evidence-file">${esc(raw)}</span></span>`;
     const line=match[3]?`${match[2]}:${match[3]}`:match[2];
@@ -573,13 +579,13 @@ function reqLocationMarkup(r){
 function reqStatusReason(r){
   const note=(r.notes||[]).filter(Boolean)[0];
   if(!note)return "";
-  return `<span class="status-reason">Preuve détectée — voir la preuve</span>`;
+  return `<span class="status-reason"><i class="fas fa-info-circle" title="Une preuve explique ce statut"></i> Preuve détectée — voir Détails</span>`;
 }
-function requirementDetailButton(r,label="Voir la preuve"){
+function requirementDetailButton(r,label="Détails"){
   const key=`req-${String(r.requirement_id||"detail").replace(/[^A-Za-z0-9_-]/g,"_")}`;
   window.__requirementDetailData=window.__requirementDetailData||{};
   window.__requirementDetailData[key]=r;
-  return `<button type="button" class="detail-button" onclick="openRequirementDetail('${key}')"><i class="fas fa-eye"></i> ${label}</button>`;
+  return `<button type="button" class="detail-button" onclick="openRequirementDetail('${key}')"><i class="fas fa-info-circle"></i> ${label}</button>`;
 }
 function reqDetail(r){
   return requirementDetailButton(r);
@@ -589,9 +595,10 @@ function openRequirementDetail(key){
   if(!r||!modal||!body)return;
   if(title)title.textContent=`${r.requirement_id||"Exigence"} — ${r.name||"Détail"}`;
   const notes=(r.notes||[]).filter(Boolean);
-  body.innerHTML=`<div class="detail-modal-summary"><b>Statut :</b> ${stPill(r.status)}<div class="small muted" style="margin-top:6px">${esc(ST_MEANING[r.status]||"Résultat de l’évaluation")}</div></div>
+  const explanation=r.status==="FAIL"?"Échec : une preuve de vulnérabilité confirmée est associée à cette exigence.":(ST_MEANING[r.status]||"Résultat de l’évaluation");
+  body.innerHTML=`<div class="detail-modal-summary"><div class="detail-modal-status-line"><b>Statut :</b> ${stPill(r.status)} <span class="info-icon" title="Pourquoi ce statut ?">i</span></div><div class="detail-modal-explanation"><span class="info-icon" title="Explication du statut">i</span><span>${esc(explanation)}</span></div></div>
     <div class="detail-modal-section"><h3>Objectif</h3><p>${esc(r.description||"Objectif non renseigné")}</p></div>
-    <div class="detail-modal-section"><h3>Fichier, ligne ou URL concernés</h3><div class="detail-modal-locations">${reqLocationMarkup(r)}</div></div>
+    <div class="detail-modal-section"><h3>Fichier et ligne ou endpoint observé</h3><div class="detail-modal-locations">${reqLocationMarkup(r)}</div></div>
     <div class="detail-modal-section"><h3>Preuve et explication du résultat</h3><p>${notes.length?notes.map(note=>`<span class="evidence-location">${richEvidence(note)}</span>`).join(""):"Aucune preuve textuelle détaillée n’est disponible."}</p></div>
     <div class="detail-modal-section"><h3>Correction recommandée</h3><p>${esc(r.remediation||"Revue manuelle nécessaire.")}</p></div>`;
   modal.hidden=false;modal.setAttribute("aria-hidden","false");document.body.classList.add("modal-open");
