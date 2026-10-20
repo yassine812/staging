@@ -1002,6 +1002,29 @@ function findingsToolbar(){
     <div style="flex:0 0 210px"><label>&nbsp;</label><span id="fcount" class="small muted"></span></div>
   </div></div>`;
 }
+function toggleFindingFilters(force){
+  const side=document.getElementById("findingFilterSidebar"),back=document.getElementById("findingFilterBackdrop");
+  if(!side||!back)return;const open=force===undefined?!side.classList.contains("open"):force;
+  side.classList.toggle("open",open);back.classList.toggle("open",open);side.setAttribute("aria-hidden",String(!open));
+}
+function clearFindingFilters(){
+  filter={sev:"",axis:"",q:""};const d=window.__audit;if(d)renderAxisResults(d);toggleFindingFilters(false);
+}
+function findingsToolbar(){
+  return `<section class="panel finding-filter-panel"><div class="table-toolbar" style="padding:0 0 12px;border-bottom:0">
+    <div><h2>Filtres des constats</h2><div class="small muted">Affinez l’affichage par sévérité, axe ou mot-clé.</div></div>
+    <button type="button" class="btn sec" onclick="toggleFindingFilters()"><i class="fas fa-filter"></i> Filtres</button></div>
+    <div id="findingFilterBackdrop" class="filter-backdrop" onclick="toggleFindingFilters(false)"></div>
+    <aside id="findingFilterSidebar" class="filter-sidebar" aria-hidden="true"><div class="filter-sidebar-head"><div><div class="eyebrow">AFFICHAGE</div><h2>Filtrer les constats</h2></div><button type="button" class="filter-close" onclick="toggleFindingFilters(false)" aria-label="Fermer">×</button></div>
+      <p class="small muted">Les résultats se mettent à jour immédiatement.</p>
+      <label>Sévérité<select id="axisFindingSeverity" onchange="setFilter('sev',this.value)"><option value="">Toutes les sévérités</option>
+        ${SEV_ORDER.map(s=>`<option value="${s}" ${filter.sev===s?"selected":""}>${sevFr(s)}</option>`).join("")}</select></label>
+      <label>Axe<select id="axisFindingFilter" onchange="setFilter('axis',this.value)"><option value="">Tous les axes</option>
+        ${AXES.map(a=>`<option value="${a.id}" ${filter.axis===a.id?"selected":""}>${a.id} &middot; ${a.tools}</option>`).join("")}</select></label>
+      <label>Recherche<input id="fq" placeholder="settings.py, CWE-89, REQ-004" value="${esc(filter.q)}" oninput="setFilter('q',this.value)"></label>
+      <div class="filter-sidebar-actions"><button type="button" class="btn sec" onclick="clearFindingFilters()">Réinitialiser</button><button type="button" class="btn" onclick="toggleFindingFilters(false)">Voir les résultats</button></div>
+    </aside><div class="small muted"><span id="fcount">${filterFindings(window.__audit||{}).length} constat(s) affiché(s)</span></div></section>`;
+}
 function axisResultsContent(d){
   const rows=filterFindings(d);
   const selectedAxis=AXES.find(a=>a.id===filter.axis);
