@@ -661,6 +661,46 @@ function requirementStatusInfoButton(r){
 function reqDetail(r){
   return requirementDetailButton(r);
 }
+function frenchEvidence(value){
+  return String(value||"")
+    .replace(/Open redirect on/gi,"Redirection ouverte détectée sur")
+    .replace(/redirects to an attacker-controlled host/gi,"redirige vers un domaine contrôlé par un attaquant")
+    .replace(/external redirect target rejected/gi,"la destination externe doit être refusée")
+    .replace(/SQL error disclosure \/ injection indicator on/gi,"Indice de divulgation ou d’injection SQL sur")
+    .replace(/unauthenticated/gi,"sans authentification")
+    .replace(/anonymous/gi,"anonyme");
+}
+function detailedProblem(r,notes){
+  const text=notes.join(" ");
+  const locations=(r.locations||[]).filter(Boolean).slice(0,4).join(", ");
+  if(/open redirect|redirection ouverte/i.test(text)){
+    return `Une redirection ouverte a été confirmée sur ${locations||"un ou plusieurs endpoints"}. L’application accepte une destination fournie par l’utilisateur, notamment via un paramètre de redirection comme « next », sans vérifier qu’elle reste sur le domaine ou le chemin autorisé. Un attaquant peut donc fabriquer un lien qui semble légitime, puis envoyer la victime vers un site externe malveillant. Ce comportement facilite l’hameçonnage et doit être corrigé avant de considérer l’exigence comme conforme.`;
+  }
+  if(/authentication|authentification|anonymous|anonyme|unauthenticated|sans authentification/i.test(`${r.name||""} ${text}`)){
+    return `L’accès à une ressource qui devrait être protégée a été possible sans authentification suffisante. Une personne non connectée peut atteindre l’endpoint ou la vue concernée, alors que cette exigence impose un contrôle d’accès. Cela peut exposer des données ou des fonctions réservées aux utilisateurs autorisés.`;
+  }
+  if(/sql/i.test(`${r.name||""} ${text}`)){
+    return `Une entrée contrôlée par l’utilisateur est utilisée dans une opération SQL sans garantie suffisante de paramétrage. Un attaquant pourrait modifier la requête, lire des données non autorisées ou provoquer une erreur exploitable. La preuve ci-dessous identifie le contrôle et l’emplacement concernés.`;
+  }
+  if(/secret|password|mot de passe|clé privée|private key/i.test(`${r.name||""} ${text}`)){
+    return `Une information sensible a été détectée dans le périmètre analysé. Sa présence peut permettre un accès non autorisé ou compromettre d’autres systèmes si elle est réutilisée. La preuve précise l’emplacement à supprimer, remplacer ou protéger.`;
+  }
+  return `Le contrôle a confirmé une non-conformité pour cette exigence : ${frenchEvidence(notes[0]||r.name||"un problème de sécurité a été détecté")}. Ce résultat signifie que la protection attendue n’est pas suffisamment démontrée et qu’une correction ciblée est nécessaire.`;
+}
+function detailedAction(r,notes){
+  const text=notes.join(" ");
+  if(/open redirect|redirection ouverte/i.test(text)){
+    return "Valider la destination avant toute redirection : n’autoriser qu’une liste blanche de chemins internes ou de domaines explicitement approuvés, refuser les URL absolues et les hôtes externes, puis utiliser une redirection par nom de route lorsque c’est possible. Tester les valeurs next, next_url et leurs variantes encodées sur chaque endpoint concerné. Après déploiement, relancer le scan DAST et vérifier que chaque destination externe est refusée.";
+  }
+  if(/authentication|authentification|anonymous|anonyme|unauthenticated|sans authentification/i.test(`${r.name||""} ${text}`)){
+    return "Protéger chaque vue et endpoint concerné avec le mécanisme d’authentification et d’autorisation approprié, par exemple LoginRequiredMixin ou IsAuthenticated. Vérifier également les permissions objet, refuser l’accès anonyme par défaut et ajouter un test qui attend une réponse 401/403 ou une redirection vers la connexion. Relancer ensuite le contrôle avec un utilisateur non connecté puis avec un utilisateur autorisé.";
+  }
+  if(/sql/i.test(`${r.name||""} ${text}`)){
+    return "Remplacer la construction dynamique de la requête par l’ORM Django ou par une requête paramétrée. Ne jamais concaténer une valeur utilisateur dans le SQL ; conserver les paramètres séparés des instructions. Ajouter des tests avec des entrées SQL malveillantes, vérifier qu’aucune erreur SQL n’est divulguée, puis relancer le scanner.";
+  }
+  const base=r.remediation&&r.remediation!=="Revue manuelle nécessaire."?frenchEvidence(r.remediation):"Appliquer une correction ciblée sur l’emplacement indiqué dans la preuve.";
+  return `${base} Vérifier la correction avec un test de sécurité reproductible, contrôler le comportement attendu sur le cas nominal et le cas malveillant, puis relancer l’audit pour confirmer le nouveau statut.`;
+}
 function openRequirementDetail(key){
   const r=(window.__requirementDetailData||{})[key],modal=document.getElementById("requirementDetailModal"),body=document.getElementById("requirementDetailBody"),title=document.getElementById("requirementDetailTitle");
   if(!r||!modal||!body)return;
@@ -675,19 +715,17 @@ function openRequirementDetail(key){
     NOT_APPLICABLE:"Non applicable : cette exigence ne s’applique pas au périmètre analysé."
   };
   const explanation=explanations[r.status]||ST_MEANING[r.status]||"Résultat de l’évaluation";
-  const problem=r.status==="FAIL"
-    ? `Non-conformité confirmée : ${notes[0]||"la vérification a détecté un problème lié à cette exigence."}`
-    : (notes[0]||explanation);
+  const problem=r.status==="FAIL"?detailedProblem(r,notes):(notes[0]?frenchEvidence(notes[0]):explanation);
   const followup=r.status==="FAIL"
     ? "Après correction, relancez l’audit puis vérifiez que cette exigence passe avec une nouvelle preuve."
     : "Après cette action, relancez le contrôle pour confirmer et conserver la nouvelle preuve.";
-  const proofItems=notes.length?notes.map(note=>`<li>${richEvidence(note)}</li>`).join(""):"<li>Aucune preuve textuelle détaillée n’est disponible pour cette exigence.</li>";
+  const proofItems=notes.length?notes.map(note=>`<li>${richEvidence(frenchEvidence(note))}</li>`).join(""):"<li>Aucune preuve textuelle détaillée n’est disponible pour cette exigence.</li>";
   body.innerHTML=`<div class="detail-modal-summary"><div class="detail-modal-status-line"><b>Statut :</b> ${stPill(r.status)}</div><div class="detail-modal-explanation"><span class="info-icon" title="Explication du statut">i</span><span>${esc(explanation)}</span></div><div class="detail-modal-context"><strong>Exigence concernée :</strong> ${esc(r.requirement_id||"—")} — ${esc(r.name||"Nom indisponible")}<br><strong>Axe(s) :</strong> ${esc(reqAxes(r))}</div></div>
     <div class="detail-modal-section"><h3>Problème détecté</h3><div class="detail-modal-problem">${esc(problem)}</div></div>
     <div class="detail-modal-section"><h3>Objectif de l’exigence</h3><p>${esc(r.description||"Objectif non renseigné")}</p></div>
     <div class="detail-modal-section"><h3>Fichier et ligne ou endpoint observé</h3><div class="detail-modal-locations">${reqLocationMarkup(r)}</div></div>
     <div class="detail-modal-section"><h3>Preuve détaillée</h3><ul class="detail-modal-evidence-list">${proofItems}</ul></div>
-    <div class="detail-modal-section"><h3>Action prochaine et correction recommandée</h3><p>${esc(r.remediation||"Revue manuelle nécessaire.")}</p><p class="detail-modal-followup"><strong>Étape suivante :</strong> ${esc(followup)}</p></div>`;
+    <div class="detail-modal-section"><h3>Action prochaine et correction recommandée</h3><p>${esc(r.status==="FAIL"?detailedAction(r,notes):frenchEvidence(r.remediation||"Revue manuelle nécessaire."))}</p><p class="detail-modal-followup"><strong>Étape suivante :</strong> ${esc(followup)}</p></div>`;
   modal.hidden=false;modal.setAttribute("aria-hidden","false");document.body.classList.add("modal-open");
 }
 function closeRequirementDetail(){
