@@ -180,6 +180,20 @@ def build_app(store: AuditStore, config_path: str | None = None,
         auth(request)
         return {"audits": store.list_audits()}
 
+    @app.delete("/api/audits/{audit_id}")
+    def delete_audit(audit_id: str, request: Request):
+        user, role = auth(request, "delete_audit")
+        try:
+            store.delete(audit_id)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="audit not found") from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail="audit encore en cours") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="identifiant d’audit invalide") from exc
+        users.audit_log("audit.delete", {"user": user, "audit_id": audit_id})
+        return {"status": "deleted", "audit_id": audit_id}
+
     @app.post("/api/audits")
     def create_audit(body: dict, request: Request):
         user, role = auth(request, "create_audit")

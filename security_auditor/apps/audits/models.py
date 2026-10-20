@@ -14,6 +14,7 @@ Every audit gets an isolated workspace:
 from __future__ import annotations
 
 import json
+import shutil
 import time
 import uuid
 from collections import Counter
@@ -151,6 +152,30 @@ class AuditStore:
                 if attempt == 7:
                     raise
                 time.sleep(0.02 * (attempt + 1))
+
+    def delete(self, audit_id: str) -> None:
+        """Delete one persisted audit after validating its exact child path."""
+        root = self.root.resolve()
+        target = (self.root / audit_id).resolve()
+        if target.parent != root:
+            raise ValueError("invalid audit id")
+        if not (target / "audit.json").is_file():
+            raise FileNotFoundError(f"audit {audit_id!r} not found")
+        audit = self.load(audit_id)
+        if audit.status == "RUNNING":
+            raise RuntimeError("audit is still running")
+        shutil.rmtree(target)
+        index = self.root / "index.json"
+        if index.exists():
+            try:
+                items = json.loads(index.read_text(encoding="utf-8"))
+                index.write_text(json.dumps(
+                    [item for item in items if item.get("id") != audit_id],
+                    indent=2,
+                ), encoding="utf-8")
+            except (OSError, TypeError, ValueError):
+                # list_audits() rebuilds the history from audit.json files.
+                pass
 
     def list_audits(self) -> list[dict]:
         # Rebuild the history summary from persisted audit files.  This keeps

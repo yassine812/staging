@@ -111,6 +111,7 @@
 .security-auditor-app .table-actions .audit-open { background: #007bff; }
 .security-auditor-app .table-actions .audit-axes { background: #17a2b8; }
 .security-auditor-app .table-actions .audit-requirements { background: #28a745; }
+.security-auditor-app .table-actions .audit-delete { background: #dc3545; }
 .security-auditor-app .dashboard-hero {
   display: flex;
   align-items: flex-end;
@@ -1542,6 +1543,7 @@ function pageSettings(){
   </div>`;
 }
 const CAN_MANAGE_REQUIREMENTS = {% if request.user.is_superuser or request.user.is_staff %}true{% else %}false{% endif %};
+const CAN_DELETE_AUDITS = {% if request.user.is_superuser or request.user.is_staff %}true{% else %}false{% endif %};
 let catalogueRows=[];
 function catalogueAxes(r){
   const mapping=r.scanner_mapping||{};
@@ -1615,6 +1617,14 @@ async function deleteCatalogueRequirement(id){
   try{await api(`/api/requirements/catalogue/${encodeURIComponent(id)}`,{method:"DELETE"});catalogueRows=catalogueRows.filter(r=>r.id!==id);refreshCatalogueTable();}
   catch(e){alert(e.message);}
 }
+async function deleteAudit(id){
+  id=decodeURIComponent(id);
+  if(!CAN_DELETE_AUDITS||!confirm(`Supprimer définitivement l’audit ${id} et tous ses rapports ?`))return;
+  try{
+    await api(`/api/audits/${encodeURIComponent(id)}`,{method:"DELETE"});
+    await pageReports();
+  }catch(e){alert(e.message);}
+}
 async function pageRequirementsCatalogue(){
   const data=await api("/api/requirements/catalogue");catalogueRows=data.requirements||[];
   document.getElementById("app").innerHTML=`<section class="dashboard-hero"><div><div class="eyebrow">RÉFÉRENTIEL</div><h1>Exigences de sécurité</h1><p>Liste complète des exigences utilisées par les audits. Filtrez par axe et consultez ou gérez chaque exigence.</p></div>${CAN_MANAGE_REQUIREMENTS?`<button class="btn" onclick="openCatalogueEditor()"><i class="fas fa-plus"></i> Ajouter une exigence</button>`:""}</section>
@@ -1631,7 +1641,7 @@ function toggleGlobalAxisFilters(force){const side=document.getElementById("glob
 function filterGlobalAxes(){const el=document.getElementById("globalAxesTable");if(el&&window.__globalAudits)el.innerHTML=globalAxesTable(window.__globalAudits);}
 async function pageReports(){
   const data=await api("/api/audits"),audits=data.audits||[];window.__globalAudits=audits;
-  document.getElementById("app").innerHTML=`<section class="dashboard-hero"><div><div class="eyebrow">TRAÇABILITÉ</div><h1>Rapports des audits</h1><p>Ouvrez la vue interne de l’audit ou téléchargez ses formats exportés.</p></div></section><section class="panel table-panel"><div class="table-toolbar"><div><h2>Rapports disponibles</h2><div class="small muted">Le bouton Rapport ouvre la page détaillée de l’audit avec ses axes et ses exigences.</div></div></div><div class="table-wrap"><table><thead><tr><th>Audit</th><th>Projet</th><th>Statut</th><th>Date</th><th>Formats</th></tr></thead><tbody>${audits.map(a=>{const base=`${API}/api/reports/${encodeURIComponent(a.id)}`;return `<tr><td><b>${esc(a.id)}</b></td><td>${esc(a.project||"")}</td><td>${pill(a.status||"")}</td><td>${esc(shortDate(a.created_at||""))}</td><td><div class="table-actions">${a.status==="COMPLETE"?`<a class="btn" href="#/audits/${encodeURIComponent(a.id)}"><i class="fas fa-eye"></i> Rapport</a><a class="btn" style="background:#dc3545" target="_blank" href="${base}/pdf"><i class="fas fa-file-pdf"></i> PDF</a><a class="btn sec" href="${base}/csv-req"><i class="fas fa-file-csv"></i> CSV exigences</a>`:`<span class="small muted">Rapport en attente</span>`}</div></td></tr>`;}).join("")||`<tr><td colspan="5" class="empty-state">Aucun audit enregistré.</td></tr>`}</tbody></table></div></section>`;
+  document.getElementById("app").innerHTML=`<section class="dashboard-hero"><div><div class="eyebrow">TRAÇABILITÉ</div><h1>Rapports des audits</h1><p>Ouvrez la vue interne de l’audit ou téléchargez ses formats exportés.</p></div></section><section class="panel table-panel"><div class="table-toolbar"><div><h2>Rapports disponibles</h2><div class="small muted">Le bouton Rapport ouvre la page détaillée de l’audit avec ses axes et ses exigences.</div></div></div><div class="table-wrap"><table><thead><tr><th>Audit</th><th>Projet</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead><tbody>${audits.map(a=>{const base=`${API}/api/reports/${encodeURIComponent(a.id)}`;return `<tr><td><b>${esc(a.id)}</b></td><td>${esc(a.project||"")}</td><td>${pill(a.status||"")}</td><td>${esc(shortDate(a.created_at||""))}</td><td><div class="table-actions">${a.status==="COMPLETE"?`<a class="btn" href="#/audits/${encodeURIComponent(a.id)}"><i class="fas fa-eye"></i> Rapport</a><a class="btn" style="background:#dc3545" target="_blank" href="${base}/pdf"><i class="fas fa-file-pdf"></i> PDF</a>${CAN_DELETE_AUDITS?`<button type="button" class="btn audit-delete" onclick="deleteAudit('${encodeURIComponent(a.id)}')"><i class="fas fa-trash"></i> Supprimer</button>`:""}`:`<span class="small muted">Rapport en attente</span>`}</div></td></tr>`;}).join("")||`<tr><td colspan="5" class="empty-state">Aucun audit enregistré.</td></tr>`}</tbody></table></div></section>`;
 }
 /* ------------------------------ router ------------------------------ */
 async function route(){
