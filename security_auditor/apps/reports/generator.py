@@ -796,14 +796,14 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
 
     # -- 4. actions prioritaires -------------------------------------------
     prio = [f for f in _sorted_findings(audit) if f["severity"] in ("Critical", "High")]
-    blocks.append(("h2", "3. Actions prioritaires (Critique + Élevé)"))
+    blocks.append(("h2", "4. Actions prioritaires (Critique + Élevé)"))
     if not prio:
         blocks.append(("body", "Aucun constat Critique ou Élevé sur ce run — voir le rapport "
                                "complet pour les points Moyen/Faible."))
     else:
-        blocks.append(("th:0,45,75,255", "Sévérité|Axe|Emplacement|Constat"))
+        blocks.append(("th:0,60,100,255", "Sévérité|Axe|Emplacement|Constat"))
         for f in prio[:30]:
-            blocks.append(("t:0,45,75,255",
+            blocks.append(("t:0,60,100,255",
                            f"{sev_fr(f['severity'])}|{axis_short(_axis_index(f))}|"
                            f"{_location(f)}|{f['title']}"))
             fix = (f.get("remediation") or "").strip()
@@ -816,13 +816,13 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
     # -- 5. emplacements les plus touchés ----------------------------------
     hot = _hotspots(audit)
     if hot:
-        blocks.append(("h2", "4. Emplacements les plus touchés (fichiers / endpoints)"))
-        blocks.append(("th:0,240,290,470", "Fichier / endpoint|Constats|Mix sévérités|"))
+        blocks.append(("h2", "5. Emplacements les plus touchés (fichiers / endpoints)"))
+        blocks.append(("th:0,250,310", "Fichier / endpoint|Constats|Mix sévérités"))
         for where, n, mix in hot:
-            blocks.append(("t:0,240,290,470", f"{where}|{n}|{mix}|"))
+            blocks.append(("t:0,250,310", f"{where}|{n}|{mix}"))
 
     # -- 6. couverture des exigences ---------------------------------------
-    blocks.append(("h2", "5. Couverture des exigences"))
+    blocks.append(("h2", "6. Couverture des exigences"))
     blocks.append(("th:0,150,210,300", "Statut|Exigences|Part|Signification"))
     for s in ("PASS", "FAIL", "PARTIAL", "NOT_TESTED", "MANUAL_REVIEW", "NOT_APPLICABLE"):
         n = st.get(s, 0)
@@ -837,18 +837,18 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
                                + (f" (+{len(fails) - 40} autres)" if len(fails) > 40 else "")))
 
     # -- 7. couverture des analyseurs --------------------------------------
-    blocks.append(("h2", "6. Analyseurs et couverture"))
+    blocks.append(("h2", "7. Analyseurs et couverture"))
     for j in audit.jobs:
         blocks.append(("kv", f"{j['name']} : {j['status']}"
                              + (f" ({j.get('error')})" if j.get("error") else "")))
 
     # -- 8. limites ---------------------------------------------------------
-    blocks.append(("h2", "7. Limites — ce qui n'est PAS prouvé"))
+    blocks.append(("h2", "8. Limites — ce qui n'est PAS prouvé"))
     for x in _limitations(audit):
         blocks.append(("bullet", x))
 
     # -- 9. où trouver le détail -------------------------------------------
-    blocks.append(("h2", "8. Détail complet"))
+    blocks.append(("h2", "9. Détail complet"))
     blocks.append(("body", "Chaque constat avec preuve, requête/réponse, correction exacte du "
                            "code et rattachement aux exigences se trouve dans :"))
     blocks.append(("kv", "reports/report.html — détail complet, imprimable"))
@@ -885,7 +885,7 @@ def _pdf_blocks_full(audit: Audit) -> list[tuple[str, str]]:
     blocks.append(("body", "Exigences : " + ", ".join(
         f"{status_fr(k)} : {v}" for k, v in sorted(st.items()))))
 
-    blocks.append(("h2", "1bis. Résultats par axe (4 axes)"))
+    blocks.append(("h2", "2. Résultats par axe (4 axes)"))
     rg, transverse = _axis_req_groups(audit)
     for i, ((name, _key), fs, rs) in enumerate(zip(AXES, _axis_groups(audit), rg)):
         sevc = Counter(f["severity"] for f in fs)
@@ -897,7 +897,7 @@ def _pdf_blocks_full(audit: Audit) -> list[tuple[str, str]]:
         blocks.append(("kv", f"Exigences transverses (aucun scanner dédié) : "
                              f"{len(transverse)} exigences [{_axis_result_line(transverse)}]"))
 
-    blocks.append(("h2", "2. Informations projet"))
+    blocks.append(("h2", "3. Informations projet"))
     blocks.append(("kv", f"nom : {project.get('name')}"))
     blocks.append(("kv", f"source : {project.get('source_type')} "
                          f"{project.get('repo_url') or project.get('path') or ''}"))
@@ -905,12 +905,12 @@ def _pdf_blocks_full(audit: Audit) -> list[tuple[str, str]]:
         blocks.append(("kv", f"commit : {project.get('commit_sha')} "
                              f"branche : {project.get('branch')}"))
 
-    blocks.append(("h2", "3. Environnement d'analyse"))
+    blocks.append(("h2", "4. Environnement d'analyse"))
     for j in audit.jobs:
         blocks.append(("kv", f"{j['name']} : {j['status']}"
                              + (f" ({j.get('error')})" if j.get("error") else "")))
 
-    blocks.append(("h2", "4. Résultats des exigences, groupés par axe"))
+    blocks.append(("h2", "5. Résultats des exigences, groupés par axe"))
     blocks.append(("body", f"{len(audit.requirement_results)} exigences évaluées. "
                            "Statuts : " + ", ".join(
                                f"{status_fr(k)} {v}" for k, v in sorted(st.items()) if v)))

@@ -1,190 +1,196 @@
-"""Minimal dependency-free PDF writer (Helvetica text reports).
+"""Professional PDF renderer for audit reports.
 
-Produces a valid multi-page PDF using only the standard library (zlib), so
-PDF report generation works in air-gapped environments.  For richer layouts
-a reportlab-based renderer can replace this module without API changes.
+The report generator exposes a small block-based API. This module turns those
+blocks into a readable A4 document with Unicode-safe typography, styled tables,
+consistent spacing and page numbering.
 """
 from __future__ import annotations
 
-import zlib
+from html import escape
+from io import BytesIO
+from pathlib import Path
 
-PAGE_W, PAGE_H = 595, 842          # A4 in points
-MARGIN = 50
-LINE_HEIGHT = 13
-CHARS_PER_LINE = 100
-
-
-def _esc(text: str) -> str:
-    return (text.replace("\\", r"\\").replace("(", r"\(").replace(")", r"\)")
-                .encode("latin-1", "replace").decode("latin-1"))
-
-
-def _wrap(text: str, width: int = CHARS_PER_LINE) -> list[str]:
-    words = text.split()
-    lines, cur = [], ""
-    for w in words:
-        while len(w) > width:
-            lines.append(w[:width])
-            w = w[width:]
-        if not cur:
-            cur = w
-        elif len(cur) + 1 + len(w) <= width:
-            cur += " " + w
-        else:
-            lines.append(cur)
-            cur = w
-    if cur:
-        lines.append(cur)
-    return lines or [""]
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import (
+    BaseDocTemplate,
+    Frame,
+    HRFlowable,
+    LongTable,
+    PageTemplate,
+    Paragraph,
+    Spacer,
+    TableStyle,
+)
 
 
-def _col_offsets(style: str) -> list[float]:
-    """'t:0,90,150,300' -> [0.0, 90.0, 150.0, 300.0] (points, from the left margin)."""
+PAGE_W, PAGE_H = A4
+NAVY = colors.HexColor("#12304A")
+BLUE = colors.HexColor("#1769AA")
+PALE_BLUE = colors.HexColor("#F5F9FD")
+TEXT = colors.HexColor("#263746")
+MUTED = colors.HexColor("#687887")
+LINE = colors.HexColor("#D8E1E8")
+
+
+def _register_fonts() -> tuple[str, str]:
+    """Use a Unicode Windows font when available; keep a safe PDF fallback."""
+    candidates = (
+        ("AuditSans", "AuditSans-Bold", Path(r"C:\Windows\Fonts\segoeui.ttf"), Path(r"C:\Windows\Fonts\segoeuib.ttf")),
+        ("AuditSans", "AuditSans-Bold", Path(r"C:\Windows\Fonts\arial.ttf"), Path(r"C:\Windows\Fonts\arialbd.ttf")),
+    )
+    for regular, bold, regular_path, bold_path in candidates:
+        if regular_path.exists() and bold_path.exists():
+            try:
+                pdfmetrics.registerFont(TTFont(regular, str(regular_path)))
+                pdfmetrics.registerFont(TTFont(bold, str(bold_path)))
+                return regular, bold
+            except Exception:
+                pass
+    return "Helvetica", "Helvetica-Bold"
+
+
+def _clean(value: object) -> str:
+    """Normalize line-breaking punctuation without damaging French accents."""
+    return (str(value or "")
+            .replace("\u00a0", " ")
+            .replace("\u2011", "-")
+            .replace("\u2013", "-")
+            .replace("\u2014", "-")
+            .replace("\u2192", "->")
+            .replace("\u2022", "-"))
+
+
+def _paragraph(text: object, style: ParagraphStyle) -> Paragraph:
+    value = escape(_clean(text)).replace("\n", "<br/>")
+    return Paragraph(value or "&nbsp;", style)
+
+
+def _offsets(style: str) -> list[float]:
     try:
-        return [float(x) for x in style.split(":", 1)[1].split(",") if x.strip() != ""]
+        return [float(part) for part in style.split(":", 1)[1].split(",") if part.strip()]
     except (IndexError, ValueError):
         return [0.0]
 
 
-def _fit(text: str, width_pt: float, size: float) -> str:
-    """Truncate a table cell so it cannot overrun the next column."""
-    limit = max(4, int(width_pt / (size * 0.50)))
-    text = text.strip()
-    return text if len(text) <= limit else text[:limit - 1] + "\u2026"
+def _row_cells(text: str, count: int) -> list[str]:
+    cells = text.split("|")
+    cells += [""] * max(0, count - len(cells))
+    return cells[:count]
+
+
+def _table(blocks: list[tuple[str, str]], start: int, content_width: float, styles: dict[str, ParagraphStyle]):
+    header_style, header_text = blocks[start]
+    offsets = _offsets(header_style)
+    column_count = len(offsets)
+    widths = [offsets[i + 1] - offsets[i] for i in range(column_count - 1)]
+    widths.append(max(60, content_width - (offsets[-1] if offsets else 0)))
+    # The legacy block definitions use page-coordinate offsets.  Some of them
+    # were authored for a wider page than A4, so normalize them before handing
+    # them to ReportLab.  This keeps every table inside the printable frame.
+    total_width = sum(widths)
+    if total_width > content_width and total_width:
+        scale = content_width / total_width
+        widths = [width * scale for width in widths]
+    rows = [[_paragraph(cell, styles["table_header"]) for cell in _row_cells(header_text, column_count)]]
+    index = start + 1
+    while index < len(blocks) and blocks[index][0].startswith("t:"):
+        rows.append([_paragraph(cell, styles["table_cell"]) for cell in _row_cells(blocks[index][1], column_count)])
+        index += 1
+
+    table = LongTable(rows, colWidths=widths, repeatRows=1, hAlign="LEFT", splitByRow=1)
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+        ("GRID", (0, 0), (-1, -1), 0.35, LINE),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, PALE_BLUE]),
+    ]))
+    return table, index
+
+
+def _page_chrome(canvas, document, title: str, regular: str, bold: str) -> None:
+    canvas.saveState()
+    canvas.setFillColor(NAVY)
+    canvas.rect(0, PAGE_H - 15 * mm, PAGE_W, 15 * mm, stroke=0, fill=1)
+    canvas.setFillColor(colors.white)
+    canvas.setFont(bold, 8.5)
+    canvas.drawString(18 * mm, PAGE_H - 9.5 * mm, "SECURITY AUDITOR")
+    canvas.setFont(regular, 8)
+    canvas.drawRightString(PAGE_W - 18 * mm, PAGE_H - 9.5 * mm, title[:72])
+    canvas.setStrokeColor(LINE)
+    canvas.setLineWidth(0.5)
+    canvas.line(18 * mm, 14 * mm, PAGE_W - 18 * mm, 14 * mm)
+    canvas.setFillColor(MUTED)
+    canvas.setFont(regular, 7.5)
+    canvas.drawString(18 * mm, 8.5 * mm, "Document confidentiel - Rapport de sécurité")
+    canvas.drawRightString(PAGE_W - 18 * mm, 8.5 * mm, f"Page {document.page}")
+    canvas.restoreState()
 
 
 def render_pdf(blocks: list[tuple[str, str]], title: str) -> bytes:
-    """blocks: list of (style, text).
+    """Render report blocks into a styled, Unicode-safe A4 PDF."""
+    regular, bold = _register_fonts()
+    buffer = BytesIO()
+    margin_x = 18 * mm
+    doc = BaseDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=margin_x,
+        rightMargin=margin_x,
+        topMargin=25 * mm,
+        bottomMargin=21 * mm,
+        title=title,
+        author="Security Auditor",
+        subject="Rapport d'audit de sécurité",
+    )
+    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="audit")
+    doc.addPageTemplates([PageTemplate(id="audit", frames=[frame], onPage=lambda c, d: _page_chrome(c, d, title, regular, bold))])
 
-    Styles: h1/h2/h3/body/bullet/kv, plus table rows ("t:0,90,150,300" - cells
-    separated by "|"), table headers ("th:...") and horizontal rules ("hr").
-    """
-    # paginate
-    pages: list[list[tuple[str, str]]] = []
-    current: list[tuple[str, str]] = []
-    y = PAGE_H - MARGIN
-    for style, text in blocks:
-        text = (text.replace("\u2192", "->").replace("\u2019", "'").replace("\u201c", '"')
-                    .replace("\u201d", '"').replace("\u2013", "-").replace("\u2014", "-")
-                    .replace("\u2022", "-").replace("\u2026", "...")
-                    .replace("\u00b7", "*").replace("\u00d7", "x"))
-        if style == "hr":
-            if y - LINE_HEIGHT < MARGIN:
-                pages.append(current)
-                current = []
-                y = PAGE_H - MARGIN
-            current.append((style, ""))
-            y -= LINE_HEIGHT
+    sample = getSampleStyleSheet()
+    styles = {
+        "h1": ParagraphStyle("AuditH1", parent=sample["Title"], fontName=bold, fontSize=23, leading=28, textColor=NAVY, spaceAfter=5, alignment=TA_LEFT),
+        "h2": ParagraphStyle("AuditH2", parent=sample["Heading2"], fontName=bold, fontSize=15, leading=19, textColor=NAVY, spaceBefore=15, spaceAfter=7, keepWithNext=True),
+        "h3": ParagraphStyle("AuditH3", parent=sample["Heading3"], fontName=bold, fontSize=11.5, leading=15, textColor=BLUE, spaceBefore=10, spaceAfter=4, keepWithNext=True),
+        "body": ParagraphStyle("AuditBody", parent=sample["BodyText"], fontName=regular, fontSize=9.5, leading=13.5, textColor=TEXT, spaceAfter=5),
+        "kv": ParagraphStyle("AuditKV", parent=sample["BodyText"], fontName=regular, fontSize=9, leading=12, textColor=MUTED, leftIndent=7, spaceAfter=3),
+        "bullet": ParagraphStyle("AuditBullet", parent=sample["BodyText"], fontName=regular, fontSize=9.2, leading=13, textColor=TEXT, leftIndent=14, firstLineIndent=-8, spaceAfter=3),
+        "table_header": ParagraphStyle("AuditTableHeader", parent=sample["BodyText"], fontName=bold, fontSize=8, leading=10, textColor=colors.white, spaceAfter=0),
+        "table_cell": ParagraphStyle("AuditTableCell", parent=sample["BodyText"], fontName=regular, fontSize=8.2, leading=10.5, textColor=TEXT, spaceAfter=0),
+    }
+
+    story = []
+    index = 0
+    while index < len(blocks):
+        style, text = blocks[index]
+        if style.startswith("th:"):
+            table, index = _table(blocks, index, doc.width, styles)
+            story.extend([Spacer(1, 4), table, Spacer(1, 7)])
             continue
-        is_row = style.startswith("t:") or style.startswith("th:")
-        wrapped = [text] if is_row else _wrap(text)
-        lh = LINE_HEIGHT + (4 if style.startswith("h") else 0)
-        if y - lh * len(wrapped) < MARGIN:
-            pages.append(current)
-            current = []
-            y = PAGE_H - MARGIN
-        for line in wrapped:
-            current.append((style, line))
-            y -= lh
-        y -= 4 if style.startswith("h") else 1
-    if current:
-        pages.append(current)
+        if style == "hr":
+            story.extend([Spacer(1, 3), HRFlowable(width="100%", thickness=0.8, color=LINE, spaceBefore=2, spaceAfter=8)])
+        elif style == "h1":
+            story.extend([_paragraph(text, styles["h1"]), HRFlowable(width="100%", thickness=2, color=BLUE, spaceBefore=1, spaceAfter=10)])
+        elif style == "h2":
+            story.extend([_paragraph(text, styles["h2"]), HRFlowable(width="100%", thickness=0.8, color=LINE, spaceBefore=0, spaceAfter=6)])
+        elif style == "h3":
+            story.append(_paragraph(text, styles["h3"]))
+        elif style == "bullet":
+            story.append(_paragraph(f"- {_clean(text)}", styles["bullet"]))
+        elif style == "kv":
+            story.append(_paragraph(text, styles["kv"]))
+        else:
+            story.append(_paragraph(text, styles["body"]))
+        index += 1
 
-    # content streams
-    streams = []
-    for page in pages:
-        ops = ["BT"]
-        y = PAGE_H - MARGIN
-        for style, line in page:
-            if style == "hr":
-                y -= LINE_HEIGHT
-                ops.append("ET")
-                ops.append(f"0.7 w 0.55 0.6 0.68 RG {MARGIN} {y + 5:.1f} m "
-                           f"{PAGE_W - MARGIN} {y + 5:.1f} l S")
-                ops.append("BT")
-                y -= 1
-                continue
-            if style.startswith("t:") or style.startswith("th:"):
-                bold = style.startswith("th:")
-                size = 8.5
-                offsets = _col_offsets(style)
-                cells = line.split("|")
-                y -= LINE_HEIGHT
-                for i, cell in enumerate(cells[:len(offsets)]):
-                    x0 = offsets[i]
-                    x1 = offsets[i + 1] if i + 1 < len(offsets) else (PAGE_W - 2 * MARGIN)
-                    txt = _fit(cell, x1 - x0 - 4, size)
-                    if not txt:
-                        continue
-                    ops.append(f"/F{'2' if bold else '1'} {size} Tf")
-                    ops.append(f"1 0 0 1 {MARGIN + x0:.1f} {y:.1f} Tm")
-                    ops.append(f"({_esc(txt)}) Tj")
-                y -= 1
-                continue
-            if style == "h1":
-                font, size = "/F2", 16
-            elif style == "h2":
-                font, size = "/F2", 13
-            elif style == "h3":
-                font, size = "/F2", 11
-            elif style == "kv":
-                font, size = "/F1", 9
-            elif style == "bullet":
-                font, size = "/F1", 9.5
-            else:
-                font, size = "/F1", 9.5
-            y -= LINE_HEIGHT + (4 if style.startswith("h") else 0)
-            prefix = "  - " if style == "bullet" else ""
-            ops.append(f"{font} {size} Tf")
-            ops.append(f"1 0 0 1 {MARGIN} {y:.1f} Tm")
-            ops.append(f"({_esc(prefix + line)}) Tj")
-            y -= 1 if not style.startswith("h") else 4
-        ops.append("ET")
-        streams.append("\n".join(ops).encode("latin-1"))
-
-    objects: list[bytes] = []
-
-    def add(obj: bytes) -> int:
-        objects.append(obj)
-        return len(objects)
-
-    catalog_id = 1
-    pages_id = 2
-    font1_id = 3
-    font2_id = 4
-    page_ids = []
-    content_ids = []
-    n_pages = max(1, len(streams))
-    for i in range(n_pages):
-        page_ids.append(5 + i * 2)
-        content_ids.append(6 + i * 2)
-
-    placeholders = 4 + n_pages * 2
-    objs: dict[int, bytes] = {}
-    objs[catalog_id] = f"<< /Type /Catalog /Pages {pages_id} 0 R >>".encode()
-    kids = " ".join(f"{p} 0 R" for p in page_ids)
-    objs[pages_id] = (f"<< /Type /Pages /Kids [{kids}] /Count {n_pages} >>").encode()
-    objs[font1_id] = b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
-    objs[font2_id] = b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>"
-    for i, stream in enumerate(streams):
-        compressed = zlib.compress(stream)
-        objs[content_ids[i]] = (f"<< /Length {len(compressed)} /Filter /FlateDecode >>".encode()
-                                + b"\nstream\n" + compressed + b"\nendstream")
-        objs[page_ids[i]] = (f"<< /Type /Page /Parent {pages_id} 0 R "
-                             f"/MediaBox [0 0 {PAGE_W} {PAGE_H}] "
-                             f"/Resources << /Font << /F1 {font1_id} 0 R /F2 {font2_id} 0 R >> >> "
-                             f"/Contents {content_ids[i]} 0 R >>").encode()
-
-    out = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
-    offsets = {}
-    for i in range(1, placeholders + 1):
-        offsets[i] = len(out)
-        out += f"{i} 0 obj\n".encode() + objs[i] + b"\nendobj\n"
-    xref_pos = len(out)
-    out += f"xref\n0 {placeholders + 1}\n".encode()
-    out += b"0000000000 65535 f \n"
-    for i in range(1, placeholders + 1):
-        out += f"{offsets[i]:010d} 00000 n \n".encode()
-    out += (f"trailer\n<< /Size {placeholders + 1} /Root {catalog_id} 0 R >>\n"
-            f"startxref\n{xref_pos}\n%%EOF").encode()
-    return bytes(out)
+    doc.build(story)
+    return buffer.getvalue()
