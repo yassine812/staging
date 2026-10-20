@@ -651,8 +651,16 @@ function openRequirementDetail(key){
   if(!r||!modal||!body)return;
   if(title)title.textContent=`${r.requirement_id||"Exigence"} — ${r.name||"Détail"}`;
   const notes=(r.notes||[]).filter(Boolean);
-  const explanation=r.status==="FAIL"?"Échec : une preuve de vulnérabilité confirmée est associée à cette exigence.":(ST_MEANING[r.status]||"Résultat de l’évaluation");
-  body.innerHTML=`<div class="detail-modal-summary"><div class="detail-modal-status-line"><b>Statut :</b> ${stPill(r.status)} <span class="info-icon" title="Pourquoi ce statut ?">i</span></div><div class="detail-modal-explanation"><span class="info-icon" title="Explication du statut">i</span><span>${esc(explanation)}</span></div></div>
+  const explanations={
+    FAIL:"Échec : la preuve observée montre que cette exigence n’est pas respectée.",
+    PASS:"Vérifié : le contrôle n’a relevé aucune non-conformité pour cette exigence.",
+    PARTIAL:"Partiel : le contrôle a relevé une conformité incomplète ou des éléments à corriger.",
+    NOT_TESTED:"Non testé : cette exigence n’a pas encore pu être vérifiée.",
+    MANUAL_REVIEW:"Revue manuelle : une vérification humaine est nécessaire pour confirmer le résultat.",
+    NOT_APPLICABLE:"Non applicable : cette exigence ne s’applique pas au périmètre analysé."
+  };
+  const explanation=explanations[r.status]||ST_MEANING[r.status]||"Résultat de l’évaluation";
+  body.innerHTML=`<div class="detail-modal-summary"><div class="detail-modal-status-line"><b>Statut :</b> ${stPill(r.status)}</div><div class="detail-modal-explanation"><span class="info-icon" title="Explication du statut">i</span><span>${esc(explanation)}</span></div></div>
     <div class="detail-modal-section"><h3>Objectif</h3><p>${esc(r.description||"Objectif non renseigné")}</p></div>
     <div class="detail-modal-section"><h3>Fichier et ligne ou endpoint observé</h3><div class="detail-modal-locations">${reqLocationMarkup(r)}</div></div>
     <div class="detail-modal-section"><h3>Preuve et explication du résultat</h3><p>${notes.length?notes.map(note=>`<span class="evidence-location">${richEvidence(note)}</span>`).join(""):"Aucune preuve textuelle détaillée n’est disponible."}</p></div>
@@ -1255,8 +1263,8 @@ function requirementTable(rows){
     <th style="width:90px">Axe(s)</th><th style="width:130px">Statut</th><th style="width:280px">Fichier / ligne exacts</th><th>Preuve / prochaine action</th></tr></thead>
     <tbody>${(rows||[]).map(r=>`<tr><td data-label="Exigence"><b>${esc(r.requirement_id)}</b><div class="small muted">${esc(r.category||"")}</div></td>
       <td data-label="Objectif">${esc(r.name||"Nom indisponible")}<div class="small muted">${esc((r.description||"").slice(0,180))}</div></td>
-      <td data-label="Axe(s)" class="small">${esc(reqAxes(r))}</td><td data-label="Statut">${stPill(r.status)}${reqStatusReason(r)}${reqDetail(r)}</td><td data-label="Fichier / ligne exacts" class="small">${reqLocationMarkup(r)}</td>
-      <td data-label="Preuve / prochaine action" class="small"><div class="evidence-summary">Preuve et correction disponibles dans Détails.</div></td></tr>`).join("")
+      <td data-label="Axe(s)" class="small">${esc(reqAxes(r))}</td><td data-label="Statut">${stPill(r.status)}</td><td data-label="Fichier / ligne exacts" class="small">${reqLocationMarkup(r)}</td>
+      <td data-label="Preuve / prochaine action" class="small"><div class="evidence-summary">Preuve et correction disponibles dans Détails.</div>${reqDetail(r)}</td></tr>`).join("")
       ||"<tr><td colspan=6 class='empty-state'>Aucune exigence ne correspond aux filtres.</td></tr>"}</tbody></table></div>`;
 }
 function requirementsContent(rr){
