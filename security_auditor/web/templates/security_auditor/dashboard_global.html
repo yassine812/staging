@@ -265,11 +265,13 @@ const SEV_MEANING={
   Low:"Durcissement / bonnes pratiques",
   Info:"\u00c9l\u00e9ment \u00e0 revoir, pas une violation"};
 const AXES=[
-  {id:"A1",label:"A1 &middot; Code (SAST)",tools:"SAST"},
-  {id:"A2",label:"A2 &middot; Configuration &amp; secrets",tools:"analyseur de settings"},
+  {id:"A1",label:"A1 &middot; Code source",tools:"SAST"},
+  {id:"A2",label:"A2 &middot; Configuration et secrets",tools:"Analyse des paramètres"},
   {id:"A3",label:"A3 &middot; D\u00e9pendances (CVE)",tools:"analyseur de d\u00e9pendances"},
   {id:"A4",label:"A4 &middot; R\u00e9seau/ports &amp; DAST",tools:"scanner de ports + DAST"}];
 const STATUS_ORDER=["PASS","FAIL","PARTIAL","NOT_TESTED","MANUAL_REVIEW","NOT_APPLICABLE"];
+function axisName(a){return ({A1:"Code source",A2:"Configuration et secrets",A3:"Dépendances et vulnérabilités",A4:"Réseau et exposition"}[a.id]||a.label);}
+function axisDescription(a){return ({A1:"Recherche de failles dans le code Django.",A2:"Vérifie les réglages, mots de passe et secrets exposés.",A3:"Recherche les bibliothèques obsolètes ou vulnérables.",A4:"Contrôle les ports et services réseau autorisés."}[a.id]||a.tools);}
 const STATUS_FR={PASS:"V\u00e9rifi\u00e9",FAIL:"\u00c9chec",PARTIAL:"Partiel",
   NOT_TESTED:"Non test\u00e9",MANUAL_REVIEW:"Revue manuelle",NOT_APPLICABLE:"Non applicable"};
 const ST_MEANING={PASS:"v\u00e9rifi\u00e9 avec preuves",FAIL:"violation confirm\u00e9e",
@@ -619,20 +621,20 @@ async function pageAudits(){
     <div class="card history-stat"><i class="stat-dot orange"></i><div><strong>${running}</strong><span>En cours</span></div></div>
     <div class="card history-stat"><i class="stat-dot red"></i><div><strong>${findings}</strong><span>Constats cumulés${failed?` · ${failed} échec(s)`:""}</span></div></div>
   </section>
-   <details class="panel launch-panel" open><summary class="launch-summary"><span class="launch-icon">✦</span><span class="launch-summary-copy"><strong>Lancer un nouvel audit interne</strong><small>Analyser les modules Django intégrés au projet</small></span><span class="launch-chevron">⌄</span></summary>
+   <details class="panel launch-panel" open><summary class="launch-summary"><span class="launch-icon">✦</span><span class="launch-summary-copy"><strong>Créer un nouvel audit</strong><small>Choisissez les contrôles à exécuter sur les modules Django du projet</small></span><span class="launch-chevron">⌄</span></summary>
      <div class="banner launch-note"><span class="note-icon">✓</span><span>L’audit cible automatiquement les modules Django de ce projet intégré. Aucun dossier externe, upload ou dépôt distant n’est utilisé.</span></div>
-      <div class="module-scope"><div class="scope-block"><label>Projet audité</label><strong>Django Security Auditor <em>Projet intégré</em></strong><div class="small muted">La racine Django est configurée par l’application hôte.</div></div>
-        <div class="scope-block"><label>Modules à auditer</label><div class="module-picker"><div id="selectedModules"></div><input id="moduleSearch" autocomplete="off" placeholder="Rechercher un module…" onfocus="renderModuleSuggestions()" oninput="renderModuleSuggestions()"><div id="moduleSuggestions" class="module-suggestions"></div></div><div class="small muted" style="margin-top:6px">Aucun choix = tous les modules du projet.</div></div></div>
-     <div class="axis-section"><div class="section-label"><span>Axes de sécurité</span><small>Aucune sélection = audit complet · jusqu’à 4 axes</small></div>
-     <div class="status-grid">${AXES.map(a=>`<label class="status-box"><input class="axisPick" type="checkbox" value="${a.id}" style="width:auto"><span class="axis-card-copy"><b>${a.id}</b> ${a.label.replace(/^A\d+ &middot; /,"")}<small>${a.tools}</small></span></label>`).join("")}</div></div>
-     <div class="network-scope"><div class="section-label"><span>Exposition réseau · A4</span><small>Ports publics uniquement sur cibles autorisées</small></div>
-       <div class="network-grid"><label>Cible(s) autorisée(s)<input id="networkTargets" value="127.0.0.1" placeholder="127.0.0.1, api.exemple.com"><small>Nom d’hôte ou IP, séparés par des virgules.</small></label>
-         <label>Portée du scan<select id="portScope"><option value="common">Ports courants</option><option value="all">Tous les ports TCP (1–65535)</option></select><small>Le scan complet nécessite Nmap installé.</small></label></div>
-       <label class="external-check"><input type="checkbox" id="networkExternal" style="width:auto"> J’autorise explicitement les cibles publiques indiquées ci-dessus.</label>
-       <div class="network-warning">Utilise uniquement des domaines/IP dont tu es propriétaire ou pour lesquels tu as une autorisation écrite.</div>
+      <div class="module-scope"><div class="scope-block"><label>Projet analysé</label><strong>Django Security Auditor <em>Projet intégré</em></strong><div class="small muted">Le scan utilise les modules Django de cette application.</div></div>
+        <div class="scope-block"><label>Modules à analyser <span class="small muted">(facultatif)</span></label><div class="module-picker"><div id="selectedModules"></div><input id="moduleSearch" autocomplete="off" placeholder="Rechercher un module Django…" onfocus="renderModuleSuggestions()" oninput="renderModuleSuggestions()"><div id="moduleSuggestions" class="module-suggestions"></div></div><div class="small muted" style="margin-top:6px">Laissez vide pour analyser tous les modules du projet.</div></div></div>
+     <div class="axis-section"><div class="section-label"><span>Contrôles de sécurité à effectuer</span><small>Choisissez des contrôles ou laissez tout décoché pour lancer les 4 axes.</small></div>
+     <div class="status-grid">${AXES.map(a=>`<label class="status-box"><input class="axisPick" type="checkbox" value="${a.id}" style="width:auto"><span class="axis-card-copy"><b>${a.id}</b> ${axisName(a)}<small>${axisDescription(a)}</small><small class="muted">Méthode : ${a.tools}</small></span></label>`).join("")}</div></div>
+     <div class="network-scope"><div class="section-label"><span>Contrôle réseau (axe A4)</span><small>Optionnel · uniquement sur des cibles autorisées</small></div>
+       <div class="network-grid"><label>Adresse(s) à vérifier<input id="networkTargets" value="127.0.0.1" placeholder="127.0.0.1 ou api.exemple.com"><small>Saisissez un nom de domaine ou une adresse IP autorisée.</small></label>
+         <label>Ports à vérifier<select id="portScope"><option value="common">Ports courants (recommandé)</option><option value="all">Tous les ports TCP (1–65535)</option></select><small>La vérification complète nécessite Nmap installé.</small></label></div>
+       <label class="external-check"><input type="checkbox" id="networkExternal" style="width:auto"> J’autorise explicitement la vérification de ces cibles réseau.</label>
+       <div class="network-warning">N’utilisez que des domaines ou adresses IP dont vous êtes propriétaire ou pour lesquels vous avez une autorisation écrite.</div>
      </div>
-     <div class="launch-footer"><label class="auth-check"><input type="checkbox" id="authz" style="width:auto"><span>Je confirme être autorisé à tester la sécurité de cette application et de son infrastructure.</span></label>
-       <div class="launch-actions"><span id="cerr" class="sev-Critical"></span><span id="launchStatus" class="launch-status"></span><button class="btn launch-btn" onclick="createAudit()"><span>▶</span> Démarrer l’audit</button></div></div>
+     <div class="launch-footer"><label class="auth-check"><input type="checkbox" id="authz" style="width:auto"><span>Je confirme avoir l’autorisation de réaliser cet audit sur cette application et son infrastructure.</span></label>
+       <div class="launch-actions"><span id="cerr" class="sev-Critical"></span><span id="launchStatus" class="launch-status"></span><button class="btn launch-btn" onclick="createAudit()"><span>▶</span> Lancer l’audit</button></div></div>
    </details>
   <section class="panel table-panel"><div class="table-toolbar"><div><h2>Scans persistés</h2><div class="small muted">L'historique reste disponible après redémarrage du serveur.</div></div></div>
     <div class="history-filters"><label>Recherche<input id="historyQ" placeholder="ID, projet, date…" oninput="filterHistory()"></label>
