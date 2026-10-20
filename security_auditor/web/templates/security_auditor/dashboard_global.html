@@ -355,6 +355,22 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .axis-detail-block th:nth-child(2) { width: 310px; }
 .security-auditor-app .axis-detail-block th:nth-child(4) { width: 145px; }
 .security-auditor-app .axis-detail-block code { display: inline-block; max-width: 100%; white-space: normal; word-break: break-word; }
+.security-auditor-app .requirements-filter-launch { position: static; display: flex; justify-content: flex-end; transform: none; z-index: auto; }
+.security-auditor-app .filter-trigger { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.security-auditor-app .filter-sidebar { top: 50%; left: 50%; right: auto; bottom: auto; width: min(560px, calc(100vw - 32px)); max-height: min(78vh, 680px); border: 1px solid #dee2e6; border-radius: 14px; box-shadow: 0 22px 65px rgba(0,0,0,.35); opacity: 0; visibility: hidden; transform: translate(-50%, -46%) scale(.96); transition: opacity .18s ease, transform .18s ease, visibility .18s ease; }
+.security-auditor-app .filter-sidebar.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+.security-auditor-app .filter-sidebar-head { padding-bottom: 12px; border-bottom: 1px solid #dee2e6; }
+.security-auditor-app .evidence-location { display: block; margin: 0 0 7px; }
+.security-auditor-app .evidence-location:last-child { margin-bottom: 0; }
+.security-auditor-app .evidence-file { display: inline; color: #1f4f87; font-weight: 600; }
+.security-auditor-app .evidence-file::before { content: "▣"; margin-right: 5px; color: #007bff; font-size: 11px; }
+.security-auditor-app .evidence-line { display: inline-block; margin-left: 6px; padding: 1px 6px; color: #495057; background: #eef1f4; border: 1px solid #d8dee5; border-radius: 5px; font-size: 11px; font-weight: 700; }
+.security-auditor-app .evidence-url { display: inline; color: #0070c9; font-weight: 600; text-decoration: underline; text-decoration-color: #80bdff; text-underline-offset: 2px; }
+.security-auditor-app .evidence-url:hover { color: #0056b3; text-decoration-color: #0056b3; }
+.security-auditor-app .evidence-summary { color: #495057; line-height: 1.5; }
+.security-auditor-app .status-reason { margin-top: 7px; padding: 0; background: transparent; border: 0; }
+.security-auditor-app .status-reason summary { color: #b02a37; font-size: 11px; font-weight: 700; }
+.security-auditor-app .status-reason .small { display: block; margin-top: 4px; color: #6c2b33; }
 .security-auditor-app .audit-detail-hero { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:22px 24px; margin-bottom:14px; background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%); border:1px solid #dbe4ef; border-radius:12px; box-shadow:0 .25rem .75rem rgba(31,45,61,.08); }
 .security-auditor-app .audit-detail-copy { min-width:0; }
 .security-auditor-app .audit-detail-copy h1 { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:4px 0 8px; font-size:30px; color:#1f2d3d; }
@@ -527,12 +543,32 @@ function reqLocations(r){
   const locations=r.locations||[];
   return locations.length?locations.join("; "):"Fichier / ligne non disponible dans la preuve";
 }
+function richEvidence(s){
+  const value=esc(s||"");
+  return value.replace(/(https?:\/\/[^\s<]+)/gi,(url)=>`<a class="evidence-url" href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+}
+function reqLocationMarkup(r){
+  const locations=Array.isArray(r.locations)&&r.locations.length?r.locations:["Fichier / ligne non disponible dans la preuve"];
+  return locations.map(value=>{
+    const raw=String(value||"").trim();
+    if(/^https?:\/\//i.test(raw))return `<span class="evidence-location"><a class="evidence-url" href="${esc(raw)}" target="_blank" rel="noopener noreferrer">${esc(raw)}</a></span>`;
+    const match=raw.match(/^(.*?)(?::(\d+)(?::(\d+))?)$/);
+    if(!match)return `<span class="evidence-location"><span class="evidence-file">${esc(raw)}</span></span>`;
+    const line=match[3]?`${match[2]}:${match[3]}`:match[2];
+    return `<span class="evidence-location"><span class="evidence-file">${esc(match[1])}</span><span class="evidence-line">ligne ${esc(line)}</span></span>`;
+  }).join("");
+}
+function reqStatusReason(r){
+  const note=(r.notes||[]).filter(Boolean)[0];
+  if(!note)return "";
+  return `<details class="status-reason"><summary>Pourquoi ?</summary><span class="small">${richEvidence(note)}</span></details>`;
+}
 function reqDetail(r){
   const desc=r.description||"Objectif non renseigné";
   const fix=r.remediation||"Revue manuelle nécessaire.";
   const notes=(r.notes||[]).join(" | ");
   return `<details><summary>Détail</summary><div class="small muted">${esc(desc)}</div>
-    <div class="small"><b>Correction :</b> ${esc(fix)}</div>${notes?`<div class="small muted"><b>Preuve :</b> ${esc(notes)}</div>`:""}</details>`;
+    <div class="small"><b>Correction :</b> ${esc(fix)}</div>${notes?`<div class="small muted"><b>Preuve :</b> ${richEvidence(notes)}</div>`:""}</details>`;
 }
 function findingRequirements(f){
   const refs=f.requirement_details||[];
@@ -1089,7 +1125,9 @@ function findingsToolbar(){
     </aside><div class="small muted"><span id="fcount">${filterFindings(window.__audit||{}).length} constat(s) affiché(s)</span></div></section>`;
 }
 function findingsToolbar(){
-  return `<div class="requirements-filter-launch"><button type="button" class="filter-fab" onclick="toggleFindingFilters()" title="Ouvrir les filtres" aria-label="Ouvrir les filtres">☰</button></div>
+  return `<section class="panel finding-filter-panel"><div class="table-toolbar" style="padding:0 0 12px;border-bottom:0">
+    <div><h2>Filtres des constats</h2><div class="small muted">Affinez l’affichage par sévérité, axe ou mot-clé.</div></div>
+    <button type="button" class="btn sec filter-trigger" onclick="toggleFindingFilters()"><i class="fas fa-filter"></i> Ouvrir les filtres</button></div>
     <div id="findingFilterBackdrop" class="filter-backdrop" onclick="toggleFindingFilters(false)"></div>
     <aside id="findingFilterSidebar" class="filter-sidebar" aria-hidden="true"><div class="filter-sidebar-head"><div><div class="eyebrow">AFFICHAGE</div><h2>Filtrer les constats</h2></div><button type="button" class="filter-close" onclick="toggleFindingFilters(false)" aria-label="Fermer">×</button></div>
       <p class="small muted">Affinez l’affichage par sévérité, axe ou mot-clé.</p>
@@ -1099,7 +1137,7 @@ function findingsToolbar(){
         ${AXES.map(a=>`<option value="${a.id}" ${filter.axis===a.id?"selected":""}>${a.id} &middot; ${a.tools}</option>`).join("")}</select></label>
       <label>Recherche<input id="fq" placeholder="settings.py, CWE-89, REQ-004" value="${esc(filter.q)}" oninput="setFilter('q',this.value)"></label>
       <div class="filter-sidebar-actions"><button type="button" class="btn sec" onclick="clearFindingFilters()">Réinitialiser</button><button type="button" class="btn" onclick="toggleFindingFilters(false)">Voir les résultats</button></div>
-    </aside>`;
+    </aside><div class="small muted"><span id="fcount">${filterFindings(window.__audit||{}).length} constat(s) affiché(s)</span></div></section>`;
 }
 function axisResultsContent(d){
   const rows=filterFindings(d);
@@ -1123,8 +1161,8 @@ function requirementTable(rows){
     <th style="width:90px">Axe(s)</th><th style="width:130px">Statut</th><th style="width:280px">Fichier / ligne exacts</th><th>Preuve / prochaine action</th></tr></thead>
     <tbody>${(rows||[]).map(r=>`<tr><td><b>${esc(r.requirement_id)}</b><div class="small muted">${esc(r.category||"")}</div></td>
       <td>${esc(r.name||"Nom indisponible")}<div class="small muted">${esc((r.description||"").slice(0,180))}</div></td>
-      <td class="small">${esc(reqAxes(r))}</td><td>${stPill(r.status)}</td><td class="small"><code>${esc(reqLocations(r))}</code></td>
-      <td class="small muted">${esc((r.notes||[]).join(" | ").slice(0,220))}${reqDetail(r)}</td></tr>`).join("")
+      <td class="small">${esc(reqAxes(r))}</td><td>${stPill(r.status)}${reqStatusReason(r)}</td><td class="small">${reqLocationMarkup(r)}</td>
+      <td class="small"><div class="evidence-summary">${richEvidence((r.notes||[]).join(" | ").slice(0,220))}</div>${reqDetail(r)}</td></tr>`).join("")
       ||"<tr><td colspan=6 class='empty-state'>Aucune exigence ne correspond aux filtres.</td></tr>"}</tbody></table></div>`;
 }
 function requirementsContent(rr){
@@ -1170,8 +1208,7 @@ function requirementsPanel(d){
   const rr=d.requirement_results||[];
   return `<section class="panel requirements-filter-panel"><div class="eyebrow">CATALOGUE COMPLET</div>
     <div class="req-filter-head"><div><h2>Exigences évaluées</h2><p class="small muted">${rr.length}/137 exigences présentes dans cet audit. Choisissez une vue sans perdre le détail fichier / ligne.</p></div>
-      <div class="small muted">${requirementStatusSummary(rr)}</div></div>
-    <div class="requirements-filter-launch"><button type="button" class="filter-fab" onclick="toggleRequirementFilters()" title="Ouvrir les filtres" aria-label="Ouvrir les filtres">☰</button></div>
+      <button type="button" class="btn sec filter-trigger" onclick="toggleRequirementFilters()"><i class="fas fa-filter"></i> Ouvrir les filtres</button></div>
     <div id="reqFilterBackdrop" class="filter-backdrop" onclick="toggleRequirementFilters(false)"></div>
     <aside id="reqFilterSidebar" class="filter-sidebar" aria-hidden="true"><div class="filter-sidebar-head"><div><div class="eyebrow">AFFICHAGE</div><h2>Filtrer les exigences</h2></div><button type="button" class="filter-close" onclick="toggleRequirementFilters(false)" aria-label="Fermer">×</button></div>
       <p class="small muted">Choisissez une vue du catalogue, puis affinez par statut ou recherche.</p>
@@ -1323,13 +1360,13 @@ async function deleteCatalogueRequirement(id){
 async function pageRequirementsCatalogue(){
   const data=await api("/api/requirements/catalogue");catalogueRows=data.requirements||[];
   document.getElementById("app").innerHTML=`<section class="dashboard-hero"><div><div class="eyebrow">RÉFÉRENTIEL</div><h1>Exigences de sécurité</h1><p>Liste complète des exigences utilisées par les audits. Filtrez par axe et consultez ou gérez chaque exigence.</p></div>${CAN_MANAGE_REQUIREMENTS?`<button class="btn" onclick="openCatalogueEditor()"><i class="fas fa-plus"></i> Ajouter une exigence</button>`:""}</section>
-    ${CAN_MANAGE_REQUIREMENTS?`<div id="catalogueEditorHost"></div>`:""}<section class="panel table-panel"><div class="table-toolbar"><div><h2>Catalogue des exigences</h2><div id="catalogueCount" class="small muted"></div></div><button type="button" class="btn sec" onclick="toggleCatalogueFilters()"><i class="fas fa-filter"></i> Filtres</button></div><div class="requirements-filter-launch"><button type="button" class="filter-fab" onclick="toggleCatalogueFilters()" title="Ouvrir les filtres" aria-label="Ouvrir les filtres">☰</button></div><div id="catalogueFilterBackdrop" class="filter-backdrop" onclick="toggleCatalogueFilters(false)"></div><aside id="catalogueFilterSidebar" class="filter-sidebar" aria-hidden="true"><div class="filter-sidebar-head"><div><div class="eyebrow">AFFICHAGE</div><h2>Filtrer les exigences</h2></div><button type="button" class="filter-close" onclick="toggleCatalogueFilters(false)" aria-label="Fermer">×</button></div><p class="small muted">Utilisez ces filtres pour retrouver rapidement une exigence dans le catalogue.</p><label>Recherche<input id="catalogueSearch" placeholder="ID, nom, description…" oninput="refreshCatalogueTable()"></label><label>Axe<select id="catalogueAxis" onchange="refreshCatalogueTable()"><option value="">Tous les axes</option>${AXES.map(a=>`<option value="${a.id}">${a.id} · ${a.tools}</option>`).join("")}</select></label><label>Sévérité<select id="catalogueSeverity" onchange="refreshCatalogueTable()"><option value="">Toutes</option>${SEV_ORDER.map(s=>`<option value="${s}">${sevFr(s)}</option>`).join("")}</select></label><div class="filter-sidebar-actions"><button type="button" class="btn sec" onclick="clearCatalogueFilters()">Réinitialiser</button><button type="button" class="btn" onclick="toggleCatalogueFilters(false)">Voir les résultats</button></div></aside><div id="catalogueTable"></div></section>`;
+    ${CAN_MANAGE_REQUIREMENTS?`<div id="catalogueEditorHost"></div>`:""}<section class="panel table-panel"><div class="table-toolbar"><div><h2>Catalogue des exigences</h2><div id="catalogueCount" class="small muted"></div></div><button type="button" class="btn sec filter-trigger" onclick="toggleCatalogueFilters()"><i class="fas fa-filter"></i> Filtres</button></div><div id="catalogueFilterBackdrop" class="filter-backdrop" onclick="toggleCatalogueFilters(false)"></div><aside id="catalogueFilterSidebar" class="filter-sidebar" aria-hidden="true"><div class="filter-sidebar-head"><div><div class="eyebrow">AFFICHAGE</div><h2>Filtrer les exigences</h2></div><button type="button" class="filter-close" onclick="toggleCatalogueFilters(false)" aria-label="Fermer">×</button></div><p class="small muted">Utilisez ces filtres pour retrouver rapidement une exigence dans le catalogue.</p><label>Recherche<input id="catalogueSearch" placeholder="ID, nom, description…" oninput="refreshCatalogueTable()"></label><label>Axe<select id="catalogueAxis" onchange="refreshCatalogueTable()"><option value="">Tous les axes</option>${AXES.map(a=>`<option value="${a.id}">${a.id} · ${a.tools}</option>`).join("")}</select></label><label>Sévérité<select id="catalogueSeverity" onchange="refreshCatalogueTable()"><option value="">Toutes</option>${SEV_ORDER.map(s=>`<option value="${s}">${sevFr(s)}</option>`).join("")}</select></label><div class="filter-sidebar-actions"><button type="button" class="btn sec" onclick="clearCatalogueFilters()">Réinitialiser</button><button type="button" class="btn" onclick="toggleCatalogueFilters(false)">Voir les résultats</button></div></aside><div id="catalogueTable"></div></section>`;
   refreshCatalogueTable();
 }
 async function pageAxes(){
   const data=await api("/api/audits"),audits=data.audits||[];window.__globalAudits=audits;
   const cards=AXES.map(a=>{const mine=audits.filter(x=>(x.axes||[]).includes(a.id)||!(x.axes||[]).length);return `<div class="card"><div class="num">${mine.length}</div><div class="lbl">${a.id} · ${a.tools}</div><div class="small muted">${axisDescription(a)}</div></div>`;}).join("");
-  document.getElementById("app").innerHTML=`<section class="dashboard-hero"><div><div class="eyebrow">VUE TRANSVERSE</div><h1>Axes de sécurité</h1><p>Les quatre axes utilisés pour organiser les contrôles et les résultats des audits.</p></div></section><section class="panel"><h2 style="margin-top:0">Liste des axes</h2><div class="table-wrap"><table><thead><tr><th>Axe</th><th>Contrôles réalisés</th><th>Description</th><th>Audits concernés</th></tr></thead><tbody>${AXES.map(a=>{const mine=audits.filter(x=>(x.axes||[]).includes(a.id)||!(x.axes||[]).length);return `<tr><td><b>${a.id}</b><div class="small muted">${a.tools}</div></td><td>${esc(axisDescription(a))}</td><td class="small muted">${esc(a.tools)}</td><td>${mine.length}</td></tr>`;}).join("")}</tbody></table></div></section><div class="grid cards">${cards}</div><section class="panel table-panel"><div class="table-toolbar"><div><h2>Audits par axe</h2><div class="small muted">Ouvrez un audit pour consulter ses constats et exigences.</div></div><button type="button" class="btn sec" onclick="toggleGlobalAxisFilters()"><i class="fas fa-filter"></i> Filtres</button></div><div class="requirements-filter-launch"><button type="button" class="filter-fab" onclick="toggleGlobalAxisFilters()" title="Ouvrir les filtres" aria-label="Ouvrir les filtres">☰</button></div><div id="globalAxisFilterBackdrop" class="filter-backdrop" onclick="toggleGlobalAxisFilters(false)"></div><aside id="globalAxisFilterSidebar" class="filter-sidebar" aria-hidden="true"><div class="filter-sidebar-head"><div><div class="eyebrow">AFFICHAGE</div><h2>Filtrer les audits</h2></div><button type="button" class="filter-close" onclick="toggleGlobalAxisFilters(false)" aria-label="Fermer">×</button></div><p class="small muted">Sélectionnez un axe pour afficher uniquement les audits concernés.</p><label>Axe<select id="globalAxisFilter" onchange="filterGlobalAxes()"><option value="">Tous les axes</option>${AXES.map(a=>`<option value="${a.id}">${a.id} · ${a.tools}</option>`).join("")}</select></label><div class="filter-sidebar-actions"><button type="button" class="btn sec" onclick="document.getElementById('globalAxisFilter').value='';filterGlobalAxes()">Réinitialiser</button><button type="button" class="btn" onclick="toggleGlobalAxisFilters(false)">Voir les résultats</button></div></aside><div id="globalAxesTable">${globalAxesTable(audits)}</div></section>`;
+  document.getElementById("app").innerHTML=`<section class="dashboard-hero"><div><div class="eyebrow">VUE TRANSVERSE</div><h1>Axes de sécurité</h1><p>Les quatre axes utilisés pour organiser les contrôles et les résultats des audits.</p></div></section><section class="panel"><h2 style="margin-top:0">Liste des axes</h2><div class="table-wrap"><table><thead><tr><th>Axe</th><th>Contrôles réalisés</th><th>Description</th><th>Audits concernés</th></tr></thead><tbody>${AXES.map(a=>{const mine=audits.filter(x=>(x.axes||[]).includes(a.id)||!(x.axes||[]).length);return `<tr><td><b>${a.id}</b><div class="small muted">${a.tools}</div></td><td>${esc(axisDescription(a))}</td><td class="small muted">${esc(a.tools)}</td><td>${mine.length}</td></tr>`;}).join("")}</tbody></table></div></section><div class="grid cards">${cards}</div><section class="panel table-panel"><div class="table-toolbar"><div><h2>Audits par axe</h2><div class="small muted">Ouvrez un audit pour consulter ses constats et exigences.</div></div><button type="button" class="btn sec filter-trigger" onclick="toggleGlobalAxisFilters()"><i class="fas fa-filter"></i> Filtres</button></div><div id="globalAxisFilterBackdrop" class="filter-backdrop" onclick="toggleGlobalAxisFilters(false)"></div><aside id="globalAxisFilterSidebar" class="filter-sidebar" aria-hidden="true"><div class="filter-sidebar-head"><div><div class="eyebrow">AFFICHAGE</div><h2>Filtrer les audits</h2></div><button type="button" class="filter-close" onclick="toggleGlobalAxisFilters(false)" aria-label="Fermer">×</button></div><p class="small muted">Sélectionnez un axe pour afficher uniquement les audits concernés.</p><label>Axe<select id="globalAxisFilter" onchange="filterGlobalAxes()"><option value="">Tous les axes</option>${AXES.map(a=>`<option value="${a.id}">${a.id} · ${a.tools}</option>`).join("")}</select></label><div class="filter-sidebar-actions"><button type="button" class="btn sec" onclick="document.getElementById('globalAxisFilter').value='';filterGlobalAxes()">Réinitialiser</button><button type="button" class="btn" onclick="toggleGlobalAxisFilters(false)">Voir les résultats</button></div></aside><div id="globalAxesTable">${globalAxesTable(audits)}</div></section>`;
 }
 function globalAxesTable(audits){const axis=(document.getElementById("globalAxisFilter")||{}).value||"";const rows=(audits||[]).filter(a=>!axis||!(a.axes||[]).length||(a.axes||[]).includes(axis));return `<div class="table-wrap"><table><thead><tr><th>Audit</th><th>Projet</th><th>Date</th><th>Statut</th><th>Axes</th><th>Actions</th></tr></thead><tbody>${rows.map(a=>`<tr><td><a href="#/audits/${esc(a.id)}">${esc(a.id)}</a></td><td>${esc(a.project||"")}</td><td>${esc(shortDate(a.created_at||""))}</td><td>${pill(a.status||"")}</td><td>${esc((a.axes||[]).join(", ")||"A1–A4")}</td><td><a class="btn" href="#/audits/${esc(a.id)}/axes">Voir les axes</a></td></tr>`).join("")||`<tr><td colspan="6" class="empty-state">Aucun audit pour ce filtre.</td></tr>`}</tbody></table></div>`;}
 function toggleGlobalAxisFilters(force){const side=document.getElementById("globalAxisFilterSidebar"),back=document.getElementById("globalAxisFilterBackdrop");if(!side||!back)return;const open=force===undefined?!side.classList.contains("open"):force;side.classList.toggle("open",open);back.classList.toggle("open",open);side.setAttribute("aria-hidden",String(!open));}
