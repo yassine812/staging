@@ -76,13 +76,13 @@
 .security-auditor-app .auditor-local-header .btn { flex: 0 0 auto; }
 .security-auditor-app .table-wrap { max-width: 100%; overflow-x: auto; }
 .security-auditor-app .table-wrap table { min-width: 720px; }
-.security-auditor-app .table-panel table th:last-child { width: 280px; text-align: center; }
+.security-auditor-app .table-panel table th:last-child { width: 360px; text-align: center; }
 .security-auditor-app .table-actions {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .security-auditor-app .table-actions > * { flex: 0 0 auto; }
 .security-auditor-app .table-actions .btn {
@@ -99,6 +99,7 @@
   font-size: 12px;
   font-weight: 700;
   line-height: 1.1;
+  white-space: nowrap;
   box-shadow: 0 2px 4px rgba(0, 0, 0, .12);
   transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
 }
