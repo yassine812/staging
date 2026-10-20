@@ -316,7 +316,7 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(1) { width: 125px; }
 .security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(2) { width: 305px; }
 .security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(3) { width: 105px; }
-.security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(4) { width: 135px; }
+.security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(4) { width: 185px; }
 .security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(5) { width: 315px; }
 .security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(6) { width: 335px; }
 .security-auditor-app .requirements-filter-panel .table-wrap tbody tr:nth-child(even),
@@ -365,7 +365,7 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .evidence-file { display: inline; color: #1f4f87; font-weight: 600; }
 .security-auditor-app .evidence-file::before { content: "▣"; margin-right: 5px; color: #007bff; font-size: 11px; }
 .security-auditor-app .evidence-line { display: inline-block; margin-left: 6px; padding: 1px 6px; color: #495057; background: #eef1f4; border: 1px solid #d8dee5; border-radius: 5px; font-size: 11px; font-weight: 700; }
-.security-auditor-app .evidence-endpoint { display: inline; color: #495057; font-weight: 600; font-family: ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size: 12px; }
+.security-auditor-app .evidence-endpoint { display: inline; color: #495057; font-weight: 600; font-family: ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size: 12px; overflow-wrap: anywhere; word-break: break-word; }
 .security-auditor-app .evidence-endpoint::before { content: "Endpoint · "; color: #6f42c1; font-family: ui-sans-serif,system-ui,sans-serif; font-size: 11px; }
 .security-auditor-app .evidence-summary { color: #495057; line-height: 1.5; }
 .security-auditor-app .status-reason { display: block; margin-top: 7px; color: #b02a37; font-size: 11px; font-weight: 700; }
@@ -561,15 +561,19 @@ function reqLocations(r){
   const locations=r.locations||[];
   return locations.length?locations.join("; "):"Fichier / ligne non disponible dans la preuve";
 }
+function endpointDisplay(value){
+  const raw=String(value||"");
+  try{return decodeURIComponent(raw);}catch(e){return raw;}
+}
 function richEvidence(s){
   const value=esc(s||"");
-  return value.replace(/(https?:\/\/[^\s<]+)/gi,(url)=>`<span class="evidence-endpoint">${url}</span>`);
+  return value.replace(/(https?:\/\/[^\s<]+)/gi,(url)=>`<span class="evidence-endpoint">${esc(endpointDisplay(url))}</span>`);
 }
 function reqLocationMarkup(r){
   const locations=Array.isArray(r.locations)&&r.locations.length?r.locations:["Fichier / ligne non disponible dans la preuve"];
   return locations.map(value=>{
     const raw=String(value||"").trim();
-    if(/^https?:\/\//i.test(raw))return `<span class="evidence-location"><span class="evidence-endpoint">${esc(raw)}</span></span>`;
+    if(/^https?:\/\//i.test(raw))return `<span class="evidence-location"><span class="evidence-endpoint">${esc(endpointDisplay(raw))}</span></span>`;
     const match=raw.match(/^(.*?)(?::(\d+)(?::(\d+))?)$/);
     if(!match)return `<span class="evidence-location"><span class="evidence-file">${esc(raw)}</span></span>`;
     const line=match[3]?`${match[2]}:${match[3]}`:match[2];
@@ -1199,8 +1203,8 @@ function requirementTable(rows){
     <th style="width:90px">Axe(s)</th><th style="width:130px">Statut</th><th style="width:280px">Fichier / ligne exacts</th><th>Preuve / prochaine action</th></tr></thead>
     <tbody>${(rows||[]).map(r=>`<tr><td><b>${esc(r.requirement_id)}</b><div class="small muted">${esc(r.category||"")}</div></td>
       <td>${esc(r.name||"Nom indisponible")}<div class="small muted">${esc((r.description||"").slice(0,180))}</div></td>
-      <td class="small">${esc(reqAxes(r))}</td><td>${stPill(r.status)}${reqStatusReason(r)}</td><td class="small">${reqLocationMarkup(r)}</td>
-      <td class="small"><div class="evidence-summary">Preuve, explication et correction disponibles dans la modale.</div>${reqDetail(r)}</td></tr>`).join("")
+      <td class="small">${esc(reqAxes(r))}</td><td>${stPill(r.status)}${reqStatusReason(r)}${reqDetail(r)}</td><td class="small">${reqLocationMarkup(r)}</td>
+      <td class="small"><div class="evidence-summary">Consultez Détails pour voir la preuve et la correction.</div></td></tr>`).join("")
       ||"<tr><td colspan=6 class='empty-state'>Aucune exigence ne correspond aux filtres.</td></tr>"}</tbody></table></div>`;
 }
 function requirementsContent(rr){
