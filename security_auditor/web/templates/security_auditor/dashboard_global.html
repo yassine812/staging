@@ -113,10 +113,69 @@
 .security-auditor-app .table-actions .audit-axes { background: #17a2b8; }
 .security-auditor-app .table-actions .audit-requirements { background: #28a745; }
 .security-auditor-app .dashboard-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
   padding: 4px 6px 0;
 }
 .security-auditor-app .dashboard-hero h1 { margin-bottom: 6px; }
+.security-auditor-app .dashboard-hero .hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.security-auditor-app .dashboard-hero .launch-modal-btn { min-height: 40px; padding: 9px 15px; }
+.security-auditor-app .audit-modal[hidden] { display: none; }
+body.security-auditor-body.modal-open { overflow: hidden; }
+.security-auditor-app .audit-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background: rgba(33, 37, 41, .58);
+}
+.security-auditor-app .audit-modal-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(1040px, 100%);
+  max-height: calc(100vh - 28px);
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, .25);
+}
+.security-auditor-app .audit-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #dee2e6;
+}
+.security-auditor-app .audit-modal-header h2 { margin: 0; color: #343a40; font-size: 21px; letter-spacing: 0; text-transform: none; }
+.security-auditor-app .audit-modal-close { border: 0; background: transparent; color: #6c757d; font-size: 27px; line-height: 1; cursor: pointer; }
+.security-auditor-app .audit-wizard-steps { display: flex; gap: 8px; padding: 12px 20px; background: #f8f9fa; border-bottom: 1px solid #dee2e6; }
+.security-auditor-app .audit-wizard-step-indicator { flex: 1; padding: 8px 10px; border: 1px solid #dee2e6; border-radius: 5px; color: #6c757d; font-size: 12px; font-weight: 600; text-align: center; }
+.security-auditor-app .audit-wizard-step-indicator.active { color: #ffffff; background: #007bff; border-color: #007bff; }
+.security-auditor-app .audit-wizard-body { overflow-y: auto; padding: 18px 20px 0; }
+.security-auditor-app .audit-wizard-step { display: none; }
+.security-auditor-app .audit-wizard-step.active { display: block; }
+.security-auditor-app .audit-wizard-step > .module-scope { margin: 0 0 18px; }
+.security-auditor-app .audit-wizard-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; margin-top: 18px; border-top: 1px solid #dee2e6; background: #f8f9fa; }
+.security-auditor-app .audit-wizard-footer .wizard-status { color: #6c757d; font-size: 12px; }
+.security-auditor-app .audit-wizard-footer .wizard-actions { display: flex; gap: 8px; }
 @media (max-width: 620px) {
+  .security-auditor-app .dashboard-hero { display: block; }
+  .security-auditor-app .dashboard-hero .hero-actions { margin-top: 12px; }
+  .security-auditor-app .audit-modal { align-items: flex-start; padding: 8px; }
+  .security-auditor-app .audit-modal-dialog { max-height: calc(100vh - 16px); }
+  .security-auditor-app .audit-modal-header { padding: 13px 14px; }
+  .security-auditor-app .audit-wizard-steps { gap: 4px; padding: 8px; }
+  .security-auditor-app .audit-wizard-step-indicator { padding: 7px 4px; font-size: 10px; }
+  .security-auditor-app .audit-wizard-body { padding: 14px 12px 0; }
+  .security-auditor-app .audit-wizard-footer { display: block; padding: 12px; }
+  .security-auditor-app .audit-wizard-footer .wizard-actions { justify-content: flex-end; margin-top: 10px; }
   .security-auditor-app .auditor-local-header {
     align-items: stretch;
     flex-direction: column;
@@ -286,6 +345,17 @@
 {% block content %}
 <div class="security-auditor-app">
   <main id="app"></main>
+  <div id="auditWizardModal" class="audit-modal" hidden aria-hidden="true">
+    <div class="audit-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="auditWizardTitle">
+      <div class="audit-modal-header"><h2 id="auditWizardTitle">Nouvel audit de sécurité</h2><button type="button" class="audit-modal-close" onclick="closeAuditWizard()" aria-label="Fermer">&times;</button></div>
+      <div class="audit-wizard-steps" aria-label="Étapes de création">
+        <div class="audit-wizard-step-indicator" data-indicator="1">1. Projet</div>
+        <div class="audit-wizard-step-indicator" data-indicator="2">2. Contrôles</div>
+        <div class="audit-wizard-step-indicator" data-indicator="3">3. Autorisation</div>
+      </div>
+      <div id="auditWizardBody" class="audit-wizard-body"></div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 {% block extra_js %}
@@ -576,7 +646,7 @@ function dashboardHome(audits){
   const scores=rows.map(a=>Number(a.score)).filter(n=>Number.isFinite(n));
   const average=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):"—";
   return `<section class="dashboard-hero"><div><div class="eyebrow">CENTRE DE CONTRÔLE</div>
-    <h1>Dashboard</h1><p>Statistiques des audits et accès aux résultats enregistrés.</p></div></section>
+    <h1>Dashboard</h1><p>Statistiques des audits et accès aux résultats enregistrés.</p></div><div class="hero-actions"><button type="button" class="btn launch-modal-btn" onclick="openAuditWizard()"><i class="fas fa-plus mr-1"></i> Nouvel audit</button></div></section>
   <section class="summary-grid">
     <div class="card summary-card"><div class="num">${rows.length}</div><div class="caption">Audits enregistrés</div><div class="hint">${complete} terminés</div></div>
     <div class="card summary-card"><div class="num st-PASS">${average}</div><div class="caption">Score moyen</div><div class="hint">sur 100 · tous audits</div></div>
@@ -597,6 +667,59 @@ async function pageDashboard(){
   window.__historyAudits=a.audits||[];
   el.innerHTML=dashboardHome(a.audits||[]);
 }
+let auditWizardStep=1;
+function auditWizardMarkup(){
+  return `<section class="audit-wizard-step" data-step="1">
+    <div class="module-scope"><div class="scope-block"><label>Projet analysé</label><strong>Django Security Auditor <em>Projet intégré</em></strong><div class="small muted">Le scan utilise les modules Django de cette application.</div></div>
+      <div class="scope-block"><label>Modules à analyser <span class="small muted">(facultatif)</span></label><div class="module-picker"><div id="selectedModules"></div><input id="moduleSearch" autocomplete="off" placeholder="Rechercher un module Django…" onfocus="renderModuleSuggestions()" oninput="renderModuleSuggestions()"><div id="moduleSuggestions" class="module-suggestions"></div></div><div class="small muted" style="margin-top:6px">Laissez vide pour analyser tous les modules du projet.</div></div></div>
+    <div class="banner launch-note"><span class="note-icon">✓</span><span>Le projet intégré sera analysé directement. Aucun fichier externe ni dépôt distant ne sera utilisé.</span></div>
+  </section>
+  <section class="audit-wizard-step" data-step="2">
+    <div class="axis-section"><div class="section-label"><span>Contrôles de sécurité à effectuer</span><small>Choisissez un ou plusieurs contrôles. Si rien n’est sélectionné, les 4 axes seront lancés.</small></div>
+      <div class="status-grid">${AXES.map(a=>`<label class="status-box"><input class="axisPick" type="checkbox" value="${a.id}" style="width:auto"><span class="axis-card-copy"><b>${a.id}</b> ${axisName(a)}<small>${axisDescription(a)}</small><small class="muted">Méthode : ${a.tools}</small></span></label>`).join("")}</div></div>
+  </section>
+  <section class="audit-wizard-step" data-step="3">
+    <div class="network-scope"><div class="section-label"><span>Contrôle réseau (axe A4)</span><small>Optionnel · uniquement sur des cibles autorisées</small></div>
+      <div class="network-grid"><label>Adresse(s) à vérifier<input id="networkTargets" value="127.0.0.1" placeholder="127.0.0.1 ou api.exemple.com"><small>Saisissez un nom de domaine ou une adresse IP autorisée.</small></label>
+        <label>Ports à vérifier<select id="portScope"><option value="common">Ports courants (recommandé)</option><option value="all">Tous les ports TCP (1–65535)</option></select><small>La vérification complète nécessite Nmap installé.</small></label></div>
+      <label class="external-check"><input type="checkbox" id="networkExternal" style="width:auto"> J’autorise explicitement la vérification de ces cibles réseau.</label>
+      <div class="network-warning">N’utilisez que des domaines ou adresses IP dont vous êtes propriétaire ou pour lesquels vous avez une autorisation écrite.</div>
+    </div>
+    <label class="auth-check"><input type="checkbox" id="authz" style="width:auto"><span>Je confirme avoir l’autorisation de réaliser cet audit sur cette application et son infrastructure.</span></label>
+    <div id="cerr" class="sev-Critical" style="margin-top:10px"></div>
+  </section>
+  <div class="audit-wizard-footer"><span id="wizardStatus" class="wizard-status">Étape 1 sur 3</span><div class="wizard-actions"><button type="button" class="btn sec" onclick="closeAuditWizard()">Annuler</button><button type="button" id="wizardPrev" class="btn sec" onclick="auditWizardPrevious()">Précédent</button><button type="button" id="wizardNext" class="btn launch-btn" onclick="auditWizardNext()">Suivant</button></div></div>`;
+}
+function renderAuditWizardStep(){
+  document.querySelectorAll("#auditWizardBody .audit-wizard-step").forEach(step=>step.classList.toggle("active",Number(step.dataset.step)===auditWizardStep));
+  document.querySelectorAll("#auditWizardModal .audit-wizard-step-indicator").forEach(step=>step.classList.toggle("active",Number(step.dataset.indicator)===auditWizardStep));
+  const prev=document.getElementById("wizardPrev"),next=document.getElementById("wizardNext"),status=document.getElementById("wizardStatus");
+  if(prev)prev.style.visibility=auditWizardStep===1?"hidden":"visible";
+  if(next)next.innerHTML=auditWizardStep===3?"<i class='fas fa-play mr-1'></i> Lancer l’audit":"Suivant <i class='fas fa-arrow-right ml-1'></i>";
+  if(status)status.textContent=`Étape ${auditWizardStep} sur 3`;
+}
+async function openAuditWizard(){
+  const modal=document.getElementById("auditWizardModal"),body=document.getElementById("auditWizardBody");
+  if(!modal||!body)return;
+  auditWizardStep=1;
+  body.innerHTML=auditWizardMarkup();
+  modal.hidden=false; modal.setAttribute("aria-hidden","false"); document.body.classList.add("modal-open");
+  window.__selectedModules=null; window.__projectModules=[]; window.__availableModules=[];
+  renderAuditWizardStep(); bindModulePicker();
+  try{
+    const moduleData=await api("/api/modules");
+    window.__availableModules=moduleData.modules||[];
+    window.__projectModules=window.__availableModules.map(m=>m.id);
+    renderModuleSuggestions();
+  }catch(e){const status=document.getElementById("wizardStatus");if(status)status.textContent="Les modules n’ont pas pu être chargés.";}
+}
+function closeAuditWizard(){
+  const modal=document.getElementById("auditWizardModal");
+  if(modal){modal.hidden=true;modal.setAttribute("aria-hidden","true");}
+  document.body.classList.remove("modal-open");
+}
+function auditWizardPrevious(){if(auditWizardStep>1){auditWizardStep--;renderAuditWizardStep();}}
+function auditWizardNext(){if(auditWizardStep<3){auditWizardStep++;renderAuditWizardStep();}else createAudit();}
 function auditOverview(d,showHeader){
   const fs=d.findings||[],sc=d.score||{},rr=d.requirement_results||[];
   const crit=fs.filter(f=>f.severity==="Critical"||f.severity==="High").length;
@@ -753,16 +876,18 @@ async function createAudit(){
     const targets=targetText.split(",").map(x=>x.trim()).filter(Boolean);
     const fullPortScan=(document.getElementById("portScope")||{}).value==="all";
     const allowExternal=!!((document.getElementById("networkExternal")||{}).checked);
-    if((fullPortScan||allowExternal)&&!authz.checked){document.getElementById("cerr").textContent="Confirmez l’autorisation avant un scan public ou complet.";return;}
+    const authorized=!!((document.getElementById("authz")||{}).checked);
+    if((fullPortScan||allowExternal)&&!authorized){document.getElementById("cerr").textContent="Confirmez l’autorisation avant un scan public ou complet.";return;}
     const startBtn=document.querySelector(".launch-btn"),status=document.getElementById("launchStatus");
     if(startBtn){startBtn.disabled=true;startBtn.innerHTML="<span class='spinner'></span> Préparation…";}
     if(status)status.textContent="Création de l’audit…";
     const project={name:"Django Security Auditor",source_type:"internal"};
     const selectedModules=window.__selectedModules===null?(window.__projectModules||[]):Array.from(window.__selectedModules||[]);
     const network={authorized_targets:targets,allow_external_targets:allowExternal,allow_full_port_scan:fullPortScan};
-    const r=await api("/api/audits",{method:"POST",body:JSON.stringify({project,modules:selectedModules,axes,network,authorization_confirmed:authz.checked})});
+    const r=await api("/api/audits",{method:"POST",body:JSON.stringify({project,modules:selectedModules,axes,network,authorization_confirmed:authorized})});
+    closeAuditWizard();
     location.hash="#/audits/"+r.audit_id;}
-  catch(e){document.getElementById("cerr").textContent=e.message;const b=document.querySelector(".launch-btn"),s=document.getElementById("launchStatus");if(b){b.disabled=false;b.innerHTML="<span>▶</span> Démarrer l’audit";}if(s)s.textContent="";}
+  catch(e){const error=document.getElementById("cerr");if(error)error.textContent=e.message;const b=document.querySelector(".launch-btn"),s=document.getElementById("launchStatus");if(b){b.disabled=false;b.innerHTML="<i class='fas fa-play mr-1'></i> Lancer l’audit";}if(s)s.textContent="";}
 }
 function setFilter(k,v){filter[k]=v;renderFindingRows(window.__audit);}
 const STATUS_PRIORITY=["FAIL","PARTIAL","NOT_TESTED","MANUAL_REVIEW","PASS","NOT_APPLICABLE"];
@@ -959,7 +1084,7 @@ async function route(){
   try{
     if(h.startsWith("#/projects"))await pageProjects();
     else if(h.startsWith("#/audits/")){const p=h.split("/");await pageAudit(p[2],p[3],p[4]&&decodeURIComponent(p[4]));}
-    else if(h.startsWith("#/audits"))await pageAudits();
+    else if(h==="#/audits")await pageDashboard();
     else if(h.startsWith("#/settings"))pageSettings();
     else await pageDashboard();
   }catch(e){document.getElementById("app").innerHTML=`<div class="panel sev-Critical">${esc(e.message)}</div>`;}
