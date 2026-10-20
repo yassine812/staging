@@ -69,11 +69,6 @@
       </a>
       <ul class="nav nav-treeview">
         <li class="nav-item">
-          <a href="{{ url_security_auditor }}#/dashboard" class="nav-link">
-            <i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p>
-          </a>
-        </li>
-        <li class="nav-item">
           <a href="{{ url_adm_dash }}" class="nav-link {% if ns == 'administration' and un == 'dashboard' %}active{% endif %}">
             <i class="nav-icon fas fa-tachometer-alt"></i><p>Tableau de bord</p>
           </a>
@@ -395,6 +390,11 @@
         <p>Security Auditor<i class="right fas fa-angle-left"></i></p>
       </a>
       <ul class="nav nav-treeview">
+        <li class="nav-item">
+          <a href="{{ url_security_auditor }}#/dashboard" class="nav-link">
+            <i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p>
+          </a>
+        </li>
         <li class="nav-item">
           <a href="{{ url_security_auditor }}#/requirements" class="nav-link">
             <i class="nav-icon fas fa-clipboard-check"></i><p>Exigences</p>
