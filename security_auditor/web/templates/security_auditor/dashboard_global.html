@@ -30,7 +30,71 @@
   background: #f4f6f9;
   color: #343a40;
 }
-.security-auditor-app main { max-width: none; padding: 0 0 24px; }
+.security-auditor-app { width: 100%; max-width: 100%; overflow-x: hidden; }
+.security-auditor-app main { max-width: none; width: 100%; padding: 0 0 24px; }
+.security-auditor-app .auditor-local-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  padding: 10px 18px;
+  margin: 0 0 18px;
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+.security-auditor-app .auditor-local-header .logo {
+  flex: 0 0 auto;
+  color: #343a40;
+  font-weight: 700;
+  letter-spacing: .2px;
+  white-space: nowrap;
+}
+.security-auditor-app .auditor-local-header .logo span { color: #28a745; }
+.security-auditor-app .auditor-local-header nav {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.security-auditor-app .auditor-local-header nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 11px;
+  color: #495057;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.security-auditor-app .auditor-local-header nav a:hover,
+.security-auditor-app .auditor-local-header nav a.active {
+  color: #ffffff;
+  background: #007bff;
+}
+.security-auditor-app .auditor-local-header .btn { flex: 0 0 auto; }
+.security-auditor-app .table-wrap { max-width: 100%; overflow-x: auto; }
+.security-auditor-app .table-wrap table { min-width: 720px; }
+@media (max-width: 620px) {
+  .security-auditor-app .auditor-local-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .security-auditor-app .auditor-local-header nav { gap: 4px; }
+  .security-auditor-app .auditor-local-header nav a {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .security-auditor-app .auditor-local-header .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
 .security-auditor-app h1,
 .security-auditor-app h2,
 .security-auditor-app h3,
@@ -87,7 +151,17 @@
 </style>
 {% endblock %}
 {% block content %}
-<div class="security-auditor-app"><main id="app"></main></div>
+<div class="security-auditor-app">
+  <header class="auditor-local-header">
+    <div class="logo">&#128737; Security <span>Auditor</span></div>
+    <nav id="nav" aria-label="Navigation Security Auditor">
+      <a href="#/audits">Dashboard</a>
+      <a href="#/audits">Nouvel audit / Historique</a>
+    </nav>
+    <a class="btn sec" href="/logout/">Se déconnecter</a>
+  </header>
+  <main id="app"></main>
+</div>
 {% endblock %}
 {% block extra_js %}
 <script>/* ------------------------------------------------------------------ *
@@ -362,7 +436,7 @@ function dashboardHome(audits,latest){
   const recent=rows.slice(0,10);
   return `<section class="dashboard-hero"><div><div class="eyebrow">CENTRE DE CONTRÔLE</div>
     <h1>Synthèse des audits</h1><p>Vue rapide de l'activité sécurité et accès direct aux résultats détaillés.</p></div>
-    <div class="hero-actions"><a class="btn" href="#/audits">+ Nouvel audit</a><a class="btn sec" href="#/audits">Voir l'historique</a></div></section>
+    <div class="hero-actions"><a class="btn" href="#/audits">+ Nouvel audit</a><a class="btn sec" href="#/audits">Voir l'historique</a>${rows[0]?`<a class="btn sec" href="#/audits/${esc(rows[0].id)}/axes">4 axes</a><a class="btn sec" href="#/audits/${esc(rows[0].id)}/requirements">Exigences</a>`:""}</div></section>
   <section class="summary-grid">
     <div class="card summary-card"><div class="num">${rows.length}</div><div class="caption">Audits enregistrés</div><div class="hint">${complete} terminés</div></div>
     <div class="card summary-card"><div class="num st-PASS">${average}</div><div class="caption">Score moyen</div><div class="hint">sur 100 · tous audits</div></div>
