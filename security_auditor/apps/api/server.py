@@ -148,11 +148,15 @@ def build_app(store: AuditStore, config_path: str | None = None,
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
         if project_root:
+            selected_modules = body.get("modules")
+            if not isinstance(selected_modules, list) or not selected_modules:
+                raise HTTPException(status_code=400,
+                                    detail="Sélectionnez au moins un module Django à analyser")
             project = {
                 "name": project.get("name") or "Projet Django intégré",
                 "source_type": "internal",
                 "path": project_root,
-                "modules": body.get("modules") or [m["id"] for m in _discover_internal_modules(project_root)],
+                "modules": selected_modules,
             }
         elif not project.get("path") and not project.get("repo_url"):
             raise HTTPException(status_code=400, detail="project.path or repo_url required")

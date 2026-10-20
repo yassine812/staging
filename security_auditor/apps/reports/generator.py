@@ -394,6 +394,10 @@ def _write_html_simple(audit: Audit, path: Path) -> None:
     owasp_rows = "".join(f"<li><b>{e(k)}</b> : {len(v)} constat(s)</li>"
                          for k, v in _owasp_map(audit).items()) or "<li>Aucun</li>"
     limitations = "".join(f"<li>{e(item)}</li>" for item in _limitations(audit))
+    network_rows = "".join(
+        f"<tr><td><b>{e(host)}</b></td><td>{e(_network_ports_text(info))}</td></tr>"
+        for host, info in ((audit.network_report or {}).get("hosts") or {}).items()
+    ) or "<tr><td colspan='2'>Aucun résultat réseau disponible.</td></tr>"
     project = audit.project or {}
     score = audit.score or {}
     document = f"""<!DOCTYPE html>
@@ -423,7 +427,8 @@ Les exigences en échec, partielles, non testées ou en revue manuelle restent �
 {requirement_sections}
 <h2>5. Vuln\u00e9rabilit\u00e9s / constats avec preuve</h2><table><tr><th>ID</th><th>Gravit\u00e9</th><th>Axe</th><th>Constat / exigences concern\u00e9es</th><th>Emplacement</th><th>Preuve</th></tr>{findings_rows}</table>
 <h2>6. Correspondance CWE / OWASP et rem\u00e9diation</h2><p><b>CWE</b></p><ul>{cwe_rows}</ul><p><b>OWASP</b></p><ul>{owasp_rows}</ul><p><b>Rem\u00e9diation :</b> les corrections sont affich\u00e9es dans les actions prioritaires et le d\u00e9tail de chaque exigence.</p>
-<h2>7. Limites</h2><ul>{limitations}</ul><div class="banner warning">L’absence de constat ne prouve pas la s\u00e9curit\u00e9. Les sondes DAST sont heuristiques et les exigences non test\u00e9es n\u00e9cessitent une v\u00e9rification compl\u00e9mentaire.</div>
+<h2>7. Résultats réseau — ports réellement vérifiés</h2><table><tr><th>Cible</th><th>Ports testés</th></tr>{network_rows}</table>
+<h2>8. Limites</h2><ul>{limitations}</ul><div class="banner warning">L’absence de constat ne prouve pas la s\u00e9curit\u00e9. Les sondes DAST sont heuristiques et les exigences non test\u00e9es n\u00e9cessitent une v\u00e9rification compl\u00e9mentaire.</div>
 <p class="muted">Pour le détail brut : report.json, findings.csv et requirements.csv. Pour le rapport exhaustif : report-full.pdf.</p>
 </main></body></html>"""
     # Keep the report UTF-8: browsers, API clients and Windows Python readers
@@ -654,6 +659,20 @@ def write_pdf(audit: Audit, path: Path, full: bool = False) -> None:
     path.write_bytes(render_pdf(blocks, f"Audit {audit.id}"))
 
 
+def _network_ports_text(info: dict) -> str:
+    """Return the exact ports tested for one host, including detected service names."""
+    ports = info.get("ports") or []
+    if not ports:
+        return "Aucun détail de port disponible"
+    values = []
+    for item in ports:
+        port = item.get("port", "?")
+        service = item.get("service") or "service inconnu"
+        state = item.get("state") or "inconnu"
+        values.append(f"{port} ({service}, {state})")
+    return ", ".join(values)
+
+
 def write_requirements_pdf(audit: Audit, path: Path) -> None:
     """Rapport des 137 exigences : statut de chacune, groupé par axe.
 
@@ -766,7 +785,16 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
         blocks.append(("t:0,195,250,495",
                        f"Exigences transverses (aucun scanner dédié)|-|-|{_axis_result_line(transverse)}"))
 
-    # -- 3. actions prioritaires -------------------------------------------
+    # -- 3. contrôle réseau ------------------------------------------------
+    blocks.append(("h2", "3. Contrôle réseau — ports réellement vérifiés"))
+    network_hosts = (audit.network_report or {}).get("hosts") or {}
+    if network_hosts:
+        for host, info in network_hosts.items():
+            blocks.append(("kv", f"{host} : {_network_ports_text(info)}"))
+    else:
+        blocks.append(("body", "Aucun résultat réseau disponible pour cet audit."))
+
+    # -- 4. actions prioritaires -------------------------------------------
     prio = [f for f in _sorted_findings(audit) if f["severity"] in ("Critical", "High")]
     blocks.append(("h2", "3. Actions prioritaires (Critique + Élevé)"))
     if not prio:
@@ -785,7 +813,7 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
             blocks.append(("body", f"... et {len(prio) - 30} autres constats Critique/Élevé "
                                    "(voir le rapport complet ou findings.csv)."))
 
-    # -- 4. emplacements les plus touchés ----------------------------------
+    # -- 5. emplacements les plus touchés ----------------------------------
     hot = _hotspots(audit)
     if hot:
         blocks.append(("h2", "4. Emplacements les plus touchés (fichiers / endpoints)"))
@@ -793,7 +821,7 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
         for where, n, mix in hot:
             blocks.append(("t:0,240,290,470", f"{where}|{n}|{mix}|"))
 
-    # -- 5. couverture des exigences ---------------------------------------
+    # -- 6. couverture des exigences ---------------------------------------
     blocks.append(("h2", "5. Couverture des exigences"))
     blocks.append(("th:0,150,210,300", "Statut|Exigences|Part|Signification"))
     for s in ("PASS", "FAIL", "PARTIAL", "NOT_TESTED", "MANUAL_REVIEW", "NOT_APPLICABLE"):
@@ -808,18 +836,18 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
         blocks.append(("body", "Exigences en ÉCHEC : " + ", ".join(fails[:40])
                                + (f" (+{len(fails) - 40} autres)" if len(fails) > 40 else "")))
 
-    # -- 6. couverture des analyseurs --------------------------------------
+    # -- 7. couverture des analyseurs --------------------------------------
     blocks.append(("h2", "6. Analyseurs et couverture"))
     for j in audit.jobs:
         blocks.append(("kv", f"{j['name']} : {j['status']}"
                              + (f" ({j.get('error')})" if j.get("error") else "")))
 
-    # -- 7. limites ---------------------------------------------------------
+    # -- 8. limites ---------------------------------------------------------
     blocks.append(("h2", "7. Limites — ce qui n'est PAS prouvé"))
     for x in _limitations(audit):
         blocks.append(("bullet", x))
 
-    # -- 8. où trouver le détail -------------------------------------------
+    # -- 9. où trouver le détail -------------------------------------------
     blocks.append(("h2", "8. Détail complet"))
     blocks.append(("body", "Chaque constat avec preuve, requête/réponse, correction exacte du "
                            "code et rattachement aux exigences se trouve dans :"))
@@ -920,6 +948,7 @@ def _pdf_blocks_full(audit: Audit) -> list[tuple[str, str]]:
         s = (info.get("summary") or {})
         blocks.append(("kv", f"{host} : ouverts={s.get('open')} fermés={s.get('closed')} "
                              f"filtrés={s.get('filtered')} méthode={info.get('method')}"))
+        blocks.append(("body", f"Ports réellement vérifiés : {_network_ports_text(info)}"))
 
     blocks.append(("h2", "9. Résultats DAST"))
     da = audit.dast_report or {}

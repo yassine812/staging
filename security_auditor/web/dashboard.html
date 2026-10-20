@@ -474,7 +474,7 @@ async function pageAudits(){
   const modules=moduleData.modules||[];
   window.__projectModules=modules.map(m=>m.id);
   window.__availableModules=modules;
-  window.__selectedModules=null;
+  window.__selectedModules=new Set();
   window.__historyAudits=audits;
   const complete=audits.filter(a=>a.status==="COMPLETE").length;
   const running=audits.filter(a=>a.status==="RUNNING"||a.status==="QUEUED").length;
@@ -493,12 +493,12 @@ async function pageAudits(){
    <details class="panel launch-panel" open><summary class="launch-summary"><span class="launch-icon">✦</span><span class="launch-summary-copy"><strong>Lancer un nouvel audit interne</strong><small>Analyser les modules Django intégrés au projet</small></span><span class="launch-chevron">⌄</span></summary>
      <div class="banner launch-note"><span class="note-icon">✓</span><span>L’audit cible automatiquement les modules Django de ce projet intégré. Aucun dossier externe, upload ou dépôt distant n’est utilisé.</span></div>
       <div class="module-scope"><div class="scope-block"><label>Projet audité</label><strong>Django Security Auditor <em>Projet intégré</em></strong><div class="small muted">La racine Django est configurée par l’application hôte.</div></div>
-        <div class="scope-block"><label>Modules à auditer</label><div class="module-picker"><div id="selectedModules"></div><input id="moduleSearch" autocomplete="off" placeholder="Rechercher un module…" onfocus="renderModuleSuggestions()" oninput="renderModuleSuggestions()"><div id="moduleSuggestions" class="module-suggestions"></div></div><div class="small muted" style="margin-top:6px">Aucun choix = tous les modules du projet.</div></div></div>
+        <div class="scope-block"><label>Modules à auditer</label><div class="module-picker"><div id="selectedModules"></div><input id="moduleSearch" autocomplete="off" placeholder="Rechercher un module…" onfocus="renderModuleSuggestions()" oninput="renderModuleSuggestions()"><div id="moduleSuggestions" class="module-suggestions"></div></div><div class="small muted" style="margin-top:6px">Sélectionnez au moins un module. Les modules choisis sont affichés ici.</div></div></div>
      <div class="axis-section"><div class="section-label"><span>Axes de sécurité</span><small>Aucune sélection = audit complet · jusqu’à 4 axes</small></div>
      <div class="status-grid">${AXES.map(a=>`<label class="status-box"><input class="axisPick" type="checkbox" value="${a.id}" style="width:auto"><span class="axis-card-copy"><b>${a.id}</b> ${a.label.replace(/^A\d+ &middot; /,"")}<small>${a.tools}</small></span></label>`).join("")}</div></div>
      <div class="network-scope"><div class="section-label"><span>Exposition réseau · A4</span><small>Ports publics uniquement sur cibles autorisées</small></div>
        <div class="network-grid"><label>Cible(s) autorisée(s)<input id="networkTargets" value="127.0.0.1" placeholder="127.0.0.1, api.exemple.com"><small>Nom d’hôte ou IP, séparés par des virgules.</small></label>
-         <label>Portée du scan<select id="portScope"><option value="priority">Ports prioritaires (21, 22, 81, 443, 6633, 8888, SMTP)</option><option value="common">Ports courants</option><option value="all">Tous les ports TCP (1–65535)</option></select><small>Le profil prioritaire est rapide ; SMTP correspond au port 25.</small></label></div>
+         <label>Portée du scan<select id="portScope"><option value="priority">Ports courants (profil rapide)</option><option value="all">Tous les ports TCP (1–65535)</option></select><small>Profil rapide pour les services FTP, SSH, messagerie et web/TLS. Le rapport indiquera chaque port réellement testé.</small></label></div>
        <label class="external-check"><input type="checkbox" id="networkExternal" style="width:auto"> J’autorise explicitement les cibles publiques indiquées ci-dessus.</label>
        <div class="network-warning">Utilise uniquement des domaines/IP dont tu es propriétaire ou pour lesquels tu as une autorisation écrite.</div>
      </div>
@@ -548,17 +548,14 @@ function renderModuleSuggestions(forceOpen=false){
   const input=document.getElementById("moduleSearch"),chips=document.getElementById("selectedModules"),list=document.getElementById("moduleSuggestions");
   if(!input||!chips||!list)return;
   const modules=window.__availableModules||[],selected=window.__selectedModules;
-  if(selected===null)chips.innerHTML='<span class="module-selection-info">Tous les modules du projet seront audités</span>';
-  else chips.innerHTML=`<span class="module-selection-info">${selected.size} module(s) sélectionné(s)</span>`;
+  const selectedIds=selected||new Set(), selectedItems=modules.filter(m=>selectedIds.has(m.id));
+  chips.innerHTML=`<span class="module-selection-info ${selectedIds.size?"":"empty"}">${selectedIds.size?`${selectedIds.size} module(s) sélectionné(s)`:"Aucun module sélectionné — sélection obligatoire"}</span>${selectedItems.length?`<div class="module-list">${selectedItems.map(m=>`<span class="module-chip"><b>${esc(m.name)}</b><small>${esc(m.id)}</small></span>`).join("")}</div>`:""}`;
   const q=input.value.toLowerCase().trim();
   const matches=modules.filter(m=>[m.name,m.id,m.path].join(" ").toLowerCase().includes(q));
-  list.innerHTML=(q||document.activeElement===input||forceOpen)?(matches.length?matches.map(m=>`<label class="module-suggestion"><input type="checkbox" ${selected===null||selected.has(m.id)?"checked":""} onchange="setModuleSelection('${esc(m.id)}',this.checked)"><span class="module-suggestion-copy"><b>${esc(m.name)}</b><small>${esc(m.id)}</small></span></label>`).join(""):'<div class="small muted" style="padding:10px">Aucun module trouvé</div>'):"";
+  list.innerHTML=(q||document.activeElement===input||forceOpen)?(matches.length?matches.map(m=>`<label class="module-suggestion"><input type="checkbox" ${selectedIds.has(m.id)?"checked":""} onchange="setModuleSelection('${esc(m.id)}',this.checked)"><span class="module-suggestion-copy"><b>${esc(m.name)}</b><small>${esc(m.id)}</small></span></label>`).join(""):'<div class="small muted" style="padding:10px">Aucun module trouvé</div>'):"";
 }
 function setModuleSelection(id,checked){
-  const modules=window.__availableModules||[];
-  if(window.__selectedModules===null)window.__selectedModules=new Set(modules.map(m=>m.id));
   if(checked)window.__selectedModules.add(id);else window.__selectedModules.delete(id);
-  if(window.__selectedModules.size===0||window.__selectedModules.size===modules.length)window.__selectedModules=null;
   renderModuleSuggestions(true);
 }
 function closeModuleSuggestions(){const list=document.getElementById("moduleSuggestions");if(list)list.innerHTML="";}
@@ -567,7 +564,7 @@ function bindModulePicker(){
   document.addEventListener("click",e=>{if(!e.target.closest(".module-picker"))closeModuleSuggestions();});
   window.__modulePickerBound=true;
 }
-function selectAllModules(){window.__selectedModules=null;renderModuleSuggestions(true);}
+function selectAllModules(){window.__selectedModules=new Set((window.__availableModules||[]).map(m=>m.id));renderModuleSuggestions(true);}
 async function createAudit(){
   try{
     const axes=Array.from(document.querySelectorAll(".axisPick:checked")).map(x=>x.value);
@@ -583,7 +580,8 @@ async function createAudit(){
     if(startBtn){startBtn.disabled=true;startBtn.innerHTML="<span class='spinner'></span> Préparation…";}
     if(status)status.textContent="Création de l’audit…";
     const project={name:"Django Security Auditor",source_type:"internal"};
-    const selectedModules=window.__selectedModules===null?(window.__projectModules||[]):Array.from(window.__selectedModules||[]);
+    const selectedModules=Array.from(window.__selectedModules||[]);
+    if(!selectedModules.length){document.getElementById("cerr").textContent="Sélectionnez au moins un module à analyser.";return;}
     const network={authorized_targets:targets,allow_external_targets:allowExternal,allow_full_port_scan:fullPortScan,scan_ports:scanPorts||portScope};
     const r=await api("/api/audits",{method:"POST",body:JSON.stringify({project,modules:selectedModules,axes,network,authorization_confirmed:authz.checked})});
     location.hash="#/audits/"+r.audit_id;}
