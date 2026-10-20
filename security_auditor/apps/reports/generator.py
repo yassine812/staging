@@ -49,6 +49,25 @@ STATUS_MEANING = {
     "MANUAL_REVIEW": "vérification humaine requise",
     "NOT_APPLICABLE": "non applicable à ce projet",
 }
+JOB_FR = {
+    "discovery": "Découverte",
+    "requirements": "Exigences",
+    "sast": "Analyse du code",
+    "dependencies": "Dépendances",
+    "endpoints": "Points d'accès",
+    "app_start": "Démarrage de l'application",
+    "dast": "Analyse dynamique",
+    "security_tests": "Tests de sécurité",
+    "network": "Réseau",
+    "correlation": "Corrélation",
+    "report": "Génération du rapport",
+}
+JOB_STATUS_FR = {
+    "SUCCESS": "Terminé",
+    "RUNNING": "En cours",
+    "FAILED": "Échec",
+    "SKIPPED": "Ignoré",
+}
 SEV_RANK = {s: i for i, s in enumerate(SEVERITY_ORDER)}
 
 
@@ -58,6 +77,14 @@ def sev_fr(sev: str) -> str:
 
 def status_fr(status: str) -> str:
     return STATUS_FR.get(status, status or "")
+
+
+def job_name_fr(name: str) -> str:
+    return JOB_FR.get(name, name or "")
+
+
+def job_status_fr(status: str) -> str:
+    return JOB_STATUS_FR.get(status, status or "")
 
 
 # ---------------------------------------------------------------------------
@@ -771,19 +798,22 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
 
     # -- 2. résultats par axe ----------------------------------------------
     blocks.append(("h2", "2. Résultats par axe (4 axes)"))
-    blocks.append(("th:0,195,250,495", "Axe|Constats|Exig.|Résultats des exigences (statuts)"))
+    blocks.append(("th:0,175,245,300", "Axe|Constats|Exigences|Résultats des exigences (statuts)"))
     rg, transverse = _axis_req_groups(audit)
+    axis_corrections: list[str] = []
     for i, ((name, _key), fs, rs) in enumerate(zip(AXES, _axis_groups(audit), rg)):
         sevc = Counter(f["severity"] for f in fs)
         mix = ", ".join(f"{sev_fr(s)} {sevc[s]}" for s in SEVERITY_ORDER if sevc.get(s))
-        blocks.append(("t:0,195,250,495",
+        blocks.append(("t:0,175,245,300",
                        f"{name}|{len(fs)} · {_pct(len(fs), total)}|{len(rs)}|"
                        f"{_axis_result_line(rs)}"))
         if mix:
-            blocks.append(("kv", f"      constats : {mix} | outils : {AXIS_TOOLS[i]}"))
+            axis_corrections.append(f"{name} — constats : {mix} | outils : {AXIS_TOOLS[i]}")
     if transverse:
-        blocks.append(("t:0,195,250,495",
+        blocks.append(("t:0,175,245,300",
                        f"Exigences transverses (aucun scanner dédié)|-|-|{_axis_result_line(transverse)}"))
+    for correction in axis_corrections:
+        blocks.append(("kv", correction))
 
     # -- 3. contrôle réseau ------------------------------------------------
     blocks.append(("h2", "3. Contrôle réseau — ports réellement vérifiés"))
@@ -806,9 +836,13 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
             blocks.append(("t:0,60,100,255",
                            f"{sev_fr(f['severity'])}|{axis_short(_axis_index(f))}|"
                            f"{_location(f)}|{f['title']}"))
+        action_corrections: list[str] = []
+        for f in prio[:30]:
             fix = (f.get("remediation") or "").strip()
             if fix:
-                blocks.append(("kv", f"      correction : {fix[:220]}"))
+                action_corrections.append(f"{_location(f)} — correction : {fix[:220]}")
+        for correction in action_corrections:
+            blocks.append(("kv", correction))
         if len(prio) > 30:
             blocks.append(("body", f"... et {len(prio) - 30} autres constats Critique/Élevé "
                                    "(voir le rapport complet ou findings.csv)."))
@@ -829,7 +863,7 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
         if not n:
             continue
         blocks.append(("t:0,150,210,300",
-                       f"{status_fr(s)} ({s})|{n}|"
+                       f"{status_fr(s)}|{n}|"
                        f"{_pct(n, len(audit.requirement_results))}|{STATUS_MEANING[s]}"))
     fails = [r["requirement_id"] for r in audit.requirement_results if r["status"] == "FAIL"]
     if fails:
@@ -839,7 +873,7 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
     # -- 7. couverture des analyseurs --------------------------------------
     blocks.append(("h2", "7. Analyseurs et couverture"))
     for j in audit.jobs:
-        blocks.append(("kv", f"{j['name']} : {j['status']}"
+        blocks.append(("kv", f"{job_name_fr(j['name'])} : {job_status_fr(j['status'])}"
                              + (f" ({j.get('error')})" if j.get("error") else "")))
 
     # -- 8. limites ---------------------------------------------------------
@@ -881,7 +915,7 @@ def _pdf_blocks_full(audit: Audit) -> list[tuple[str, str]]:
     for s in SEVERITY_ORDER:
         n = sev.get(s, 0)
         blocks.append(("t:0,80,200,320",
-                       f"{sev_fr(s)} ({s})|{n}|{_pct(n, total)}|{SEVERITY_MEANING[s]}"))
+                       f"{sev_fr(s)}|{n}|{_pct(n, total)}|{SEVERITY_MEANING[s]}"))
     blocks.append(("body", "Exigences : " + ", ".join(
         f"{status_fr(k)} : {v}" for k, v in sorted(st.items()))))
 
@@ -907,7 +941,7 @@ def _pdf_blocks_full(audit: Audit) -> list[tuple[str, str]]:
 
     blocks.append(("h2", "4. Environnement d'analyse"))
     for j in audit.jobs:
-        blocks.append(("kv", f"{j['name']} : {j['status']}"
+        blocks.append(("kv", f"{job_name_fr(j['name'])} : {job_status_fr(j['status'])}"
                              + (f" ({j.get('error')})" if j.get("error") else "")))
 
     blocks.append(("h2", "5. Résultats des exigences, groupés par axe"))
