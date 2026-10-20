@@ -1,9 +1,9 @@
-import json
 from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
 from security_auditor.apps.integration import InternalSecurityAuditor
@@ -40,9 +40,9 @@ def _fastapi_app():
 def dashboard(request):
     if not FRONTEND.exists():
         return HttpResponse("Security Auditor dashboard missing", status=500)
-    page = FRONTEND.read_text(encoding="utf-8")
-    page = page.replace('const API="";', f"const API={json.dumps(MOUNT_PATH)};", 1)
-    return HttpResponse(page, content_type="text/html; charset=utf-8")
+    return render(request, "security_auditor/dashboard_global.html", {
+        "api_base": MOUNT_PATH,
+    })
 
 
 @login_required

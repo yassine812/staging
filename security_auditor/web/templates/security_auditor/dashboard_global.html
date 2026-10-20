@@ -1,0 +1,691 @@
+{% extends 'base_global.html' %}
+
+{% block title %}Security Auditor{% endblock %}
+{% block body_class %}security-auditor-body{% endblock %}
+{% block breadcrumb %}
+  <div class="row mb-2"><div class="col-sm-6"><h1>Security Auditor</h1></div></div>
+{% endblock %}
+{% block global_extra_css %}
+<style>.security-auditor-app{--bg:#0b1220;--panel:#111a2e;--panel2:#16223a;--line:#24334f;--txt:#dbe4f3;--mut:#8ea2c0;
+       --red:#ef4444;--orange:#f59e0b;--green:#10b981;--blue:#3b82f6;--purple:#8b5cf6}.security-auditor-app *{box-sizing:border-box}.security-auditor-app{margin:0;font:14px/1.45 ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt)}.security-auditor-app a{color:var(--blue);text-decoration:none}.security-auditor-app header{display:flex;align-items:center;gap:14px;padding:10px 20px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}.security-auditor-app header .logo{font-weight:700;letter-spacing:.4px}.security-auditor-app header .logo span{color:var(--green)}.security-auditor-app nav{display:flex;gap:4px;flex:1}.security-auditor-app nav a{padding:6px 12px;border-radius:7px;color:var(--mut)}.security-auditor-app nav a.active,.security-auditor-app nav a:hover{background:var(--panel2);color:var(--txt)}.security-auditor-app main{padding:30px 28px 60px;max-width:1440px;margin:0 auto}.security-auditor-app h1{font-size:26px;margin:8px 0 8px;letter-spacing:-.02em}.security-auditor-app h2{font-size:14px;margin:28px 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}.security-auditor-app .grid{display:grid;gap:12px}.security-auditor-app .cards{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}.security-auditor-app .card{background:linear-gradient(145deg,#121f36,#101a2d);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:0 12px 30px rgba(0,0,0,.12)}.security-auditor-app .card.click{cursor:pointer}.security-auditor-app .card.click:hover{border-color:var(--blue)}.security-auditor-app .card .num{font-size:28px;font-weight:750;line-height:1.1}.security-auditor-app .card .lbl{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.05em}.security-auditor-app .pctx{font-size:12px;font-weight:700}.security-auditor-app .sev-Critical{color:var(--red)}.security-auditor-app .sev-High{color:#fb7185}.security-auditor-app .sev-Medium{color:var(--orange)}.security-auditor-app .sev-Low{color:var(--blue)}.security-auditor-app .sev-Info{color:var(--mut)}.security-auditor-app .st-PASS{color:var(--green)}.security-auditor-app .st-FAIL{color:var(--red)}.security-auditor-app .st-PARTIAL{color:var(--orange)}.security-auditor-app .st-NOT_TESTED,.security-auditor-app .st-NOT_APPLICABLE{color:var(--mut)}.security-auditor-app .st-MANUAL_REVIEW{color:var(--purple)}.security-auditor-app table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}.security-auditor-app th,.security-auditor-app td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:13px}.security-auditor-app th{background:var(--panel2);color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.05em}.security-auditor-app tr:last-child td{border-bottom:none}.security-auditor-app .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;background:var(--panel2);border:1px solid var(--line)}.security-auditor-app .tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:11px;background:var(--panel2);border:1px solid var(--line);color:var(--mut);margin-right:4px}.security-auditor-app .btn{background:var(--blue);border:none;color:#fff;padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer}.security-auditor-app .btn.sec{background:var(--panel2);border:1px solid var(--line);color:var(--txt)}.security-auditor-app input,.security-auditor-app select,.security-auditor-app textarea{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 10px;width:100%;font:inherit}.security-auditor-app label{display:block;margin:10px 0 4px;color:var(--mut);font-size:12px}.security-auditor-app .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.security-auditor-app .row>*{flex:1}.security-auditor-app .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}.security-auditor-app .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.security-auditor-app .tabs a{padding:6px 12px;border-radius:7px;background:var(--panel2);color:var(--mut);border:1px solid var(--line)}.security-auditor-app .tabs a.active{color:var(--txt);border-color:var(--blue)}.security-auditor-app pre{background:#0a0f1c;border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;font-size:12px;max-height:320px}.security-auditor-app .muted{color:var(--mut)}.security-auditor-app .small{font-size:12px}.security-auditor-app code{background:#0a0f1c;padding:1px 6px;border-radius:5px;font-size:12px}.security-auditor-app .disclaimer{border:1px solid #7c2d12;background:#431407;border-radius:10px;padding:10px 14px;font-size:12.5px}.security-auditor-app .banner{border:1px solid #1d4ed8;background:#172554;border-radius:10px;padding:8px 14px;font-size:12.5px;margin-bottom:14px}.security-auditor-app .progress{height:10px;background:#0a0f1c;border:1px solid var(--line);border-radius:99px;overflow:hidden;margin:7px 0}.security-auditor-app .progress span{display:block;height:100%;background:var(--green);border-radius:99px}.security-auditor-app .status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.security-auditor-app .status-box{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px}.security-auditor-app .status-box .n{font-size:20px;font-weight:750}.security-auditor-app details{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:5px 8px;margin-top:5px}.security-auditor-app details summary{cursor:pointer;color:var(--txt)}.security-auditor-app .dashboard-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px}.security-auditor-app .dashboard-hero .eyebrow{color:var(--green);font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}.security-auditor-app .dashboard-hero p{margin:0;color:var(--mut);font-size:13px}.security-auditor-app .hero-actions{display:flex;gap:8px;flex-wrap:wrap}.security-auditor-app .summary-grid{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:12px;margin-bottom:28px}.security-auditor-app .summary-card{min-height:112px;position:relative;overflow:hidden}.security-auditor-app .summary-card:after{content:"";position:absolute;width:90px;height:90px;border-radius:50%;right:-35px;top:-35px;background:rgba(59,130,246,.09)}.security-auditor-app .summary-card .num{font-size:30px}.security-auditor-app .summary-card .caption{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-top:6px}.security-auditor-app .summary-card .hint{color:var(--mut);font-size:12px;margin-top:4px}.security-auditor-app .table-panel{padding:0;overflow:hidden}.security-auditor-app .table-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line)}.security-auditor-app .table-toolbar h2{margin:0;color:var(--txt);font-size:15px;letter-spacing:0;text-transform:none}.security-auditor-app .table-toolbar input{max-width:300px}.security-auditor-app .table-wrap{overflow-x:auto}.security-auditor-app .table-panel table{border:0;border-radius:0}.security-auditor-app .table-panel tbody tr:hover{background:rgba(59,130,246,.07)}.security-auditor-app .axis-mini{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.security-auditor-app .axis-mini .card{padding:12px 14px}.security-auditor-app .axis-mini .axis-name{font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.security-auditor-app .axis-mini .axis-count{font-size:22px;font-weight:750;margin-top:5px}.security-auditor-app .latest-panel{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:18px 0;padding:16px 18px}.security-auditor-app .latest-panel .latest-id{font-weight:750;color:var(--blue)}.security-auditor-app .empty-state{text-align:center;padding:44px 20px;color:var(--mut)}.security-auditor-app .history-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0 24px}.security-auditor-app .history-stat{display:flex;align-items:center;gap:12px;padding:14px 16px}.security-auditor-app .history-stat .stat-dot{width:10px;height:10px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 5px rgba(59,130,246,.12)}.security-auditor-app .history-stat .stat-dot.green{background:var(--green);box-shadow:0 0 0 5px rgba(16,185,129,.12)}.security-auditor-app .history-stat .stat-dot.orange{background:var(--orange);box-shadow:0 0 0 5px rgba(245,158,11,.12)}.security-auditor-app .history-stat .stat-dot.red{background:var(--red);box-shadow:0 0 0 5px rgba(239,68,68,.12)}.security-auditor-app .history-stat strong{display:block;font-size:22px;line-height:1.1}.security-auditor-app .history-stat span{display:block;color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.05em}.security-auditor-app .history-filters{display:grid;grid-template-columns:1.5fr 180px 180px;gap:10px;padding:14px 18px;background:var(--panel2);border-bottom:1px solid var(--line)}.security-auditor-app .history-filters label{margin:0}.security-auditor-app .history-filters input,.security-auditor-app .history-filters select{margin-top:4px}.security-auditor-app .launch-panel{margin-bottom:20px}.security-auditor-app .launch-panel>summary{font-weight:750;padding:2px;cursor:pointer}.security-auditor-app .launch-panel[open]>summary{margin-bottom:10px}.security-auditor-app .launch-panel{padding:0;overflow:hidden;background:linear-gradient(145deg,#121e34,#10192b)}.security-auditor-app .launch-panel>summary.launch-summary{display:flex;align-items:center;gap:13px;padding:18px 22px;margin:0;list-style:none;border-bottom:1px solid transparent;background:rgba(22,34,58,.68)}.security-auditor-app .launch-panel>summary.launch-summary::-webkit-details-marker{display:none}.security-auditor-app .launch-panel[open]>summary.launch-summary{margin:0;border-bottom-color:var(--line)}.security-auditor-app .launch-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;color:#bfdbfe;background:linear-gradient(135deg,#2563eb,#4f46e5);font-size:20px;box-shadow:0 5px 15px rgba(37,99,235,.3)}.security-auditor-app .launch-summary-copy{display:flex;flex:1;flex-direction:column;gap:2px}.security-auditor-app .launch-summary-copy strong{font-size:15px}.security-auditor-app .launch-summary-copy small{color:var(--mut);font-size:12px;font-weight:400}.security-auditor-app .launch-chevron{color:var(--mut);font-size:22px;transition:transform .2s}.security-auditor-app .launch-panel[open] .launch-chevron{transform:rotate(180deg)}.security-auditor-app .launch-panel>.launch-note{display:flex;align-items:center;gap:10px;margin:18px 22px 14px;padding:11px 13px;border-color:#315fd1;background:linear-gradient(90deg,rgba(30,64,175,.45),rgba(23,37,84,.7));color:#dbeafe}.security-auditor-app .note-icon{display:grid;place-items:center;flex:0 0 21px;width:21px;height:21px;border-radius:50%;background:var(--green);color:#052e26;font-size:12px;font-weight:800}.security-auditor-app .launch-panel>.module-scope{margin:0 22px 20px;grid-template-columns:minmax(230px,.85fr) minmax(340px,1.5fr);gap:0;padding:0;background:transparent;border:0}.security-auditor-app .scope-block{padding:16px 18px;background:rgba(22,34,58,.82);border:1px solid var(--line)}.security-auditor-app .scope-block:first-child{border-radius:10px 0 0 10px;border-right:0}.security-auditor-app .scope-block:last-child{border-radius:0 10px 10px 0}.security-auditor-app .scope-block label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#9db3d5}.security-auditor-app .scope-block strong{display:block;font-size:16px;margin:5px 0 2px}.security-auditor-app .scope-block strong em{font-style:normal;color:var(--green);font-size:11px;font-weight:600;margin-left:4px}.security-auditor-app .scope-block .module-picker input{background:#0e1729}.security-auditor-app .axis-section{margin:0 22px 18px}.security-auditor-app .section-label{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:9px;color:var(--txt);font-weight:700}.security-auditor-app .section-label small{color:var(--mut);font-size:11px;font-weight:400}.security-auditor-app .axis-section .status-grid{grid-template-columns:repeat(4,1fr)}.security-auditor-app .axis-section .status-box{display:flex;align-items:flex-start;gap:8px;min-height:78px;padding:13px;background:rgba(22,34,58,.72);transition:border-color .18s,background .18s,transform .18s}.security-auditor-app .axis-section .status-box:hover{border-color:#4f7de0;background:#1a2a49;transform:translateY(-2px)}.security-auditor-app .axis-section .status-box:has(input:checked){border-color:var(--blue);background:rgba(30,64,175,.27);box-shadow:0 0 0 1px rgba(59,130,246,.25)}.security-auditor-app .axis-section .status-box input{margin-top:2px;accent-color:var(--blue)}.security-auditor-app .axis-card-copy{display:flex;flex-direction:column;gap:4px;color:var(--txt)}.security-auditor-app .axis-card-copy b{color:#bfdbfe}.security-auditor-app .axis-card-copy small{color:var(--mut);font-size:11px;font-weight:400}.security-auditor-app .launch-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 22px;padding:16px 0 20px;border-top:1px solid var(--line)}.security-auditor-app .auth-check{display:flex;align-items:flex-start;gap:8px;margin:0;max-width:700px;color:var(--mut);line-height:1.35}.security-auditor-app .auth-check input{margin-top:2px;accent-color:var(--blue)}.security-auditor-app .launch-actions{display:flex;align-items:center;gap:12px}.security-auditor-app .launch-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;box-shadow:0 8px 18px rgba(59,130,246,.24)}.security-auditor-app .btn:disabled{opacity:.7;cursor:wait}.security-auditor-app .launch-status{color:var(--mut);font-size:12px}.security-auditor-app .spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.security-auditor-app .network-scope{margin:0 22px 18px;padding:15px 16px;border:1px solid rgba(245,158,11,.35);border-radius:10px;background:rgba(120,53,15,.1)}.security-auditor-app .network-scope .section-label{margin-bottom:8px}.security-auditor-app .network-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}.security-auditor-app .network-grid label{margin:0}.security-auditor-app .network-grid small{display:block;margin-top:4px;color:var(--mut);font-size:11px}.security-auditor-app .network-scope input,.security-auditor-app .network-scope select{margin-top:5px}.security-auditor-app .external-check{display:flex;align-items:flex-start;gap:8px;margin:12px 0 0;color:var(--mut)}.security-auditor-app .external-check input{margin-top:2px;accent-color:var(--orange)}.security-auditor-app .network-warning{margin-top:10px;color:#fcd34d;font-size:11px}.security-auditor-app .audit-progress{padding:18px 20px;margin-bottom:18px;border-color:#2853a9;background:linear-gradient(145deg,rgba(24,49,93,.9),rgba(17,26,46,.96))}.security-auditor-app .audit-progress-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.security-auditor-app .audit-progress-head h2{margin:4px 0 0;color:var(--txt);font-size:18px;letter-spacing:0;text-transform:none}.security-auditor-app .audit-progress-head strong{font-size:24px;color:#bfdbfe}.security-auditor-app .audit-progress>.progress{height:11px;margin:14px 0 6px}.security-auditor-app .audit-progress>.progress span{background:linear-gradient(90deg,var(--blue),var(--green));transition:width .4s ease}.security-auditor-app .audit-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:14px}.security-auditor-app .audit-step{display:flex;align-items:center;gap:6px;padding:7px 8px;border:1px solid var(--line);border-radius:7px;color:var(--mut);font-size:11px;background:rgba(10,15,28,.22)}.security-auditor-app .audit-step i{display:grid;place-items:center;flex:0 0 18px;width:18px;height:18px;border-radius:50%;font-style:normal;font-size:11px;background:var(--panel2)}.security-auditor-app .audit-step.success{color:#a7f3d0;border-color:rgba(16,185,129,.35)}.security-auditor-app .audit-step.success i{background:var(--green);color:#052e26}.security-auditor-app .audit-step.running{color:#bfdbfe;border-color:rgba(59,130,246,.7);background:rgba(59,130,246,.12)}.security-auditor-app .audit-step.running i{background:var(--blue);color:#fff}.security-auditor-app .audit-step.failed{color:#fecaca;border-color:rgba(239,68,68,.45)}.security-auditor-app .audit-step.failed i{background:var(--red);color:#fff}.security-auditor-app .module-scope{display:grid;grid-template-columns:1fr 1.5fr;gap:16px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px 15px;margin-bottom:14px}.security-auditor-app .module-scope label{margin:0 0 4px}.security-auditor-app .module-scope strong{display:block;font-size:15px}.security-auditor-app .module-list{display:flex;gap:7px;flex-wrap:wrap}.security-auditor-app .module-chip{display:inline-flex;flex-direction:column;gap:1px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 9px}.security-auditor-app .module-chip small{color:var(--mut);font-size:11px}.security-auditor-app .module-picker{position:relative}.security-auditor-app .module-selection-info{display:flex;align-items:center;gap:7px;margin-bottom:7px;color:var(--mut);font-size:12px}.security-auditor-app .module-selection-info:before{content:"✓";display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:rgba(16,185,129,.16);color:var(--green);font-weight:800}.security-auditor-app .module-suggestions{position:absolute;left:0;right:0;top:100%;z-index:8;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 12px 25px rgba(0,0,0,.28);overflow:hidden}.security-auditor-app .module-suggestion{display:flex;justify-content:flex-start;align-items:center;gap:9px;width:100%;padding:9px 11px;margin:0;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--txt);text-align:left;cursor:pointer}.security-auditor-app .module-suggestion:last-child{border-bottom:0}.security-auditor-app .module-suggestion:hover{background:var(--panel2)}.security-auditor-app .module-suggestion input{width:auto;margin:0;accent-color:var(--blue)}.security-auditor-app .module-suggestion-copy{display:flex;flex-direction:column;gap:1px}.security-auditor-app .module-suggestion small{color:var(--mut)}.security-auditor-app .history-id{font-weight:750;color:var(--blue);white-space:nowrap}.security-auditor-app .history-project{font-weight:650}.security-auditor-app .history-date{white-space:nowrap;color:var(--mut);font-size:12px}.security-auditor-app .requirements-filter-panel{padding:0;overflow:hidden}.security-auditor-app .requirements-filter-panel>.eyebrow,.security-auditor-app .requirements-filter-panel>.req-filter-head{padding-left:18px;padding-right:18px}.security-auditor-app .requirements-filter-panel>.eyebrow{padding-top:18px;color:var(--green);font-size:11px;font-weight:800;letter-spacing:.13em}.security-auditor-app .req-filter-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding-top:4px;padding-bottom:15px}.security-auditor-app .req-filter-head h2{margin:0;color:var(--txt);font-size:18px;letter-spacing:0;text-transform:none}.security-auditor-app .req-filter-head p{margin:5px 0 0}.security-auditor-app .requirements-filters{display:grid;grid-template-columns:1.1fr 190px 1.4fr;gap:12px;padding:14px 18px;background:var(--panel2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.security-auditor-app .requirements-filters label{margin:0}.security-auditor-app .requirements-filters input,.security-auditor-app .requirements-filters select{margin-top:4px}.security-auditor-app .requirements-group{padding:0 18px 10px}.security-auditor-app .requirements-group h3{font-size:15px;margin:20px 0 8px;color:var(--txt)}.security-auditor-app .requirements-result-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px 2px}.security-auditor-app .requirements-filter-panel table{border:0;border-radius:0}.security-auditor-app .requirements-filter-panel tbody tr:hover{background:rgba(59,130,246,.07)}.security-auditor-app .requirements-filter-launch{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:18;padding:0}.security-auditor-app .requirements-filter-launch>.small{display:none}.security-auditor-app .filter-fab{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;background:var(--blue);border:0;color:#fff;border-radius:10px;padding:0;font-size:20px;line-height:1;cursor:pointer;box-shadow:0 10px 24px rgba(59,130,246,.3)}.security-auditor-app .filter-backdrop{display:none;position:fixed;inset:0;background:rgba(2,6,23,.62);z-index:19}.security-auditor-app .filter-backdrop.open{display:block}.security-auditor-app .filter-sidebar{position:fixed;top:0;right:0;bottom:0;width:min(410px,calc(100vw - 22px));padding:22px;background:var(--panel);border-left:1px solid var(--line);box-shadow:-18px 0 45px rgba(0,0,0,.35);z-index:20;transform:translateX(105%);transition:transform .22s ease;overflow-y:auto}.security-auditor-app .filter-sidebar.open{transform:translateX(0)}.security-auditor-app .filter-sidebar-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.security-auditor-app .filter-sidebar h2{margin:4px 0 0;color:var(--txt);font-size:19px;letter-spacing:0;text-transform:none}.security-auditor-app .filter-close{width:34px;height:34px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:24px;line-height:1;cursor:pointer}.security-auditor-app .filter-sidebar label{margin-top:18px}.security-auditor-app .filter-sidebar-actions{display:flex;gap:8px;margin-top:28px;padding-top:18px;border-top:1px solid var(--line)}.security-auditor-app .filter-sidebar-actions .btn{flex:1;text-align:center}
+ @media(max-width:900px){.security-auditor-app .history-stats{grid-template-columns:repeat(2,1fr)}.security-auditor-app .history-filters{grid-template-columns:1fr 1fr}}
+ @media(max-width:620px){.security-auditor-app .history-stats{grid-template-columns:1fr 1fr}.security-auditor-app .history-filters{grid-template-columns:1fr}.security-auditor-app .history-filters input,.security-auditor-app .history-filters select{width:100%}}
+ @media(max-width:900px){.security-auditor-app .summary-grid{grid-template-columns:repeat(3,1fr)}.security-auditor-app .axis-mini{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:900px){.security-auditor-app .axis-section .status-grid{grid-template-columns:repeat(2,1fr)}.security-auditor-app .audit-steps{grid-template-columns:repeat(3,1fr)}.security-auditor-app .launch-panel>.module-scope{grid-template-columns:1fr}.security-auditor-app .scope-block:first-child{border-right:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0}.security-auditor-app .scope-block:last-child{border-radius:0 0 10px 10px}}
+  @media(max-width:620px){.security-auditor-app main{padding:20px 14px 40px}.security-auditor-app .dashboard-hero{display:block}.security-auditor-app .hero-actions{margin-top:14px}.security-auditor-app .summary-grid{grid-template-columns:repeat(2,1fr)}.security-auditor-app .table-toolbar{display:block}.security-auditor-app .table-toolbar input{max-width:none;margin-top:10px}.security-auditor-app .axis-mini{grid-template-columns:1fr 1fr}.security-auditor-app .req-filter-head,.security-auditor-app .requirements-result-head{display:block}.security-auditor-app .requirements-result-head .small{margin-top:6px}.security-auditor-app .requirements-filters{grid-template-columns:1fr}.security-auditor-app .requirements-filter-launch{right:10px}.security-auditor-app .requirements-filter-launch .small{display:none}.security-auditor-app .module-scope{grid-template-columns:1fr}.security-auditor-app .axis-section .status-grid{grid-template-columns:1fr}.security-auditor-app .audit-steps{grid-template-columns:repeat(2,1fr)}.security-auditor-app .network-grid{grid-template-columns:1fr}.security-auditor-app .section-label{display:block}.security-auditor-app .section-label small{display:block;margin-top:3px}.security-auditor-app .launch-footer{display:block}.security-auditor-app .launch-actions{justify-content:flex-end;margin-top:14px}.security-auditor-app header{padding:10px 12px}.security-auditor-app .logo{font-size:13px}.security-auditor-app nav a{padding:6px 7px;font-size:12px}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="security-auditor-app"><main id="app"></main></div>
+{% endblock %}
+{% block extra_js %}
+<script>/* ------------------------------------------------------------------ *
+ *  Static snapshot mode: when window.DSA_SNAPSHOT is present (exported
+ *  by tools/static_preview.py) the dashboard renders offline from the
+ *  embedded data instead of calling the API.
+ * ------------------------------------------------------------------ */
+const SNAP=window.DSA_SNAPSHOT||null;
+const API="{{ api_base }}";
+const SEV_ORDER=["Critical","High","Medium","Low","Info"];
+const SEV_FR={Critical:"Critique",High:"\u00c9lev\u00e9",Medium:"Moyen",Low:"Faible",Info:"Info"};
+const SEV_MEANING={
+  Critical:"Exploitable imm\u00e9diatement, impact grave &mdash; corriger en priorit\u00e9 absolue",
+  High:"Faiblesse s\u00e9rieuse, exploitable &mdash; corriger avant mise en production",
+  Medium:"Faiblesse r\u00e9elle, impact limit\u00e9 &mdash; corriger au prochain sprint",
+  Low:"Durcissement / bonnes pratiques",
+  Info:"\u00c9l\u00e9ment \u00e0 revoir, pas une violation"};
+const AXES=[
+  {id:"A1",label:"A1 &middot; Code (SAST)",tools:"SAST"},
+  {id:"A2",label:"A2 &middot; Configuration &amp; secrets",tools:"analyseur de settings"},
+  {id:"A3",label:"A3 &middot; D\u00e9pendances (CVE)",tools:"analyseur de d\u00e9pendances"},
+  {id:"A4",label:"A4 &middot; R\u00e9seau/ports &amp; DAST",tools:"scanner de ports + DAST"}];
+const STATUS_ORDER=["PASS","FAIL","PARTIAL","NOT_TESTED","MANUAL_REVIEW","NOT_APPLICABLE"];
+const STATUS_FR={PASS:"V\u00e9rifi\u00e9",FAIL:"\u00c9chec",PARTIAL:"Partiel",
+  NOT_TESTED:"Non test\u00e9",MANUAL_REVIEW:"Revue manuelle",NOT_APPLICABLE:"Non applicable"};
+const ST_MEANING={PASS:"v\u00e9rifi\u00e9 avec preuves",FAIL:"violation confirm\u00e9e",
+  PARTIAL:"couverture partielle",NOT_TESTED:"aucune couverture &mdash; point ouvert",
+  MANUAL_REVIEW:"v\u00e9rification humaine requise",NOT_APPLICABLE:"non applicable"};
+// Résultats par axe — libellé conservé en clair pour les exports et lecteurs simples.
+function sevFr(s){return SEV_FR[s]||s;}
+function stFr(s){return STATUS_FR[s]||s;}
+let filter={sev:"",axis:"",q:""};
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function pct(n,total){return total?Math.round(100*n/total)+"%":"0%";}
+function sevRank(s){const i=SEV_ORDER.indexOf(s);return i<0?9:i;}
+function sortFindings(fs){return (fs||[]).slice().sort((a,b)=>sevRank(a.severity)-sevRank(b.severity)||String(a.title).localeCompare(String(b.title)));}
+function axisIdx(f){
+  if(f&&f.axis)return Math.max(0,Math.min(3,Number(f.axis)-1));   // fourni par l'API
+  const dk=((f&&f.dedup_key)||""),src=new Set((f&&f.sources)||[]);
+  if(dk.startsWith("sast:")||src.has("sast"))return 0;
+  if(dk.startsWith("config:")||src.has("configuration"))return 1;
+  if(dk.startsWith("dep:")||src.has("dependencies"))return 2;
+  return 3;
+}
+function axisLabelOf(f){return AXES[axisIdx(f)].label;}
+function axisLabel(f){return AXES[axisIdx(f)].label;}
+function axisShort(f){return AXES[axisIdx(f)].id;}
+function loc(f){
+  if(f.file)return f.line?`${f.file}:${f.line}`:String(f.file);
+  if(f.endpoint)return String(f.endpoint);
+  const src=f.sources||[];
+  if(src.includes("dependencies")&&f.proof)return "manifeste &middot; "+f.proof;
+  if(src.includes("network")&&f.proof)return f.proof;
+  return "\u2014";
+}
+function engines(f){return (f.sources||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join("");}
+function pill(t,cls){return `<span class="pill ${cls||""}">${esc(t)}</span>`;}
+function sevPill(s){return `<span class="pill sev-${esc(s)}">${esc(sevFr(s))}</span>`;}
+function stPill(s){return `<span class="pill st-${esc(s)}">${esc(stFr(s))}</span>`;}
+function reqAxes(r){return (r.axis_ids||[]).length?(r.axis_ids||[]).join(", "):(r.axis?"A"+r.axis:"—");}
+function reqLocations(r){
+  const locations=r.locations||[];
+  return locations.length?locations.join("; "):"Fichier / ligne non disponible dans la preuve";
+}
+function reqDetail(r){
+  const desc=r.description||"Objectif non renseigné";
+  const fix=r.remediation||"Revue manuelle nécessaire.";
+  const notes=(r.notes||[]).join(" | ");
+  return `<details><summary>Détail</summary><div class="small muted">${esc(desc)}</div>
+    <div class="small"><b>Correction :</b> ${esc(fix)}</div>${notes?`<div class="small muted"><b>Preuve :</b> ${esc(notes)}</div>`:""}</details>`;
+}
+function findingRequirements(f){
+  const refs=f.requirement_details||[];
+  if(!refs.length)return esc((f.requirement_ids||[]).join(", ")||"—");
+  return refs.map(r=>`<div><b>${esc(r.requirement_id)}</b> <span class="small muted">${esc(r.name||"")}</span>
+    <div class="small muted">${esc((r.axis_ids||[]).join(", "))} · ${esc(stFr(r.status||""))}</div></div>`).join("");
+}
+
+/* ------------------------------- api ------------------------------- */
+function snapshotApi(path){
+  if(path==="/api/audits")return {audits:SNAP.audits||[]};
+  if(path.startsWith("/api/audits/"))return SNAP.detail;
+  if(path==="/api/projects")return {projects:SNAP.projects||[]};
+  return {};
+}
+async function api(path,opts={}){
+  if(SNAP)return snapshotApi(path);
+  opts.headers=Object.assign({"Content-Type":"application/json"},opts.headers||{});
+  const r=await fetch(API+path,opts);
+  if(r.status===401)throw new Error("Session Django expirée. Rechargez la page.");
+  if(!r.ok)throw new Error((await r.json()).detail||r.statusText);
+  return r.json();
+}
+
+/* ---------------------------- shared bits --------------------------- */
+function severityCards(findings,auditId){
+  const total=findings.length,counts={};
+  SEV_ORDER.forEach(s=>counts[s]=0);
+  findings.forEach(f=>counts[f.severity]=(counts[f.severity]||0)+1);
+  return SEV_ORDER.map(s=>`
+    <div class="card" title="Constats ${sevFr(s)}">
+      <div class="num sev-${s}">${counts[s]||0}</div>
+      <div class="lbl">${sevFr(s)}</div>
+      <div class="pctx sev-${s}">${pct(counts[s]||0,total)} <span class="muted small">sur ${total}</span></div>
+      <div class="small muted">${SEV_MEANING[s]}</div>
+    </div>`).join("");
+}
+function axisCards(findings){
+  const total=findings.length,perF=AXES.map(()=>[]);
+  findings.forEach(f=>perF[axisIdx(f)].push(f));
+  return AXES.map((a,i)=>{
+    const fs=perF[i],c={};
+    SEV_ORDER.forEach(s=>c[s]=0);fs.forEach(f=>c[f.severity]=(c[f.severity]||0)+1);
+    const mix=SEV_ORDER.filter(s=>c[s]).map(s=>`<span class="sev-${s}">${sevFr(s)} ${c[s]}</span>`).join(" &middot; ")||"<span class='muted'>aucun constat</span>";
+    return `<div class="card">
+      <div class="num">${fs.length}</div>
+      <div class="lbl">${a.label}</div>
+      <div class="pctx">${pct(fs.length,total)} <span class="muted small">des constats</span></div>
+      <div class="small muted">${a.tools}</div>
+      <div class="small">${mix}</div>
+    </div>`;}).join("");
+}
+function axisResultsTable(findings,reqs){
+  const total=findings.length,perF=AXES.map(()=>[]),perR=AXES.map(()=>[]);
+  const transverse=(reqs||[]).filter(r=>r.transverse);
+  findings.forEach(f=>perF[axisIdx(f)].push(f));
+  (reqs||[]).filter(r=>!r.transverse).forEach(r=>perR[axisIdx(r)].push(r));
+  return `<table><tr><th style="width:250px">Axe</th><th style="width:110px">Constats</th>
+    <th style="width:110px">Exigences</th><th>R\u00e9sultats des exigences</th><th style="width:230px">Outils</th></tr>
+    ${AXES.map((a,i)=>{
+      const rs=perR[i],st={};const c={};perF[i].forEach(f=>c[f.severity]=(c[f.severity]||0)+1);
+      rs.forEach(r=>st[r.status]=(st[r.status]||0)+1);
+      const res=STATUS_ORDER.filter(s=>st[s]).map(s=>`<span class="st-${s}">${stFr(s)} ${st[s]}</span>`).join(" &middot; ")||"<span class='muted'>aucune</span>";
+      const mix=SEV_ORDER.filter(s=>c[s]).map(s=>`<span class="sev-${s}">${sevFr(s)} ${c[s]}</span>`).join(", ")||"<span class='muted'>aucun constat</span>";
+      return `<tr><td><b>${a.label}</b><div class="small muted">${mix}</div></td>
+        <td>${perF[i].length}<div class="small muted">${pct(perF[i].length,total)}</div></td>
+        <td>${rs.length}</td><td class="small">${res}</td><td class="small muted">${a.tools}</td></tr>`;
+    }).join("")}
+    ${transverse.length?(()=>{const st={};transverse.forEach(r=>st[r.status]=(st[r.status]||0)+1);
+      const res=STATUS_ORDER.filter(s=>st[s]).map(s=>`<span class="st-${s}">${stFr(s)} ${st[s]}</span>`).join(" &middot; ");
+      return `<tr><td><b>Exigences transverses</b><div class="small muted">aucun scanner dédié : processus, gouvernance, revue manuelle</div></td>
+        <td>&ndash;</td><td>${transverse.length}</td><td class="small">${res}</td>
+        <td class="small muted">revue manuelle</td></tr>`;})():""}
+  </table>`;
+}
+function requirementCards(rr){
+  const counts={};rr.forEach(r=>counts[r.status]=(counts[r.status]||0)+1);
+  return STATUS_ORDER.map(s=>`
+    <div class="card">
+      <div class="num st-${s}">${counts[s]||0}</div>
+      <div class="lbl">${stFr(s)}</div>
+      <div class="pctx">${pct(counts[s]||0,rr.length)} <span class="muted small">de ${rr.length}</span></div>
+      <div class="small muted">${ST_MEANING[s]} <span class="tag">${s}</span></div>
+    </div>`).join("");
+}
+function requirementCoverage(rr){
+  const total=137, evaluated=(rr||[]).length, tested=(rr||[]).filter(r=>r.status!=="NOT_TESTED").length;
+  const open=(rr||[]).filter(r=>["FAIL","PARTIAL","NOT_TESTED","MANUAL_REVIEW"].includes(r.status));
+  const pctEvaluated=Math.min(100,Math.round(100*evaluated/total));
+  const boxes=STATUS_ORDER.map(s=>`<div class="status-box"><div class="n st-${s}">${(rr||[]).filter(r=>r.status===s).length}</div>
+    <div class="small">${stFr(s)}</div><div class="small muted">${pct((rr||[]).filter(r=>r.status===s).length,evaluated)} des résultats</div></div>`).join("");
+  return `<div class="panel"><div class="row"><div style="flex:2"><b>Matrice des exigences</b>
+    <div class="small muted">${evaluated}/${total} exigences présentes dans ce run</div>
+    <div class="progress"><span style="width:${pctEvaluated}%"></span></div>
+    <div class="small muted">${tested}/${evaluated||0} disposent d'une preuve ou d'une revue ; ${open.length} restent ouvertes</div></div>
+    <div style="flex:1"><b>Lecture rapide</b><div class="small muted">Échec = violation confirmée · Partiel = couverture incomplète · Non testé = preuve manquante</div></div></div>
+    <div class="status-grid" style="margin-top:10px">${boxes}</div></div>`;
+}
+function requirementActionTable(rr){
+  const allOpen=sortReqs((rr||[]).filter(r=>["FAIL","PARTIAL","NOT_TESTED","MANUAL_REVIEW"].includes(r.status)));
+  const open=allOpen.slice(0,25);
+  if(!open.length)return `<div class="panel">Toutes les exigences sont vérifiées ou non applicables.</div>`;
+  return `<table><tr><th style="width:90px">ID</th><th>Exigence</th><th style="width:90px">Axe(s)</th>
+    <th style="width:120px">Statut</th><th style="width:280px">Fichier / ligne exacts</th><th>Preuve / action</th></tr>${open.map(r=>`<tr>
+    <td><b>${esc(r.requirement_id)}</b><div class="small muted">${esc(r.severity||"")}</div></td>
+    <td>${esc(r.name||"Nom indisponible")}<div class="small muted">${esc((r.description||"").slice(0,180))}</div></td>
+    <td class="small">${esc(reqAxes(r))}</td><td>${stPill(r.status)}</td><td class="small"><code>${esc(reqLocations(r))}</code></td>
+    <td class="small">${esc((r.notes||[]).join(" | ").slice(0,180))}
+      <details><summary>Voir la correction</summary><div class="muted">${esc(r.remediation||"Revue manuelle nécessaire.")}</div></details></td>
+    </tr>`).join("")}</table>${allOpen.length>25?`<p class="small muted">+ ${allOpen.length-25} exigences ouvertes. Voir l'onglet <b>exigences</b> pour les 137 lignes.</p>`:""}`;
+}
+function requirementMatrix(rr){
+  const groups=AXES.map((a,i)=>({a,rows:(rr||[]).filter(r=>!r.transverse&&axisIdx(r)===i)}));
+  const transverse=(rr||[]).filter(r=>r.transverse);
+  const tableFor=(rows)=>`<table><tr><th style="width:90px">ID</th><th>Exigence / objectif</th>
+    <th style="width:90px">Axe(s)</th><th style="width:120px">Statut</th><th style="width:280px">Fichier / ligne exacts</th><th>Preuve / correction</th></tr>
+    ${sortReqs(rows).map(r=>`<tr><td><b>${esc(r.requirement_id)}</b><div class="small muted">${esc(r.severity||"")}</div></td>
+      <td>${esc(r.name||"Nom indisponible")}<div class="small muted">${esc(r.description||"")}</div></td>
+      <td class="small">${esc(reqAxes(r))}</td><td>${stPill(r.status)}</td>
+      <td class="small"><code>${esc(reqLocations(r))}</code></td>
+      <td class="small">${esc((r.notes||[]).join(" | "))}<details><summary>Correction</summary><div class="muted">${esc(r.remediation||"Revue manuelle nécessaire.")}</div></details></td></tr>`).join("")
+      ||"<tr><td colspan=6 class='muted'>Aucune exigence</td></tr>"}</table>`;
+  return groups.map(({a,rows})=>`<details open><summary><b>${a.label}</b> — ${rows.length} exigence(s)</summary>${tableFor(rows)}</details>`).join("")
+    +(transverse.length?`<details open><summary><b>Exigences transverses</b> — ${transverse.length}</summary>${tableFor(transverse)}</details>`:"");
+}
+function engineCoverage(d){
+  const jobs=d.jobs||[];
+  return `<table><tr><th>Moteur</th><th>Statut</th><th>Rôle</th><th>Ce que cela couvre</th></tr>${jobs.map(j=>{
+    const role={sast:"Code et flux dangereux",settings:"Configuration Django et secrets",dependencies:"Versions et CVE",network:"Ports et services autorisés",dast:"Comportement HTTP de l'application",security_tests:"Tests automatisés d'autorisation",endpoints:"Inventaire des endpoints",correlation:"Corrélation exigences / preuves"}[j.name]||"Étape du pipeline";
+    return `<tr><td><b>${esc(j.name)}</b></td><td>${pill(j.status)}</td><td class="small">${esc(role)}</td><td class="small muted">${j.status==="SUCCESS"?"Preuves disponibles pour la corrélation.":esc(j.error||"Aucune preuve produite — les exigences liées restent ouvertes.")}</td></tr>`;
+  }).join("")}</table>`;
+}
+function axisDetail(fs){
+  return AXES.map((a,i)=>{
+    const mine=fs.filter(f=>axisIdx(f)===i);
+    return `<h2>${a.label} <span class="muted small">(${a.tools})</span></h2>
+    <p class="small muted">${mine.length} constat(s) détecté(s) par cet axe</p>
+    <table><tr><th style="width:110px">S\u00e9v\u00e9rit\u00e9</th><th style="width:250px">Emplacement</th>
+      <th>Constat / correction</th><th style="width:120px">Moteurs</th></tr>
+      ${mine.map(f=>`<tr><td>${sevPill(f.severity)}</td>
+        <td class="small"><code>${esc(loc(f))}</code></td>
+        <td>${esc(f.title)}<div class="small muted">${esc((f.remediation||"").slice(0,160))}</div></td>
+        <td class="small">${engines(f)}</td></tr>`).join("")
+        ||"<tr><td colspan=4 class='muted'>Aucun constat sur cet axe</td></tr>"}</table>`;
+  }).join("");
+}
+function priorityTable(findings){
+  const prio=sortFindings(findings).filter(f=>f.severity==="Critical"||f.severity==="High");
+  if(!prio.length)return "<div class='panel muted'>Aucun constat Critique ou \u00c9lev\u00e9 dans cet audit.</div>";
+  const shown=prio.slice(0,15);
+  return `<table><tr><th style="width:100px">S\u00e9v\u00e9rit\u00e9</th><th style="width:60px">Axe</th>
+    <th style="width:250px">Emplacement</th><th>Constat / correction</th></tr>
+    ${shown.map(f=>`<tr>
+      <td>${sevPill(f.severity)}</td>
+      <td class="small" title="${esc(AXES[axisIdx(f)].tools)}">${axisShort(f)}</td>
+      <td class="small"><code>${esc(loc(f))}</code></td>
+      <td>${esc(f.title)}<div class="small muted">${findingRequirements(f)}</div>
+          <div class="small muted">correction : ${esc((f.remediation||f.description||"").slice(0,200))}</div></td>
+    </tr>`).join("")}</table>
+    ${prio.length>shown.length?`<p class="small muted">+ ${prio.length-shown.length} autres constats Critique/\u00c9lev\u00e9 &mdash; voir l'onglet <b>constats</b> ou le rapport.</p>`:""}`;
+}
+function hotspotTable(findings){
+  const groups={};
+  findings.forEach(f=>{
+    const key=f.file?String(f.file):(f.endpoint?String(f.endpoint)
+      :(axisIdx(f)===2?"(manifests de d\u00e9pendances)":"(sans emplacement)"));
+    (groups[key]=groups[key]||[]).push(f);
+  });
+  const rows=Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).slice(0,10);
+  if(!rows.length)return "<div class='panel muted'>Aucun emplacement enregistr\u00e9.</div>";
+  return `<table><tr><th>Fichier / endpoint</th><th style="width:110px">Constats</th><th style="width:340px">Mix s\u00e9v\u00e9rit\u00e9s</th></tr>
+    ${rows.map(([where,fs])=>{
+      const c={};fs.forEach(f=>c[f.severity]=(c[f.severity]||0)+1);
+      const mix=SEV_ORDER.filter(s=>c[s]).map(s=>`<span class="sev-${s}">${sevFr(s)} ${c[s]}</span>`).join(" &middot; ");
+      return `<tr><td><code>${esc(where)}</code></td><td>${fs.length}</td><td class="small">${mix}</td></tr>`;
+    }).join("")}</table>`;
+}
+
+/* ------------------------------ pages ------------------------------ */
+function dashboardAxisSummary(detail){
+  if(!detail)return AXES.map(a=>`<div class="card"><div class="axis-name">${a.id} &middot; ${a.tools}</div><div class="axis-count">—</div><div class="small muted">Aucun résultat</div></div>`).join("");
+  const findings=detail.findings||[], reqs=detail.requirement_results||[];
+  return AXES.map((a,i)=>{
+    const fs=findings.filter(f=>axisIdx(f)===i);
+    const rs=reqs.filter(r=>!r.transverse&&axisIdx(r)===i);
+    const open=rs.filter(r=>["FAIL","PARTIAL","NOT_TESTED","MANUAL_REVIEW"].includes(r.status)).length;
+    return `<div class="card"><div class="axis-name">${a.id} &middot; ${a.tools}</div>
+      <div class="axis-count">${fs.length}</div><div class="small muted">constats</div>
+      <div class="small">${rs.length} exigences · <span class="${open?"sev-High":"st-PASS"}">${open} ouvertes</span></div></div>`;
+  }).join("");
+}
+function dashboardHome(audits,latest){
+  const rows=audits||[];
+  const complete=rows.filter(a=>a.status==="COMPLETE").length;
+  const failed=rows.filter(a=>a.status==="FAILED").length;
+  const totalFindings=rows.reduce((n,a)=>n+Number(a.findings||0),0);
+  const scores=rows.map(a=>Number(a.score)).filter(n=>Number.isFinite(n));
+  const average=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):"—";
+  const latestReq=latest&&latest.requirements_coverage?latest.requirements_coverage.evaluated:(rows[0]&&rows[0].requirements)||0;
+  const latestName=latest&&latest.project?latest.project.name:(rows[0]&&rows[0].project)||"Aucun projet analysé";
+  const recent=rows.slice(0,10);
+  return `<section class="dashboard-hero"><div><div class="eyebrow">CENTRE DE CONTRÔLE</div>
+    <h1>Synthèse des audits</h1><p>Vue rapide de l'activité sécurité et accès direct aux résultats détaillés.</p></div>
+    <div class="hero-actions"><a class="btn" href="#/audits">+ Nouvel audit</a><a class="btn sec" href="#/audits">Voir l'historique</a></div></section>
+  <section class="summary-grid">
+    <div class="card summary-card"><div class="num">${rows.length}</div><div class="caption">Audits enregistrés</div><div class="hint">${complete} terminés</div></div>
+    <div class="card summary-card"><div class="num st-PASS">${average}</div><div class="caption">Score moyen</div><div class="hint">sur 100 · tous audits</div></div>
+    <div class="card summary-card"><div class="num sev-High">${totalFindings}</div><div class="caption">Constats cumulés</div><div class="hint">${failed} audit(s) en échec</div></div>
+    <div class="card summary-card"><div class="num">${latestReq}/137</div><div class="caption">Dernière couverture</div><div class="hint">exigences évaluées</div></div>
+    <div class="card summary-card"><div class="num">4</div><div class="caption">Axes disponibles</div><div class="hint">SAST · config · CVE · DAST</div></div>
+  </section>
+  <div class="latest-panel card"><div><div class="small muted">DERNIER AUDIT</div><div class="latest-id">${esc(latestName)}</div><div class="small muted">${rows[0]?esc(rows[0].created_at||""):"Lancez votre premier audit pour commencer"}</div></div>
+    ${rows[0]?`<div class="row" style="align-items:center"><div>${pill(rows[0].status||"")}</div><a class="btn sec" href="#/audits/${esc(rows[0].id)}">Ouvrir le détail</a></div>`:""}</div>
+  <h2>Répartition du dernier audit</h2><section class="axis-mini">${dashboardAxisSummary(latest)}</section>
+  <h2>Audits récents</h2>
+  <section class="panel table-panel"><div class="table-toolbar"><h2>Tableau de suivi</h2><input id="historyQ" placeholder="Rechercher un audit…" oninput="filterHistory()"></div>
+    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Projet</th><th>Date</th><th>Statut</th><th>Score</th><th>Exigences</th><th>Constats</th><th>Axes</th><th></th></tr></thead><tbody id="historyRows">${historyRows(recent)}</tbody></table></div></section>`;
+}
+async function pageDashboard(){
+  const a=await api("/api/audits");
+  const latest=(a.audits||[])[0];
+  let detail=null; if(latest){try{detail=await api("/api/audits/"+latest.id);}catch(e){}}
+  const el=document.getElementById("app");
+  window.__historyAudits=a.audits||[];
+  el.innerHTML=dashboardHome(a.audits||[],detail);
+  if(detail&&detail.status!=="COMPLETE")setTimeout(route,4000);
+}
+function auditOverview(d,showHeader){
+  const fs=d.findings||[],sc=d.score||{},rr=d.requirement_results||[];
+  const crit=fs.filter(f=>f.severity==="Critical"||f.severity==="High").length;
+  return `${showHeader?`<h1>Tableau de bord &mdash; ${esc(d.id)} ${d.status!=="COMPLETE"?pill(d.status):""}</h1>`:""}
+  ${(d.project&&d.project.name)?`<p class="small muted">Projet <b>${esc(d.project.name)}</b> &middot; ${esc(d.project.source_type||"")} ${d.project.commit_sha?`&middot; commit <code>${esc(d.project.commit_sha.slice(0,12))}</code>`:""}</p>`:""}
+  ${d.status!=="COMPLETE"?'<div class="panel">Le pipeline tourne encore &mdash; cette page se rafraîchit automatiquement.</div>':""}
+  <div class="grid cards">
+    <div class="card"><div class="num">${sc.score!=null?sc.score:"&ndash;"}</div><div class="lbl">Score de sécurité /100</div>
+      <div class="small muted">Indicateur seulement : les constats et les statuts d'exigences font foi.</div></div>
+    <div class="card"><div class="num">${fs.length}</div><div class="lbl">Constats</div>
+      <div class="small muted">${crit} Critique+\u00c9lev\u00e9 &middot; ${fs.filter(f=>f.file).length} avec un fichier précis</div></div>
+    <div class="card"><div class="num">${rr.length}/137</div><div class="lbl">Exigences évaluées</div>
+      <div class="small muted">${rr.length===137?"catalogue complet":"catalogue incomplet — points manquants à vérifier"}</div></div>
+    <div class="card"><div class="num">${(d.jobs||[]).filter(j=>j.status==="SUCCESS").length}/${(d.jobs||[]).length}</div><div class="lbl">Tâches du pipeline OK</div>
+      <div class="small muted">${(d.jobs||[]).filter(j=>j.status==="FAILED").length} en échec / ignorées</div></div>
+  </div>
+  <h2>Constats par sévérité (part du total &mdash; cliquez pour filtrer)</h2>
+  <div class="grid cards">${severityCards(fs,d.id)}</div>
+  <h2>Couverture des 137 exigences</h2>
+  ${requirementCoverage(rr)}
+  <h2>Résultats par axe (4 axes) &mdash; constats et exigences</h2>
+  <div class="grid cards">${axisCards(fs,rr)}</div>
+  ${axisResultsTable(fs,rr)}
+  <h2>Exigences ouvertes à traiter</h2>
+  ${requirementActionTable(rr)}
+  <h2>Tableau complet des 137 exigences</h2>
+  <p class="small muted">Chaque ligne du catalogue avec axe, statut, preuve, correction et fichier/ligne ou endpoint lorsque disponible.</p>
+  ${requirementMatrix(rr)}
+  <h2>Actions prioritaires &mdash; Critique &amp; \u00c9lev\u00e9 avec emplacement</h2>
+  ${priorityTable(fs)}
+  <h2>Emplacements les plus touchés</h2>
+  ${hotspotTable(fs)}
+  <h2>Exigences (${rr.length})</h2>
+  <div class="grid cards">${requirementCards(rr)}</div>
+  <h2>Tâches du pipeline</h2><table><tr><th>Tâche</th><th style="width:120px">Statut</th><th>Erreur</th></tr>
+  ${(d.jobs||[]).map(j=>`<tr><td>${esc(j.name)}</td><td>${pill(j.status)}</td><td class="small muted">${esc(j.error||"")}</td></tr>`).join("")}</table>
+  <h2>Détail des moteurs et de la couverture</h2>
+  ${engineCoverage(d)}
+  <div class="disclaimer" style="margin-top:18px">Le score est un indicateur de synthèse. Les exigences NON TESTÉES et en REVUE MANUELLE restent ouvertes : l'absence de constat ne prouve pas la sécurité.</div>`;
+}
+async function pageProjects(){
+  const d=await api("/api/projects");
+  document.getElementById("app").innerHTML=`<h1>Projets</h1>
+  <table><tr><th>Nom</th><th>Type</th><th>Chemin / d\u00e9p\u00f4t</th><th>Commit</th></tr>
+  ${(d.projects||[]).map(p=>`<tr><td>${esc(p.name||"")}</td><td>${esc(p.source_type||"")}</td><td class="small">${esc(p.repo_url||p.path||"")}</td><td class="small">${esc((p.commit_sha||"").slice(0,12))}</td></tr>`).join("")||"<tr><td colspan=4 class='muted'>No projects yet.</td></tr>"}</table>`;
+}
+async function pageAudits(){
+  const d=await api("/api/audits");
+  const audits=d.audits||[];
+  let moduleData={modules:[]};
+  try{moduleData=await api("/api/modules");}catch(e){}
+  const modules=moduleData.modules||[];
+  window.__projectModules=modules.map(m=>m.id);
+  window.__availableModules=modules;
+  window.__selectedModules=null;
+  window.__historyAudits=audits;
+  const complete=audits.filter(a=>a.status==="COMPLETE").length;
+  const running=audits.filter(a=>a.status==="RUNNING"||a.status==="QUEUED").length;
+  const failed=audits.filter(a=>a.status==="FAILED").length;
+  const findings=audits.reduce((n,a)=>n+Number(a.findings||0),0);
+  document.getElementById("app").innerHTML=`
+   <section class="dashboard-hero"><div><div class="eyebrow">CENTRE DE CONTRÔLE</div><h1>Dashboard</h1>
+     <p>Lancez un nouvel audit et suivez les scans internes enregistrés.</p></div>
+     <div class="hero-actions"><span class="small muted">Traçabilité des audits</span></div></section>
+  <section class="history-stats">
+    <div class="card history-stat"><i class="stat-dot"></i><div><strong>${audits.length}</strong><span>Scans enregistrés</span></div></div>
+    <div class="card history-stat"><i class="stat-dot green"></i><div><strong>${complete}</strong><span>Audits terminés</span></div></div>
+    <div class="card history-stat"><i class="stat-dot orange"></i><div><strong>${running}</strong><span>En cours</span></div></div>
+    <div class="card history-stat"><i class="stat-dot red"></i><div><strong>${findings}</strong><span>Constats cumulés${failed?` · ${failed} échec(s)`:""}</span></div></div>
+  </section>
+   <details class="panel launch-panel" open><summary class="launch-summary"><span class="launch-icon">✦</span><span class="launch-summary-copy"><strong>Lancer un nouvel audit interne</strong><small>Analyser les modules Django intégrés au projet</small></span><span class="launch-chevron">⌄</span></summary>
+     <div class="banner launch-note"><span class="note-icon">✓</span><span>L’audit cible automatiquement les modules Django de ce projet intégré. Aucun dossier externe, upload ou dépôt distant n’est utilisé.</span></div>
+      <div class="module-scope"><div class="scope-block"><label>Projet audité</label><strong>Django Security Auditor <em>Projet intégré</em></strong><div class="small muted">La racine Django est configurée par l’application hôte.</div></div>
+        <div class="scope-block"><label>Modules à auditer</label><div class="module-picker"><div id="selectedModules"></div><input id="moduleSearch" autocomplete="off" placeholder="Rechercher un module…" onfocus="renderModuleSuggestions()" oninput="renderModuleSuggestions()"><div id="moduleSuggestions" class="module-suggestions"></div></div><div class="small muted" style="margin-top:6px">Aucun choix = tous les modules du projet.</div></div></div>
+     <div class="axis-section"><div class="section-label"><span>Axes de sécurité</span><small>Aucune sélection = audit complet · jusqu’à 4 axes</small></div>
+     <div class="status-grid">${AXES.map(a=>`<label class="status-box"><input class="axisPick" type="checkbox" value="${a.id}" style="width:auto"><span class="axis-card-copy"><b>${a.id}</b> ${a.label.replace(/^A\d+ &middot; /,"")}<small>${a.tools}</small></span></label>`).join("")}</div></div>
+     <div class="network-scope"><div class="section-label"><span>Exposition réseau · A4</span><small>Ports publics uniquement sur cibles autorisées</small></div>
+       <div class="network-grid"><label>Cible(s) autorisée(s)<input id="networkTargets" value="127.0.0.1" placeholder="127.0.0.1, api.exemple.com"><small>Nom d’hôte ou IP, séparés par des virgules.</small></label>
+         <label>Portée du scan<select id="portScope"><option value="common">Ports courants</option><option value="all">Tous les ports TCP (1–65535)</option></select><small>Le scan complet nécessite Nmap installé.</small></label></div>
+       <label class="external-check"><input type="checkbox" id="networkExternal" style="width:auto"> J’autorise explicitement les cibles publiques indiquées ci-dessus.</label>
+       <div class="network-warning">Utilise uniquement des domaines/IP dont tu es propriétaire ou pour lesquels tu as une autorisation écrite.</div>
+     </div>
+     <div class="launch-footer"><label class="auth-check"><input type="checkbox" id="authz" style="width:auto"><span>Je confirme être autorisé à tester la sécurité de cette application et de son infrastructure.</span></label>
+       <div class="launch-actions"><span id="cerr" class="sev-Critical"></span><span id="launchStatus" class="launch-status"></span><button class="btn launch-btn" onclick="createAudit()"><span>▶</span> Démarrer l’audit</button></div></div>
+   </details>
+  <section class="panel table-panel"><div class="table-toolbar"><div><h2>Scans persistés</h2><div class="small muted">L'historique reste disponible après redémarrage du serveur.</div></div></div>
+    <div class="history-filters"><label>Recherche<input id="historyQ" placeholder="ID, projet, date…" oninput="filterHistory()"></label>
+      <label>Statut<select id="historyStatus" onchange="filterHistory()"><option value="">Tous les statuts</option><option value="COMPLETE">Terminé</option><option value="RUNNING">En cours</option><option value="QUEUED">En attente</option><option value="FAILED">Échec</option></select></label>
+      <label>Axe<select id="historyAxis" onchange="filterHistory()"><option value="">Tous les axes</option>${AXES.map(a=>`<option value="${a.id}">${a.id} · ${a.tools}</option>`).join("")}</select></label>
+    </div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Projet</th><th>Date</th><th>Statut</th><th>Score</th><th>Exigences</th><th>Constats</th><th>Axes</th><th></th></tr></thead>
+     <tbody id="historyRows">${historyRows(audits)}</tbody></table></div></section>`;
+  renderModuleSuggestions();
+  bindModulePicker();
+}
+function historyRows(rows){
+  const q=((document.getElementById("historyQ")||{}).value||"").toLowerCase().trim();
+  const status=(document.getElementById("historyStatus")||{}).value||"";
+  const axis=(document.getElementById("historyAxis")||{}).value||"";
+  const visible=(rows||[]).filter(a=>{
+    if(status&&a.status!==status)return false;
+    if(axis&&(a.axes||[]).length&&!(a.axes||[]).includes(axis))return false;
+    if(!q)return true;
+    return [a.id,a.project,a.status,(a.axes||[]).join(" "),a.created_at].join(" ").toLowerCase().includes(q);
+  });
+  if(!visible.length)return "<tr><td colspan=9 class='empty-state'>Aucun scan ne correspond aux filtres.</td></tr>";
+  return visible.map(a=>{
+    const by=a.requirements_by_status||{};
+    const req=`${a.requirements||0} <span class="small muted">(${by.FAIL||0} échec · ${by.NOT_TESTED||0} non testé)</span>`;
+    const findings=`${a.findings||0}<div class="small muted">${a.critical||0} critique · ${a.high||0} élevé</div>`;
+    const axes=(a.axes||[]).length?(a.axes||[]).join(", "):"A1–A4";
+    return `<tr><td><a class="history-id" href="#/audits/${esc(a.id)}">${esc(a.id)}</a></td><td><span class="history-project">${esc(a.project||"")}</span><div class="small muted">${esc(a.source_type||"local")}</div></td>
+      <td class="history-date">${esc(shortDate(a.created_at||""))}</td><td>${pill(a.status||"")}</td><td>${a.score==null?"—":esc(a.score)+"/100"}</td>
+      <td class="small">${req}</td><td class="small">${findings}</td><td>${esc(axes)}</td><td><a href="#/audits/${esc(a.id)}">ouvrir</a></td></tr>`;
+  }).join("");
+}
+function shortDate(value){
+  if(!value)return "—";
+  try{return new Date(value).toLocaleString("fr-FR",{dateStyle:"short",timeStyle:"short"});}
+  catch(e){return String(value);}
+}
+function filterHistory(){
+  const el=document.getElementById("historyRows");
+  if(el)el.innerHTML=historyRows(window.__historyAudits||[]);
+}
+function renderModuleSuggestions(forceOpen=false){
+  const input=document.getElementById("moduleSearch"),chips=document.getElementById("selectedModules"),list=document.getElementById("moduleSuggestions");
+  if(!input||!chips||!list)return;
+  const modules=window.__availableModules||[],selected=window.__selectedModules;
+  if(selected===null)chips.innerHTML='<span class="module-selection-info">Tous les modules du projet seront audités</span>';
+  else chips.innerHTML=`<span class="module-selection-info">${selected.size} module(s) sélectionné(s)</span>`;
+  const q=input.value.toLowerCase().trim();
+  const matches=modules.filter(m=>[m.name,m.id,m.path].join(" ").toLowerCase().includes(q));
+  list.innerHTML=(q||document.activeElement===input||forceOpen)?(matches.length?matches.map(m=>`<label class="module-suggestion"><input type="checkbox" ${selected===null||selected.has(m.id)?"checked":""} onchange="setModuleSelection('${esc(m.id)}',this.checked)"><span class="module-suggestion-copy"><b>${esc(m.name)}</b><small>${esc(m.id)}</small></span></label>`).join(""):'<div class="small muted" style="padding:10px">Aucun module trouvé</div>'):"";
+}
+function setModuleSelection(id,checked){
+  const modules=window.__availableModules||[];
+  if(window.__selectedModules===null)window.__selectedModules=new Set(modules.map(m=>m.id));
+  if(checked)window.__selectedModules.add(id);else window.__selectedModules.delete(id);
+  if(window.__selectedModules.size===0||window.__selectedModules.size===modules.length)window.__selectedModules=null;
+  renderModuleSuggestions(true);
+}
+function closeModuleSuggestions(){const list=document.getElementById("moduleSuggestions");if(list)list.innerHTML="";}
+function bindModulePicker(){
+  if(window.__modulePickerBound)return;
+  document.addEventListener("click",e=>{if(!e.target.closest(".module-picker"))closeModuleSuggestions();});
+  window.__modulePickerBound=true;
+}
+function selectAllModules(){window.__selectedModules=null;renderModuleSuggestions(true);}
+async function createAudit(){
+  try{
+    const axes=Array.from(document.querySelectorAll(".axisPick:checked")).map(x=>x.value);
+    if(axes.length>4){document.getElementById("cerr").textContent="Sélectionnez au maximum quatre axes.";return;}
+    const targetText=(document.getElementById("networkTargets")||{}).value||"127.0.0.1";
+    const targets=targetText.split(",").map(x=>x.trim()).filter(Boolean);
+    const fullPortScan=(document.getElementById("portScope")||{}).value==="all";
+    const allowExternal=!!((document.getElementById("networkExternal")||{}).checked);
+    if((fullPortScan||allowExternal)&&!authz.checked){document.getElementById("cerr").textContent="Confirmez l’autorisation avant un scan public ou complet.";return;}
+    const startBtn=document.querySelector(".launch-btn"),status=document.getElementById("launchStatus");
+    if(startBtn){startBtn.disabled=true;startBtn.innerHTML="<span class='spinner'></span> Préparation…";}
+    if(status)status.textContent="Création de l’audit…";
+    const project={name:"Django Security Auditor",source_type:"internal"};
+    const selectedModules=window.__selectedModules===null?(window.__projectModules||[]):Array.from(window.__selectedModules||[]);
+    const network={authorized_targets:targets,allow_external_targets:allowExternal,allow_full_port_scan:fullPortScan};
+    const r=await api("/api/audits",{method:"POST",body:JSON.stringify({project,modules:selectedModules,axes,network,authorization_confirmed:authz.checked})});
+    location.hash="#/audits/"+r.audit_id;}
+  catch(e){document.getElementById("cerr").textContent=e.message;const b=document.querySelector(".launch-btn"),s=document.getElementById("launchStatus");if(b){b.disabled=false;b.innerHTML="<span>▶</span> Démarrer l’audit";}if(s)s.textContent="";}
+}
+function setFilter(k,v){filter[k]=v;renderFindingRows(window.__audit);}
+const STATUS_PRIORITY=["FAIL","PARTIAL","NOT_TESTED","MANUAL_REVIEW","PASS","NOT_APPLICABLE"];
+function sortReqs(rows){
+  return (rows||[]).slice().sort((a,b)=>{
+    const ra=STATUS_PRIORITY.indexOf(a.status),rb=STATUS_PRIORITY.indexOf(b.status);
+    return (ra<0?9:ra)-(rb<0?9:rb)||String(a.requirement_id).localeCompare(String(b.requirement_id));
+  });
+}
+function filterFindings(d){
+  return sortFindings(d.findings||[]).filter(f=>{
+    if(filter.sev&&f.severity!==filter.sev)return false;
+    if(filter.axis&&axisShort(f)!==filter.axis)return false;
+    if(filter.q){
+      const hay=[f.title,f.description,f.file,f.endpoint,f.proof,(f.cwe||[]).join(" "),(f.requirement_ids||[]).join(" ")].join(" ").toLowerCase();
+      if(!hay.includes(filter.q.toLowerCase()))return false;
+    }
+    return true;});
+}
+function findingRows(d){
+  const fs=filterFindings(d);
+  if(!fs.length)return "<tr><td colspan=7 class='muted'>Aucun constat ne correspond \u00e0 ces filtres.</td></tr>";
+  return fs.map(f=>`<tr>
+    <td>${sevPill(f.severity)}<div class="small muted">${esc(f.confidence||"")}</div></td>
+    <td class="small" title="${esc(AXES[axisIdx(f)].tools)}">${axisShort(f)}
+      <div class="small muted">${esc(axisLabelOf(f).replace(/&middot;/g,"\u00b7"))}</div></td>
+    <td class="small"><code title="${esc(loc(f))}">${esc(loc(f))}</code></td>
+    <td>${esc(f.title)}<div class="small muted">${esc((f.description||"").slice(0,180))}</div>
+        <div class="small muted">correction : ${esc((f.remediation||"").slice(0,160))}</div></td>
+    <td class="small">${engines(f)}</td>
+    <td class="small">${findingRequirements(f)}</td>
+    <td class="small">${esc((f.cwe||[]).join(", "))}${f.owasp?`<div class="muted">${esc(f.owasp)}</div>`:""}</td>
+  </tr>`).join("");
+}
+function renderFindingRows(d){
+  const el=document.getElementById("frows"); if(!el)return;
+  el.innerHTML=findingRows(d);
+  const c=document.getElementById("fcount");
+  if(c)c.textContent=`${filterFindings(d).length} of ${(d.findings||[]).length} findings shown`;
+}
+function findingsToolbar(){
+  return `<div class="panel"><div class="row">
+    <div style="flex:0 0 180px"><label>S\u00e9v\u00e9rit\u00e9</label>
+      <select onchange="setFilter('sev',this.value)">
+        <option value="">Toutes les s\u00e9v\u00e9rit\u00e9s</option>
+        ${SEV_ORDER.map(s=>`<option value="${s}" ${filter.sev===s?"selected":""}>${sevFr(s)}</option>`).join("")}
+      </select></div>
+    <div style="flex:0 0 230px"><label>Axe</label>
+      <select onchange="setFilter('axis',this.value)">
+        <option value="">Tous les axes</option>
+        ${AXES.map(a=>`<option value="${a.id}" ${filter.axis===a.id?"selected":""}>${a.id} &middot; ${a.tools}</option>`).join("")}
+      </select></div>
+    <div><label>Recherche (titre, fichier, endpoint, CWE, exigence)</label>
+      <input id="fq" placeholder="ex. settings.py, CWE-89, REQ-004" value="${esc(filter.q)}"
+             oninput="setFilter('q',this.value)"></div>
+    <div style="flex:0 0 210px"><label>&nbsp;</label><span id="fcount" class="small muted"></span></div>
+  </div></div>`;
+}
+function requirementStatusSummary(rows){
+  return STATUS_ORDER.filter(s=>(rows||[]).some(r=>r.status===s))
+    .map(s=>`<span class="st-${s}">${stFr(s)} ${(rows||[]).filter(r=>r.status===s).length}</span>`).join(" &middot; ")||"aucun résultat";
+}
+function requirementTable(rows){
+  return `<div class="table-wrap"><table><thead><tr><th style="width:100px">Exigence</th><th>Objectif</th>
+    <th style="width:90px">Axe(s)</th><th style="width:130px">Statut</th><th style="width:280px">Fichier / ligne exacts</th><th>Preuve / prochaine action</th></tr></thead>
+    <tbody>${(rows||[]).map(r=>`<tr><td><b>${esc(r.requirement_id)}</b><div class="small muted">${esc(r.category||"")}</div></td>
+      <td>${esc(r.name||"Nom indisponible")}<div class="small muted">${esc((r.description||"").slice(0,180))}</div></td>
+      <td class="small">${esc(reqAxes(r))}</td><td>${stPill(r.status)}</td><td class="small"><code>${esc(reqLocations(r))}</code></td>
+      <td class="small muted">${esc((r.notes||[]).join(" | ").slice(0,220))}${reqDetail(r)}</td></tr>`).join("")
+      ||"<tr><td colspan=6 class='empty-state'>Aucune exigence ne correspond aux filtres.</td></tr>"}</tbody></table></div>`;
+}
+function requirementsContent(rr){
+  const view=(document.getElementById("reqAxisFilter")||{}).value||"all";
+  const status=(document.getElementById("reqStatusFilter")||{}).value||"";
+  const q=((document.getElementById("reqSearch")||{}).value||"").toLowerCase().trim();
+  const filtered=(rr||[]).filter(r=>{
+    if(status&&r.status!==status)return false;
+    if(view==="transverse"&&!r.transverse)return false;
+    if(/^A[1-4]$/.test(view)&&(r.transverse||`A${axisIdx(r)+1}`!==view))return false;
+    if(q){const hay=[r.requirement_id,r.name,r.description,r.category,reqAxes(r),reqLocations(r),(r.notes||[]).join(" ")].join(" ").toLowerCase();if(!hay.includes(q))return false;}
+    return true;
+  });
+  const heading=`<div class="requirements-result-head"><div><b>${filtered.length}</b> exigence(s) affichée(s)</div><div class="small muted">${requirementStatusSummary(filtered)}</div></div>`;
+  if(view==="grouped"){
+    const groups=AXES.map((a,i)=>({a,rows:filtered.filter(r=>!r.transverse&&axisIdx(r)===i)}));
+    const trans=filtered.filter(r=>r.transverse);
+    return heading+groups.map(({a,rows})=>`<section class="requirements-group"><h3>${a.label} <span class="muted">· ${rows.length}</span></h3>${requirementTable(sortReqs(rows))}</section>`).join("")
+      +(trans.length?`<section class="requirements-group"><h3>Exigences transverses <span class="muted">· ${trans.length}</span></h3>${requirementTable(sortReqs(trans))}</section>`:"");
+  }
+  const label=view==="all"?"Toutes les exigences":view==="transverse"?"Exigences transverses":(AXES.find(a=>a.id===view)||{}).label||view;
+  return heading+`<section class="requirements-group"><h3>${label}</h3>${requirementTable(sortReqs(filtered))}</section>`;
+}
+function filterRequirements(){
+  const el=document.getElementById("requirementsContent");
+  if(el&&window.__audit)el.innerHTML=requirementsContent(window.__audit.requirement_results||[]);
+  const count=document.getElementById("reqFilterCount");
+  const active=[document.getElementById("reqAxisFilter")?.value||"all",document.getElementById("reqStatusFilter")?.value||"",document.getElementById("reqSearch")?.value||""]
+    .filter((v,i)=>v&&(i!==0||v!=="all")).length;
+  if(count)count.textContent=active?`${active} actif${active>1?"s":""}`:"Aucun filtre";
+}
+function toggleRequirementFilters(force){
+  const side=document.getElementById("reqFilterSidebar"),back=document.getElementById("reqFilterBackdrop");
+  if(!side||!back)return;
+  const open=force===undefined?!side.classList.contains("open"):force;
+  side.classList.toggle("open",open);back.classList.toggle("open",open);side.setAttribute("aria-hidden",String(!open));
+}
+function clearRequirementFilters(){
+  const axis=document.getElementById("reqAxisFilter"),status=document.getElementById("reqStatusFilter"),search=document.getElementById("reqSearch");
+  if(axis)axis.value="all";if(status)status.value="";if(search)search.value="";filterRequirements();
+}
+function requirementsPanel(d){
+  const rr=d.requirement_results||[];
+  return `<section class="panel requirements-filter-panel"><div class="eyebrow">CATALOGUE COMPLET</div>
+    <div class="req-filter-head"><div><h2>Exigences évaluées</h2><p class="small muted">${rr.length}/137 exigences présentes dans cet audit. Choisissez une vue sans perdre le détail fichier / ligne.</p></div>
+      <div class="small muted">${requirementStatusSummary(rr)}</div></div>
+    <div class="requirements-filter-launch"><button type="button" class="filter-fab" onclick="toggleRequirementFilters()" title="Ouvrir les filtres" aria-label="Ouvrir les filtres">☰</button></div>
+    <div id="reqFilterBackdrop" class="filter-backdrop" onclick="toggleRequirementFilters(false)"></div>
+    <aside id="reqFilterSidebar" class="filter-sidebar" aria-hidden="true"><div class="filter-sidebar-head"><div><div class="eyebrow">AFFICHAGE</div><h2>Filtrer les exigences</h2></div><button type="button" class="filter-close" onclick="toggleRequirementFilters(false)" aria-label="Fermer">×</button></div>
+      <p class="small muted">Choisissez une vue du catalogue, puis affinez par statut ou recherche.</p>
+      <label>Afficher
+        <select id="reqAxisFilter" onchange="filterRequirements()"><option value="all">Les exigences ensemble</option><option value="grouped">Tous les axes, regroupés</option>${AXES.map(a=>`<option value="${a.id}">${a.label}</option>`).join("")}<option value="transverse">Exigences transverses</option></select></label>
+      <label>Statut
+        <select id="reqStatusFilter" onchange="filterRequirements()"><option value="">Tous les statuts</option>${STATUS_ORDER.map(s=>`<option value="${s}">${stFr(s)}</option>`).join("")}</select></label>
+      <label>Rechercher<input id="reqSearch" placeholder="ID, nom, fichier, ligne…" oninput="filterRequirements()"></label>
+      <div class="filter-sidebar-actions"><button type="button" class="btn sec" onclick="clearRequirementFilters()">Réinitialiser</button><button type="button" class="btn" onclick="toggleRequirementFilters(false)">Voir les résultats</button></div>
+    </aside><div id="requirementsContent">${requirementsContent(rr)}</div></section>`;
+}
+const AUDIT_STEPS=[
+  ["discovery","Découverte du projet"],["requirements","Chargement des exigences"],["sast","Analyse SAST"],
+  ["settings","Configuration et secrets"],["dependencies","Dépendances / CVE"],["endpoints","Découverte des endpoints"],
+  ["app_start","Démarrage de l’application"],["dast","Analyse DAST"],["security_tests","Tests de sécurité"],
+  ["network","Réseau et ports"],["correlation","Corrélation des résultats"],["report","Génération du rapport"]
+];
+function auditProgress(d){
+  const jobs=d.jobs||[],by=Object.fromEntries(jobs.map(j=>[j.name,j]));
+  const done=AUDIT_STEPS.filter(([id])=>["SUCCESS","SKIPPED","FAILED"].includes((by[id]||{}).status)).length;
+  const running=AUDIT_STEPS.find(([id])=>(by[id]||{}).status==="RUNNING");
+  const current=running?running[1]:(d.status==="QUEUED"?"Mise en file du scan":(done===AUDIT_STEPS.length?"Finalisation":"Préparation du pipeline"));
+  const percent=Math.round(done*100/AUDIT_STEPS.length);
+  const last=(d.logs||[]).slice(-1)[0];
+  return `<section class="panel audit-progress"><div class="audit-progress-head"><div><div class="eyebrow">SCAN EN COURS</div><h2>${current}</h2><p class="small muted">Les résultats se mettent à jour automatiquement.</p></div><strong>${done}/${AUDIT_STEPS.length}</strong></div>
+    <div class="progress"><span style="width:${percent}%"></span></div><div class="small muted">${percent}% du pipeline terminé${last?` · ${esc(last.message||"")}`:""}</div>
+    <div class="audit-steps">${AUDIT_STEPS.map(([id,label])=>{const s=(by[id]||{}).status||"PENDING";const icon=s==="SUCCESS"?"✓":s==="FAILED"?"!":s==="RUNNING"?"•":"";return `<div class="audit-step ${s.toLowerCase()}"><i>${icon}</i><span>${label}</span></div>`;}).join("")}</div></section>`;
+}
+async function pageAudit(id,tab,sev){
+  const d=await api("/api/audits/"+id);
+  window.__audit=d;
+  tab=tab||"axes";
+  if(sev!==undefined)filter.sev=sev||"";
+  const tabs=["axes","requirements","history"];
+  const navTabs=["dashboard",...tabs];
+  const TAB_FR={dashboard:"Dashboard",axes:"4 axes",requirements:"exigences",history:"historique"};
+  if(!tabs.includes(tab))tab="axes";
+  let body="";
+  if(tab==="axes"){
+    body=`<div class="panel"><div class="eyebrow">LECTURE PAR MOTEUR</div>
+      <h2 style="margin-top:6px">Constats répartis sur les 4 axes</h2>
+      <p class="small muted">Cette vue est dédiée aux résultats des scanners : sévérité, emplacement, constat et correction. Le détail des 137 exigences est centralisé dans l’onglet Exigences.</p>
+      <a class="btn sec" href="#/audits/${esc(id)}/requirements">Voir les exigences détaillées</a></div>
+    <div class="grid cards">${axisCards(d.findings||[])}</div>
+    ${axisDetail(d.findings||[])}`;
+  }else if(tab==="requirements"){
+    body=requirementsPanel(d);
+  }else if(tab==="history"){
+    const history=await api("/api/audits");
+    window.__historyAudits=history.audits||[];
+    body=`<div class="panel"><h2 style="margin-top:0">Historique des scans</h2>
+      <p class="small muted">Tous les scans enregistrés sont conservés pour la traçabilité. Cliquez sur un ID pour ouvrir son résultat.</p>
+      <label>Rechercher</label><input id="historyQ" placeholder="ID, projet, axe, statut..." oninput="filterHistory()"></div>
+      <table><thead><tr><th>ID</th><th>Projet</th><th>Créé le</th><th>Statut</th><th>Score</th><th>Exigences</th><th>Constats</th><th>Axes</th><th></th></tr></thead>
+      <tbody id="historyRows">${historyRows(history.audits||[])}</tbody></table>`;
+  }
+  document.getElementById("app").innerHTML=`
+  <h1>Audit ${esc(id)} ${pill(d.status)}</h1>
+  <p class="small muted">Projet : <b>${esc((d.project||{}).name)}</b> &mdash; ${esc((d.project||{}).source_type)}
+  ${(d.project||{}).commit_sha?` &mdash; commit <code>${esc(d.project.commit_sha.slice(0,12))}</code>`:""}</p>
+  <div class="tabs">${navTabs.map(t=>`<a class="${t===tab?"active":""}" href="${t==="dashboard"?"#/audits":`#/audits/${id}/${t}`}">${TAB_FR[t]||t}</a>`).join("")}</div>
+  ${d.status!=="COMPLETE"?auditProgress(d):""}
+  ${body}`;
+  if(d.status!=="COMPLETE")setTimeout(route,2500);
+}
+function pageSettings(){
+  document.getElementById("app").innerHTML=`<h1>Param\u00e8tres</h1>
+  <div class="panel">
+    <p class="small muted">La configuration est lue depuis <code>security_auditor/security-audit.yml</code> \u00e0 la racine de la plateforme.
+    Seules les cibles list\u00e9es dans <code>network.authorized_targets</code> (par d\u00e9faut 127.0.0.1 / localhost) peuvent \u00eatre scann\u00e9es.
+    Les \u00e9tapes r\u00e9seau et DAST exigent en plus la confirmation d'autorisation.</p>
+    <p class="small muted">Authentification automatique via votre session Django actuelle.</p>
+  </div>`;
+}
+/* ------------------------------ router ------------------------------ */
+async function route(){
+  const h=(location.hash&&location.hash!=="#/dashboard")?location.hash:"#/audits";
+  document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("active",a.getAttribute("href")===h.split("/").slice(0,2).join("/")));
+  try{
+    if(h.startsWith("#/projects"))await pageProjects();
+    else if(h.startsWith("#/audits/")){const p=h.split("/");await pageAudit(p[2],p[3],p[4]&&decodeURIComponent(p[4]));}
+    else if(h.startsWith("#/audits"))await pageAudits();
+    else if(h.startsWith("#/settings"))pageSettings();
+    else await pageDashboard();
+  }catch(e){document.getElementById("app").innerHTML=`<div class="panel sev-Critical">${esc(e.message)}</div>`;}
+}
+window.addEventListener("hashchange",route);
+if(SNAP){document.querySelector("header").insertAdjacentHTML("afterend",
+  `<div class="banner" style="margin:14px 20px 0">Export statique &mdash; lecture seule, sans API. Les boutons qui nécessitent le serveur sont désactivés.</div>`);
+  document.querySelector("header button").style.display="none";}
+route();</script>
+{% endblock %}
