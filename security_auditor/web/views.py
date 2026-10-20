@@ -14,6 +14,15 @@ MOUNT_PATH = "/security-auditor"
 CONFIG_PATH = Path(__file__).resolve().parents[1] / "security-audit.yml"
 
 
+def _auditor_role(user):
+    """Map the existing Django authorization flags to auditor permissions."""
+    if user.is_superuser or user.is_staff:
+        return "admin"
+    if getattr(user, "is_auditeur", False):
+        return "analyst"
+    return "viewer"
+
+
 def _fastapi_app():
     from security_auditor.apps.api.server import build_app
 
@@ -48,6 +57,11 @@ def api_proxy(request, rest=""):
         value = request.headers.get(name)
         if value:
             headers[name] = value
+    # Never trust browser-supplied auditor credentials.  The Django session
+    # is the single source of identity for this mounted application.
+    headers.pop("authorization", None)
+    headers["x-django-user"] = request.user.get_username()
+    headers["x-django-role"] = _auditor_role(request.user)
     query = {key: values for key, values in request.GET.lists()}
     with TestClient(_fastapi_app()) as client:
         response = client.request(

@@ -29,7 +29,7 @@ from security_auditor.apps.audits.models import AuditStore
 from security_auditor.apps.audits.axes import normalize_selected_axes
 from security_auditor.apps.audits.pipeline import AuditPipeline
 from security_auditor.apps.audits.retest import run_retest
-from security_auditor.apps.users.auth import AuthError, UserStore
+from security_auditor.apps.users.auth import AuthError, ROLE_PERMISSIONS, UserStore
 from security_auditor.worker.queue import JobQueue
 
 FRONTEND = Path(__file__).resolve().parents[2] / "web" / "dashboard.html"
@@ -75,6 +75,19 @@ def build_app(store: AuditStore, config_path: str | None = None,
     app.state.base_path = base_path.rstrip("/")
 
     def auth(request: Request, permission: str = "read"):
+        # The Django integration authenticates the request before forwarding
+        # it here.  In that mode, use the host session identity instead of
+        # asking the user to authenticate a second time in the auditor store.
+        django_user = request.headers.get("x-django-user", "").strip()
+        if django_user:
+            role = request.headers.get("x-django-role", "viewer").strip()
+            if role not in ROLE_PERMISSIONS:
+                role = "viewer"
+            if permission not in ROLE_PERMISSIONS[role]:
+                raise HTTPException(status_code=403,
+                                    detail=f"role '{role}' lacks permission '{permission}'")
+            return django_user, role
+
         creds: Optional[HTTPAuthorizationCredentials] = None
         header = request.headers.get("authorization", "")
         if header.lower().startswith("bearer "):

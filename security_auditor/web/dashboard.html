@@ -109,7 +109,6 @@
  @media(max-width:900px){.summary-grid{grid-template-columns:repeat(3,1fr)}.axis-mini{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:900px){.axis-section .status-grid{grid-template-columns:repeat(2,1fr)}.audit-steps{grid-template-columns:repeat(3,1fr)}.launch-panel>.module-scope{grid-template-columns:1fr}.scope-block:first-child{border-right:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0}.scope-block:last-child{border-radius:0 0 10px 10px}}
   @media(max-width:620px){main{padding:20px 14px 40px}.dashboard-hero{display:block}.hero-actions{margin-top:14px}.summary-grid{grid-template-columns:repeat(2,1fr)}.table-toolbar{display:block}.table-toolbar input{max-width:none;margin-top:10px}.axis-mini{grid-template-columns:1fr 1fr}.req-filter-head,.requirements-result-head{display:block}.requirements-result-head .small{margin-top:6px}.requirements-filters{grid-template-columns:1fr}.requirements-filter-launch{right:10px}.requirements-filter-launch .small{display:none}.module-scope{grid-template-columns:1fr}.axis-section .status-grid{grid-template-columns:1fr}.audit-steps{grid-template-columns:repeat(2,1fr)}.network-grid{grid-template-columns:1fr}.section-label{display:block}.section-label small{display:block;margin-top:3px}.launch-footer{display:block}.launch-actions{justify-content:flex-end;margin-top:14px}header{padding:10px 12px}.logo{font-size:13px}nav a{padding:6px 7px;font-size:12px}}
- #login{max-width:380px;margin:80px auto}
 </style>
 </head>
 <body>
@@ -118,7 +117,7 @@
   <nav id="nav">
     <a href="#/audits">Dashboard</a>
   </nav>
-  <button class="btn sec" onclick="logout()">Se déconnecter</button>
+  <a class="btn sec" href="/logout/">Se déconnecter</a>
 </header>
 <main id="app"></main>
 <!-- Résultats par axe : détail disponible dans l'onglet « 4 axes » de chaque audit. -->
@@ -154,7 +153,6 @@ const ST_MEANING={PASS:"v\u00e9rifi\u00e9 avec preuves",FAIL:"violation confirm\
 // Résultats par axe — libellé conservé en clair pour les exports et lecteurs simples.
 function sevFr(s){return SEV_FR[s]||s;}
 function stFr(s){return STATUS_FR[s]||s;}
-let TOKEN=localStorage.getItem("dsa_token")||"";
 let filter={sev:"",axis:"",q:""};
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
@@ -213,28 +211,10 @@ function snapshotApi(path){
 async function api(path,opts={}){
   if(SNAP)return snapshotApi(path);
   opts.headers=Object.assign({"Content-Type":"application/json"},opts.headers||{});
-  if(TOKEN)opts.headers["Authorization"]="Bearer "+TOKEN;
   const r=await fetch(API+path,opts);
-  if(r.status===401){showLogin();throw new Error("unauthorized")}
+  if(r.status===401)throw new Error("Session Django expirée. Rechargez la page.");
   if(!r.ok)throw new Error((await r.json()).detail||r.statusText);
   return r.json();
-}
-function logout(){localStorage.removeItem("dsa_token");TOKEN="";showLogin();}
-function showLogin(){
-  document.getElementById("app").innerHTML=`
-  <div id="login" class="panel">
-    <h1>Connexion</h1>
-    <label>Utilisateur</label><input id="u" value="admin">
-    <label>Mot de passe</label><input id="p" type="password">
-    <p class="small muted">Identifiants par défaut : admin / admin-audit-2026 (à changer immédiatement en production).</p>
-    <button class="btn" onclick="doLogin()">Se connecter</button>
-    <p id="lerr" class="sev-Critical"></p>
-  </div>`;
-}
-async function doLogin(){
-  try{const r=await api("/api/auth/token",{method:"POST",body:JSON.stringify({username:u.value,password:p.value})});
-    TOKEN=r.token;localStorage.setItem("dsa_token",TOKEN);route();}
-  catch(e){document.getElementById("lerr").textContent=e.message;}
 }
 
 /* ---------------------------- shared bits --------------------------- */
@@ -793,14 +773,13 @@ function pageSettings(){
     <p class="small muted">La configuration est lue depuis <code>security_auditor/security-audit.yml</code> \u00e0 la racine de la plateforme.
     Seules les cibles list\u00e9es dans <code>network.authorized_targets</code> (par d\u00e9faut 127.0.0.1 / localhost) peuvent \u00eatre scann\u00e9es.
     Les \u00e9tapes r\u00e9seau et DAST exigent en plus la confirmation d'autorisation.</p>
-    <label>Jeton d'API</label><input value="${esc(TOKEN)}">
+    <p class="small muted">Authentification automatique via votre session Django actuelle.</p>
   </div>`;
 }
 /* ------------------------------ router ------------------------------ */
 async function route(){
   const h=(location.hash&&location.hash!=="#/dashboard")?location.hash:"#/audits";
   document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("active",a.getAttribute("href")===h.split("/").slice(0,2).join("/")));
-  if(!TOKEN&&!SNAP){showLogin();return;}
   try{
     if(h.startsWith("#/projects"))await pageProjects();
     else if(h.startsWith("#/audits/")){const p=h.split("/");await pageAudit(p[2],p[3],p[4]&&decodeURIComponent(p[4]));}
