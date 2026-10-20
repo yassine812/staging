@@ -189,12 +189,28 @@ def build_app(store: AuditStore, config_path: str | None = None,
             net = audit.config.setdefault("network", {})
             allow_external = bool(network_override.get("allow_external_targets", False))
             full_scan = bool(network_override.get("allow_full_port_scan", False))
+            requested_ports = network_override.get("scan_ports")
+            if requested_ports is not None and (
+                not isinstance(requested_ports, str) or requested_ports not in {"common", "all"}
+            ):
+                if not isinstance(requested_ports, list) or not requested_ports or len(requested_ports) > 100:
+                    raise HTTPException(status_code=400,
+                                        detail="network.scan_ports must contain 1-100 TCP ports")
+                try:
+                    requested_ports = [int(port) for port in requested_ports]
+                except (TypeError, ValueError) as exc:
+                    raise HTTPException(status_code=400,
+                                        detail="network.scan_ports must contain valid TCP ports") from exc
+                if any(port < 1 or port > 65535 for port in requested_ports):
+                    raise HTTPException(status_code=400,
+                                        detail="network.scan_ports values must be between 1 and 65535")
+                requested_ports = list(dict.fromkeys(requested_ports))
             if (allow_external or full_scan) and not audit.authorization_confirmed:
                 raise HTTPException(status_code=400,
                                     detail="authorization confirmation is required for public or full port scans")
             net["allow_external_targets"] = allow_external
             net["allow_full_port_scan"] = full_scan
-            net["scan_ports"] = "all" if full_scan else "common"
+            net["scan_ports"] = "all" if full_scan else (requested_ports or "common")
             store.save(audit)
         users.audit_log("audit.create", {"user": user, "audit_id": audit.id})
         queue.submit("full-audit", pipeline.run_full, audit)

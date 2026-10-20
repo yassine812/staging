@@ -21,6 +21,10 @@ COMMON_PORTS = [21, 22, 23, 25, 53, 80, 110, 143, 443, 1433, 1521, 2181, 3000,
                 3306, 5432, 5672, 6379, 6380, 8000, 8080, 8443, 9090, 9200,
                 11211, 15672, 27017, 9092]
 
+# Small, high-value service profile used by the audit wizard when a complete
+# TCP scan would be unnecessarily expensive.  SMTP is represented by port 25.
+PRIORITY_PORTS = [21, 22, 25, 81, 443, 6633, 8888]
+
 SERVICE_NAMES = {
     21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", 53: "DNS", 80: "HTTP",
     110: "POP3", 143: "IMAP", 443: "HTTPS", 1433: "MSSQL", 1521: "Oracle",

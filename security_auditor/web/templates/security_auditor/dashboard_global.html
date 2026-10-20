@@ -683,7 +683,7 @@ function auditWizardMarkup(){
   <section class="audit-wizard-step" data-step="3">
     <div class="network-scope"><div class="section-label"><span>Contrôle réseau (axe A4)</span><small>Optionnel · uniquement sur des cibles autorisées</small></div>
       <div class="network-grid"><label>Adresse(s) à vérifier<input id="networkTargets" value="127.0.0.1" placeholder="127.0.0.1 ou api.exemple.com"><small>Saisissez un nom de domaine ou une adresse IP autorisée.</small></label>
-        <label>Ports à vérifier<select id="portScope"><option value="common">Ports courants (recommandé)</option><option value="all">Tous les ports TCP (1–65535)</option></select><small>La vérification complète nécessite Nmap installé.</small></label></div>
+        <label>Ports à vérifier<select id="portScope"><option value="priority">Ports prioritaires (21, 22, 81, 443, 6633, 8888, SMTP)</option><option value="common">Ports courants</option><option value="all">Tous les ports TCP (1–65535)</option></select><small>Le profil prioritaire est rapide ; SMTP correspond au port 25.</small></label></div>
       <label class="external-check"><input type="checkbox" id="networkExternal" style="width:auto"> J’autorise explicitement la vérification de ces cibles réseau.</label>
       <div class="network-warning">N’utilisez que des domaines ou adresses IP dont vous êtes propriétaire ou pour lesquels vous avez une autorisation écrite.</div>
     </div>
@@ -800,7 +800,7 @@ async function pageAudits(){
      <div class="status-grid">${AXES.map(a=>`<label class="status-box"><input class="axisPick" type="checkbox" value="${a.id}" style="width:auto"><span class="axis-card-copy"><b>${a.id}</b> ${axisName(a)}<small>${axisDescription(a)}</small><small class="muted">Méthode : ${a.tools}</small></span></label>`).join("")}</div></div>
      <div class="network-scope"><div class="section-label"><span>Contrôle réseau (axe A4)</span><small>Optionnel · uniquement sur des cibles autorisées</small></div>
        <div class="network-grid"><label>Adresse(s) à vérifier<input id="networkTargets" value="127.0.0.1" placeholder="127.0.0.1 ou api.exemple.com"><small>Saisissez un nom de domaine ou une adresse IP autorisée.</small></label>
-         <label>Ports à vérifier<select id="portScope"><option value="common">Ports courants (recommandé)</option><option value="all">Tous les ports TCP (1–65535)</option></select><small>La vérification complète nécessite Nmap installé.</small></label></div>
+         <label>Ports à vérifier<select id="portScope"><option value="priority">Ports prioritaires (21, 22, 81, 443, 6633, 8888, SMTP)</option><option value="common">Ports courants</option><option value="all">Tous les ports TCP (1–65535)</option></select><small>Le profil prioritaire est rapide ; SMTP correspond au port 25.</small></label></div>
        <label class="external-check"><input type="checkbox" id="networkExternal" style="width:auto"> J’autorise explicitement la vérification de ces cibles réseau.</label>
        <div class="network-warning">N’utilisez que des domaines ou adresses IP dont vous êtes propriétaire ou pour lesquels vous avez une autorisation écrite.</div>
      </div>
@@ -876,7 +876,9 @@ async function createAudit(){
     if(axes.length>4){document.getElementById("cerr").textContent="Sélectionnez au maximum quatre axes.";return;}
     const targetText=(document.getElementById("networkTargets")||{}).value||"127.0.0.1";
     const targets=targetText.split(",").map(x=>x.trim()).filter(Boolean);
-    const fullPortScan=(document.getElementById("portScope")||{}).value==="all";
+    const portScope=(document.getElementById("portScope")||{}).value||"priority";
+    const fullPortScan=portScope==="all";
+    const scanPorts=portScope==="priority"?[21,22,25,81,443,6633,8888]:null;
     const allowExternal=!!((document.getElementById("networkExternal")||{}).checked);
     const authorized=!!((document.getElementById("authz")||{}).checked);
     if((fullPortScan||allowExternal)&&!authorized){document.getElementById("cerr").textContent="Confirmez l’autorisation avant un scan public ou complet.";return;}
@@ -885,7 +887,7 @@ async function createAudit(){
     if(status)status.textContent="Création de l’audit…";
     const project={name:"Django Security Auditor",source_type:"internal"};
     const selectedModules=window.__selectedModules===null?(window.__projectModules||[]):Array.from(window.__selectedModules||[]);
-    const network={authorized_targets:targets,allow_external_targets:allowExternal,allow_full_port_scan:fullPortScan};
+    const network={authorized_targets:targets,allow_external_targets:allowExternal,allow_full_port_scan:fullPortScan,scan_ports:scanPorts||portScope};
     const r=await api("/api/audits",{method:"POST",body:JSON.stringify({project,modules:selectedModules,axes,network,authorization_confirmed:authorized})});
     closeAuditWizard();
     location.hash="#/audits/"+r.audit_id;}
