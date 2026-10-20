@@ -11,7 +11,7 @@ from typing import Optional
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_REQUIREMENTS_PATH = ROOT / "requirements" / "django_137_requirements.yml"
+DEFAULT_REQUIREMENTS_PATH = ROOT / "django_137_requirements.yml"
 DEFAULT_MAPPING_PATH = ROOT / "rules" / "requirement_mapping.yml"
 
 

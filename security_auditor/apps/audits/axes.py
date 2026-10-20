@@ -35,7 +35,7 @@ AXIS_SCANNERS = {
     "A3": ("dependencies",),
     "A4": ("endpoints", "app_start", "dast", "security_tests", "network"),
 }
-CATALOGUE = Path(__file__).resolve().parents[2] / "requirements" / "django_137_requirements.yml"
+CATALOGUE = Path(__file__).resolve().parents[2] / "django_137_requirements.yml"
 
 
 def normalize_selected_axes(values) -> list[str]:
