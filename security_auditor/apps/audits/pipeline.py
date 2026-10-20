@@ -394,6 +394,9 @@ class AuditPipeline:
 
     def _step_report(self, audit: Audit):
         from security_auditor.apps.reports.generator import generate_all_reports
+        # Mark it before rendering so the generated PDF does not record itself
+        # as still running.
+        audit.set_job("report", "SUCCESS")
         paths = generate_all_reports(self.store, audit)
         audit.log("INFO", f"Reports generated: {', '.join(paths.keys())}")
         audit.report_paths = paths

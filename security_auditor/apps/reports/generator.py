@@ -53,6 +53,7 @@ JOB_FR = {
     "discovery": "Découverte",
     "requirements": "Exigences",
     "sast": "Analyse du code",
+    "settings": "Paramètres et secrets",
     "dependencies": "Dépendances",
     "endpoints": "Points d'accès",
     "app_start": "Démarrage de l'application",
@@ -836,13 +837,9 @@ def _pdf_blocks_executive(audit: Audit) -> list[tuple[str, str]]:
             blocks.append(("t:0,60,100,255",
                            f"{sev_fr(f['severity'])}|{axis_short(_axis_index(f))}|"
                            f"{_location(f)}|{f['title']}"))
-        action_corrections: list[str] = []
-        for f in prio[:30]:
-            fix = (f.get("remediation") or "").strip()
-            if fix:
-                action_corrections.append(f"{_location(f)} — correction : {fix[:220]}")
-        for correction in action_corrections:
-            blocks.append(("kv", correction))
+        blocks.append(("body", "Les corrections détaillées, avec la preuve et la remédiation "
+                               "associées à chaque constat, sont disponibles dans "
+                               "report-full.pdf."))
         if len(prio) > 30:
             blocks.append(("body", f"... et {len(prio) - 30} autres constats Critique/Élevé "
                                    "(voir le rapport complet ou findings.csv)."))
