@@ -294,6 +294,67 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .axis-summary-card.active { border-color:#007bff; box-shadow:0 0 0 2px rgba(0,123,255,.12),0 .35rem 1rem rgba(0,0,0,.1); transform:translateY(-2px); }
 .security-auditor-app .axis-results-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:18px 0 8px; }
 .security-auditor-app .axis-results-head h2 { margin:0; color:#343a40; font-size:18px; letter-spacing:0; text-transform:none; }
+.security-auditor-app .requirements-filter-panel .table-wrap {
+  margin: 0 18px 20px;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  box-shadow: 0 .125rem .35rem rgba(31,45,61,.06);
+}
+.security-auditor-app .requirements-filter-panel .table-wrap table {
+  min-width: 1320px;
+  table-layout: fixed;
+  border: 0;
+  border-radius: 10px;
+}
+.security-auditor-app .requirements-filter-panel .table-wrap th,
+.security-auditor-app .requirements-filter-panel .table-wrap td {
+  padding: 14px 15px;
+  vertical-align: top;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(1) { width: 125px; }
+.security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(2) { width: 305px; }
+.security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(3) { width: 105px; }
+.security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(4) { width: 135px; }
+.security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(5) { width: 315px; }
+.security-auditor-app .requirements-filter-panel .table-wrap th:nth-child(6) { width: 335px; }
+.security-auditor-app .requirements-filter-panel .table-wrap tbody tr:nth-child(even),
+.security-auditor-app .axis-detail-block tbody tr:nth-child(even) { background: #fbfcfe; }
+.security-auditor-app .requirements-filter-panel .table-wrap tbody tr:hover,
+.security-auditor-app .axis-detail-block tbody tr:hover { background: #eef6ff; }
+.security-auditor-app .pill.st-FAIL { color: #b02a37; background: #fde8ea; border-color: #f5c2c7; }
+.security-auditor-app .pill.st-PARTIAL { color: #9a6700; background: #fff4d6; border-color: #ffda6a; }
+.security-auditor-app .pill.st-PASS { color: #146c43; background: #dff5e9; border-color: #a3e2bd; }
+.security-auditor-app .pill.st-NOT_TESTED { color: #526274; background: #eef1f4; border-color: #ced4da; }
+.security-auditor-app .axis-detail-block {
+  margin: 18px 0 24px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  box-shadow: 0 .125rem .35rem rgba(31,45,61,.06);
+}
+.security-auditor-app .axis-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 18px;
+  background: linear-gradient(90deg, #f8fbff, #ffffff);
+  border-bottom: 1px solid #e5e9ef;
+}
+.security-auditor-app .axis-detail-head h2 { margin: 0 0 2px; color: #1f2d3d; font-size: 17px; letter-spacing: 0; text-transform: none; }
+.security-auditor-app .axis-detail-head small { color: #6c757d; }
+.security-auditor-app .axis-detail-count { flex: 0 0 auto; padding: 5px 10px; color: #1f4f87; background: #e8f2ff; border: 1px solid #b8daff; border-radius: 99px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.security-auditor-app .axis-detail-block .table-wrap { overflow-x: auto; }
+.security-auditor-app .axis-detail-block table { min-width: 1020px; table-layout: fixed; border: 0; border-radius: 0; }
+.security-auditor-app .axis-detail-block th,
+.security-auditor-app .axis-detail-block td { padding: 14px 15px; vertical-align: top; line-height: 1.5; overflow-wrap: anywhere; }
+.security-auditor-app .axis-detail-block th:nth-child(1) { width: 135px; }
+.security-auditor-app .axis-detail-block th:nth-child(2) { width: 310px; }
+.security-auditor-app .axis-detail-block th:nth-child(4) { width: 145px; }
+.security-auditor-app .axis-detail-block code { display: inline-block; max-width: 100%; white-space: normal; word-break: break-word; }
 .security-auditor-app .audit-detail-hero { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:22px 24px; margin-bottom:14px; background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%); border:1px solid #dbe4ef; border-radius:12px; box-shadow:0 .25rem .75rem rgba(31,45,61,.08); }
 .security-auditor-app .audit-detail-copy { min-width:0; }
 .security-auditor-app .audit-detail-copy h1 { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:4px 0 8px; font-size:30px; color:#1f2d3d; }
@@ -609,15 +670,17 @@ function axisDetail(fs){
   return visibleAxes.map(a=>{
     const i=AXES.indexOf(a);
     const mine=fs.filter(f=>axisIdx(f)===i);
-    return `<h2>${a.label} <span class="muted small">(${a.tools})</span></h2>
-    <p class="small muted">${mine.length} constat(s) détecté(s) par cet axe</p>
-    <table><tr><th style="width:110px">S\u00e9v\u00e9rit\u00e9</th><th style="width:250px">Emplacement</th>
-      <th>Constat / correction</th><th style="width:120px">Moteurs</th></tr>
-      ${mine.map(f=>`<tr><td>${sevPill(f.severity)}</td>
-        <td class="small"><code>${esc(loc(f))}</code></td>
-        <td>${esc(f.title)}<div class="small muted">${esc((f.remediation||"").slice(0,160))}</div></td>
-        <td class="small">${engines(f)}</td></tr>`).join("")
-        ||"<tr><td colspan=4 class='muted'>Aucun constat sur cet axe</td></tr>"}</table>`;
+    return `<section class="axis-detail-block">
+      <div class="axis-detail-head"><div><h2>${a.label}</h2><small>${a.tools}</small></div>
+        <span class="axis-detail-count">${mine.length} constat(s)</span></div>
+      <div class="table-wrap"><table><thead><tr><th>S\u00e9v\u00e9rit\u00e9</th><th>Emplacement</th>
+        <th>Constat / correction</th><th>Moteurs</th></tr></thead><tbody>
+        ${mine.map(f=>`<tr><td>${sevPill(f.severity)}</td>
+          <td class="small"><code>${esc(loc(f))}</code></td>
+          <td><b>${esc(f.title)}</b><div class="small muted">${esc((f.remediation||"").slice(0,220))}</div></td>
+          <td class="small">${engines(f)}</td></tr>`).join("")
+          ||"<tr><td colspan=4 class='muted'>Aucun constat sur cet axe</td></tr>"}</tbody></table></div>
+    </section>`;
   }).join("");
 }
 function priorityTable(findings){
