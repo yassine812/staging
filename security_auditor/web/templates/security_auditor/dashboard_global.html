@@ -288,6 +288,11 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .module-list { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
 .security-auditor-app .module-chip { display:inline-flex; flex-direction:column; gap:1px; padding:5px 8px; border:1px solid #b8daff; border-radius:6px; background:#e8f2ff; color:#1f4f87; font-size:12px; }
 .security-auditor-app .module-chip small { color:#5b78a0; font-size:10px; }
+.security-auditor-app .axis-summary-card { cursor:pointer; transition:transform .18s,box-shadow .18s,border-color .18s; }
+.security-auditor-app .axis-summary-card:hover,
+.security-auditor-app .axis-summary-card.active { border-color:#007bff; box-shadow:0 0 0 2px rgba(0,123,255,.12),0 .35rem 1rem rgba(0,0,0,.1); transform:translateY(-2px); }
+.security-auditor-app .axis-results-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:18px 0 8px; }
+.security-auditor-app .axis-results-head h2 { margin:0; color:#343a40; font-size:18px; letter-spacing:0; text-transform:none; }
 .security-auditor-app .module-suggestions {
   background: #ffffff;
   border-color: #ced4da;
@@ -480,7 +485,7 @@ function axisCards(findings){
     const fs=perF[i],c={};
     SEV_ORDER.forEach(s=>c[s]=0);fs.forEach(f=>c[f.severity]=(c[f.severity]||0)+1);
     const mix=SEV_ORDER.filter(s=>c[s]).map(s=>`<span class="sev-${s}">${sevFr(s)} ${c[s]}</span>`).join(" &middot; ")||"<span class='muted'>aucun constat</span>";
-    return `<div class="card">
+    return `<div class="card axis-summary-card ${filter.axis===a.id?"active":""}" role="button" tabindex="0" onclick="setFilter('axis','${a.id}')" onkeydown="if(event.key==='Enter'||event.key===' ')setFilter('axis','${a.id}')" title="Filtrer les constats sur ${a.id}">
       <div class="num">${fs.length}</div>
       <div class="lbl">${a.label}</div>
       <div class="pctx">${pct(fs.length,total)} <span class="muted small">des constats</span></div>
@@ -569,7 +574,9 @@ function engineCoverage(d){
   }).join("")}</table>`;
 }
 function axisDetail(fs){
-  return AXES.map((a,i)=>{
+  const visibleAxes=filter.axis?AXES.filter(a=>a.id===filter.axis):AXES;
+  return visibleAxes.map(a=>{
+    const i=AXES.indexOf(a);
     const mine=fs.filter(f=>axisIdx(f)===i);
     return `<h2>${a.label} <span class="muted small">(${a.tools})</span></h2>
     <p class="small muted">${mine.length} constat(s) détecté(s) par cet axe</p>
@@ -898,7 +905,16 @@ async function createAudit(){
     location.hash="#/audits/"+r.audit_id;}
   catch(e){const error=document.getElementById("cerr");if(error)error.textContent=e.message;const b=document.querySelector(".launch-btn"),s=document.getElementById("launchStatus");if(b){b.disabled=false;b.innerHTML="<i class='fas fa-play mr-1'></i> Lancer l’audit";}if(s)s.textContent="";}
 }
-function setFilter(k,v){filter[k]=v;renderFindingRows(window.__audit);}
+function setFilter(k,v){
+  filter[k]=v;
+  if(document.getElementById("axisResults")&&window.__audit){
+    renderAxisResults(window.__audit);
+    const control=document.getElementById(k==="axis"?"axisFindingFilter":k==="sev"?"axisFindingSeverity":"");
+    if(control)control.value=v;
+    return;
+  }
+  renderFindingRows(window.__audit);
+}
 const STATUS_PRIORITY=["FAIL","PARTIAL","NOT_TESTED","MANUAL_REVIEW","PASS","NOT_APPLICABLE"];
 function sortReqs(rows){
   return (rows||[]).slice().sort((a,b)=>{
@@ -940,12 +956,12 @@ function renderFindingRows(d){
 function findingsToolbar(){
   return `<div class="panel"><div class="row">
     <div style="flex:0 0 180px"><label>S\u00e9v\u00e9rit\u00e9</label>
-      <select onchange="setFilter('sev',this.value)">
+      <select id="axisFindingSeverity" onchange="setFilter('sev',this.value)">
         <option value="">Toutes les s\u00e9v\u00e9rit\u00e9s</option>
         ${SEV_ORDER.map(s=>`<option value="${s}" ${filter.sev===s?"selected":""}>${sevFr(s)}</option>`).join("")}
       </select></div>
     <div style="flex:0 0 230px"><label>Axe</label>
-      <select onchange="setFilter('axis',this.value)">
+      <select id="axisFindingFilter" onchange="setFilter('axis',this.value)">
         <option value="">Tous les axes</option>
         ${AXES.map(a=>`<option value="${a.id}" ${filter.axis===a.id?"selected":""}>${a.id} &middot; ${a.tools}</option>`).join("")}
       </select></div>
@@ -954,6 +970,19 @@ function findingsToolbar(){
              oninput="setFilter('q',this.value)"></div>
     <div style="flex:0 0 210px"><label>&nbsp;</label><span id="fcount" class="small muted"></span></div>
   </div></div>`;
+}
+function axisResultsContent(d){
+  const rows=filterFindings(d);
+  const selectedAxis=AXES.find(a=>a.id===filter.axis);
+  const label=selectedAxis?`${selectedAxis.id} — ${selectedAxis.tools}`:"Tous les axes";
+  return `<div class="axis-results-head"><h2>Constats filtrés</h2><div class="small muted"><b>${rows.length}</b> résultat(s) · ${esc(label)}</div></div>
+    <div class="grid cards">${axisCards(rows)}</div>${axisDetail(rows)}`;
+}
+function renderAxisResults(d){
+  const el=document.getElementById("axisResults");
+  if(el)el.innerHTML=axisResultsContent(d);
+  const c=document.getElementById("fcount");
+  if(c)c.textContent=`${filterFindings(d).length} sur ${(d.findings||[]).length} constat(s) affiché(s)`;
 }
 function requirementStatusSummary(rows){
   return STATUS_ORDER.filter(s=>(rows||[]).some(r=>r.status===s))
@@ -1056,8 +1085,7 @@ async function pageAudit(id,tab,sev){
       <h2 style="margin-top:6px">Constats répartis sur les 4 axes</h2>
       <p class="small muted">Cette vue est dédiée aux résultats des scanners : sévérité, emplacement, constat et correction. Le détail des 137 exigences est centralisé dans l’onglet Exigences.</p>
       <a class="btn sec" href="#/audits/${esc(id)}/requirements">Voir les exigences détaillées</a></div>
-    <div class="grid cards">${axisCards(d.findings||[])}</div>
-    ${axisDetail(d.findings||[])}`;
+    ${findingsToolbar()}<div id="axisResults">${axisResultsContent(d)}</div>`;
   }else if(tab==="requirements"){
     body=requirementsPanel(d);
   }else if(tab==="history"){
@@ -1076,6 +1104,7 @@ async function pageAudit(id,tab,sev){
   <div class="tabs">${navTabs.map(t=>`<a class="${t===tab?"active":""}" href="${t==="dashboard"?"#/audits":`#/audits/${id}/${t}`}">${TAB_FR[t]||t}</a>`).join("")}</div>
   ${d.status!=="COMPLETE"?auditProgress(d):""}
   ${body}`;
+  if(tab==="axes")renderAxisResults(d);
   if(d.status!=="COMPLETE")setTimeout(route,2500);
 }
 function pageSettings(){
