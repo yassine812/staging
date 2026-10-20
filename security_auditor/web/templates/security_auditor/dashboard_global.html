@@ -13,6 +13,77 @@
  @media(max-width:900px){.security-auditor-app .summary-grid{grid-template-columns:repeat(3,1fr)}.security-auditor-app .axis-mini{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:900px){.security-auditor-app .axis-section .status-grid{grid-template-columns:repeat(2,1fr)}.security-auditor-app .audit-steps{grid-template-columns:repeat(3,1fr)}.security-auditor-app .launch-panel>.module-scope{grid-template-columns:1fr}.security-auditor-app .scope-block:first-child{border-right:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0}.security-auditor-app .scope-block:last-child{border-radius:0 0 10px 10px}}
   @media(max-width:620px){.security-auditor-app main{padding:20px 14px 40px}.security-auditor-app .dashboard-hero{display:block}.security-auditor-app .hero-actions{margin-top:14px}.security-auditor-app .summary-grid{grid-template-columns:repeat(2,1fr)}.security-auditor-app .table-toolbar{display:block}.security-auditor-app .table-toolbar input{max-width:none;margin-top:10px}.security-auditor-app .axis-mini{grid-template-columns:1fr 1fr}.security-auditor-app .req-filter-head,.security-auditor-app .requirements-result-head{display:block}.security-auditor-app .requirements-result-head .small{margin-top:6px}.security-auditor-app .requirements-filters{grid-template-columns:1fr}.security-auditor-app .requirements-filter-launch{right:10px}.security-auditor-app .requirements-filter-launch .small{display:none}.security-auditor-app .module-scope{grid-template-columns:1fr}.security-auditor-app .axis-section .status-grid{grid-template-columns:1fr}.security-auditor-app .audit-steps{grid-template-columns:repeat(2,1fr)}.security-auditor-app .network-grid{grid-template-columns:1fr}.security-auditor-app .section-label{display:block}.security-auditor-app .section-label small{display:block;margin-top:3px}.security-auditor-app .launch-footer{display:block}.security-auditor-app .launch-actions{justify-content:flex-end;margin-top:14px}.security-auditor-app header{padding:10px 12px}.security-auditor-app .logo{font-size:13px}.security-auditor-app nav a{padding:6px 7px;font-size:12px}}
+/* Harmonisation avec le thème global AdminLTE de l'application. */
+.security-auditor-app,
+.security-auditor-app main {
+  --bg: #f4f6f9;
+  --panel: #ffffff;
+  --panel2: #f8f9fa;
+  --line: #dee2e6;
+  --txt: #343a40;
+  --mut: #6c757d;
+  --blue: #007bff;
+  --green: #28a745;
+  --orange: #fd7e14;
+  --red: #dc3545;
+  --purple: #6f42c1;
+  background: #f4f6f9;
+  color: #343a40;
+}
+.security-auditor-app main { max-width: none; padding: 0 0 24px; }
+.security-auditor-app h1,
+.security-auditor-app h2,
+.security-auditor-app h3,
+.security-auditor-app h4,
+.security-auditor-app p,
+.security-auditor-app label { color: #343a40; }
+.security-auditor-app .muted,
+.security-auditor-app .small,
+.security-auditor-app .caption,
+.security-auditor-app .hint { color: #6c757d; }
+.security-auditor-app .card,
+.security-auditor-app .panel,
+.security-auditor-app .summary-card,
+.security-auditor-app .table-panel,
+.security-auditor-app .launch-panel,
+.security-auditor-app .scope-block,
+.security-auditor-app .status-box,
+.security-auditor-app .audit-progress,
+.security-auditor-app .latest-panel,
+.security-auditor-app .history-stat,
+.security-auditor-app .requirements-filter-panel {
+  background: #ffffff !important;
+  color: #343a40;
+  border-color: #dee2e6;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+.security-auditor-app .launch-panel > summary.launch-summary,
+.security-auditor-app .history-filters,
+.security-auditor-app .requirements-filters,
+.security-auditor-app .module-scope {
+  background: #f8f9fa !important;
+  border-color: #dee2e6;
+}
+.security-auditor-app table,
+.security-auditor-app th,
+.security-auditor-app td { border-color: #dee2e6; }
+.security-auditor-app table { background: #ffffff; }
+.security-auditor-app th { background: #f8f9fa; color: #495057; }
+.security-auditor-app input,
+.security-auditor-app select,
+.security-auditor-app textarea { background: #ffffff; color: #343a40; border-color: #ced4da; }
+.security-auditor-app code,
+.security-auditor-app pre { background: #f8f9fa; color: #343a40; border-color: #dee2e6; }
+.security-auditor-app .tabs a,
+.security-auditor-app .pill,
+.security-auditor-app .tag { background: #f8f9fa; color: #495057; border-color: #dee2e6; }
+.security-auditor-app .btn { background: #007bff; color: #ffffff; }
+.security-auditor-app .btn.sec { background: #6c757d; color: #ffffff; border-color: #6c757d; }
+.security-auditor-app .banner { background: #e8f2ff; color: #1f4f87; border-color: #b8daff; }
+.security-auditor-app .launch-icon { background: #007bff; }
+.security-auditor-app .axis-card-copy b,
+.security-auditor-app .req-filter-head h2,
+.security-auditor-app .table-toolbar h2 { color: #343a40; }
 </style>
 {% endblock %}
 {% block content %}
