@@ -628,6 +628,58 @@ function stFr(s){return STATUS_FR[s]||s;}
 let filter={sev:"",axis:"",q:""};
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+const FINDING_TITLE_FR={
+  "Dynamic SQL via cursor.execute":"Requête SQL dynamique via cursor.execute",
+  "Dynamic SQL via .raw()/.extra()":"Requête SQL dynamique via .raw()/.extra()",
+  "Dynamic SQL via RawSQL":"Requête SQL dynamique via RawSQL",
+  "String-built SQL expression":"Expression SQL construite dynamiquement",
+  "Private key material present":"Clé privée exposée",
+  "Hardcoded Django SECRET_KEY":"SECRET_KEY Django codée en dur",
+  "Hardcoded credential":"Identifiant codé en dur",
+  "AWS access key detected":"Clé d’accès AWS détectée",
+  "GitHub token detected":"Jeton GitHub détecté",
+  "Stripe secret key detected":"Clé secrète Stripe détectée",
+  "Open redirect":"Redirection ouverte",
+  "Path traversal":"Traversée de répertoires",
+  "Server-side template injection risk":"Risque d’injection de modèle côté serveur",
+  "Shell command execution (os.system/os.popen)":"Exécution de commande système (os.system/os.popen)",
+  "subprocess with shell=True":"Sous-processus exécuté avec shell=True",
+  "Pickle deserialization":"Désérialisation Pickle non sécurisée",
+  "Unsafe YAML loading":"Chargement YAML non sécurisé"
+};
+function findingTitleFr(value){
+  const raw=String(value||"");
+  if(FINDING_TITLE_FR[raw])return FINDING_TITLE_FR[raw];
+  return raw.replace(/^Open redirect on /i,"Redirection ouverte sur ")
+    .replace(/^Path traversal on /i,"Traversée de répertoires sur ")
+    .replace(/^Reflected XSS on /i,"XSS réfléchie sur ")
+    .replace(/^Insecure Django setting: /i,"Paramètre Django non sécurisé : ");
+}
+const FINDING_REMEDIATION_FR={
+  "Use parameterized queries: cursor.execute(sql, params) with %s placeholders.":"Utiliser une requête paramétrée : cursor.execute(sql, params) avec des paramètres %s.",
+  "Remove the key, purge history, and rotate it immediately.":"Supprimer la clé, purger l’historique Git et la renouveler immédiatement.",
+  "Remove dynamic code execution; use data literals (ast.literal_eval) or dispatch tables.":"Supprimer l’exécution de code dynamique ; utiliser des données littérales (ast.literal_eval) ou une table de dispatch.",
+  "Validate with url_has_allowed_host_and_scheme() or redirect by route name.":"Valider la destination avec url_has_allowed_host_and_scheme() ou rediriger par nom de route.",
+  "Fix the failing control and run a retest.":"Corriger le contrôle en échec puis relancer un test de vérification.",
+  "Use subprocess with an argument list and shell=False.":"Utiliser subprocess avec une liste d’arguments et shell=False.",
+  "Pass commands as argument lists with shell=False.":"Transmettre les commandes sous forme de liste d’arguments avec shell=False."
+};
+function findingRemediationFr(value){
+  const raw=String(value||"");
+  if(FINDING_REMEDIATION_FR[raw])return FINDING_REMEDIATION_FR[raw];
+  return raw.replace(/^Upgrade /i,"Mettre à niveau ")
+    .replace(/ to a fixed version$/i," vers une version corrigée")
+    .replace(/^Set /i,"Définir ")
+    .replace(/^See the mapped requirement remediation; verify with a retest\.$/i,"Appliquer la correction de l’exigence correspondante puis vérifier le résultat avec un nouveau test.");
+}
+const FINDING_DESCRIPTION_FR={
+  "SQL statement built without placeholders (f-string/%/format or variable).":"La requête SQL est construite sans paramètres, à partir d’une chaîne ou d’une valeur variable.",
+  "PEM private key material found in the repository.":"Une clé privée au format PEM a été trouvée dans le dépôt.",
+  "redirect()/HttpResponseRedirect with a runtime-derived target.":"La destination d’une redirection est construite à partir d’une valeur fournie à l’exécution.",
+  "Template source constructed from dynamic data (Template(...)/from_string()).":"Le modèle est construit à partir de données dynamiques.",
+  "QuerySet.raw()/extra() called with dynamically built SQL.":"Une requête SQL construite dynamiquement est exécutée via raw() ou extra()."
+};
+function findingDescriptionFr(value){return FINDING_DESCRIPTION_FR[String(value||"")]||String(value||"");}
 function pct(n,total){return total?Math.round(100*n/total)+"%":"0%";}
 function sevRank(s){const i=SEV_ORDER.indexOf(s);return i<0?9:i;}
 function sortFindings(fs){return (fs||[]).slice().sort((a,b)=>sevRank(a.severity)-sevRank(b.severity)||String(a.title).localeCompare(String(b.title)));}
@@ -923,7 +975,7 @@ function axisDetail(fs){
         <th>Constat / correction</th><th>Moteurs</th></tr></thead><tbody>
         ${mine.map(f=>`<tr><td data-label="Sévérité">${sevPill(f.severity)}</td>
           <td data-label="Emplacement" class="small"><code>${esc(loc(f))}</code></td>
-          <td data-label="Constat / correction"><b>${esc(f.title)}</b><div class="small muted">${esc((f.remediation||"").slice(0,220))}</div></td>
+          <td data-label="Constat / correction"><b>${esc(findingTitleFr(f.title))}</b><div class="small muted">${esc(findingRemediationFr(f.remediation||"").slice(0,220))}</div></td>
           <td data-label="Moteurs" class="small">${engines(f)}</td></tr>`).join("")
           ||"<tr><td colspan=4 class='muted'>Aucun constat sur cet axe</td></tr>"}</tbody></table></div>
     </section>`;
@@ -939,8 +991,8 @@ function priorityTable(findings){
       <td>${sevPill(f.severity)}</td>
       <td class="small" title="${esc(AXES[axisIdx(f)].tools)}">${axisShort(f)}</td>
       <td class="small"><code>${esc(loc(f))}</code></td>
-      <td>${esc(f.title)}<div class="small muted">${findingRequirements(f)}</div>
-          <div class="small muted">correction : ${esc((f.remediation||f.description||"").slice(0,200))}</div></td>
+      <td>${esc(findingTitleFr(f.title))}<div class="small muted">${findingRequirements(f)}</div>
+          <div class="small muted">Correction : ${esc(findingRemediationFr(f.remediation||f.description||"").slice(0,200))}</div></td>
     </tr>`).join("")}</table>
     ${prio.length>shown.length?`<p class="small muted">+ ${prio.length-shown.length} autres constats Critique/\u00c9lev\u00e9 &mdash; voir l'onglet <b>constats</b> ou le rapport.</p>`:""}`;
 }
@@ -1280,8 +1332,8 @@ function findingRows(d){
     <td class="small" title="${esc(AXES[axisIdx(f)].tools)}">${axisShort(f)}
       <div class="small muted">${esc(axisLabelOf(f).replace(/&middot;/g,"\u00b7"))}</div></td>
     <td class="small"><code title="${esc(loc(f))}">${esc(loc(f))}</code></td>
-    <td>${esc(f.title)}<div class="small muted">${esc((f.description||"").slice(0,180))}</div>
-        <div class="small muted">correction : ${esc((f.remediation||"").slice(0,160))}</div></td>
+    <td>${esc(findingTitleFr(f.title))}<div class="small muted">${esc(findingDescriptionFr(f.description).slice(0,180))}</div>
+        <div class="small muted">Correction : ${esc(findingRemediationFr(f.remediation||"").slice(0,160))}</div></td>
     <td class="small">${engines(f)}</td>
     <td class="small">${findingRequirements(f)}</td>
     <td class="small">${esc((f.cwe||[]).join(", "))}${f.owasp?`<div class="muted">${esc(f.owasp)}</div>`:""}</td>
