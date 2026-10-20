@@ -288,6 +288,8 @@ body.security-auditor-body.modal-open { overflow: hidden; }
   background: #ffffff;
   border-color: #ced4da;
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, .15);
+  max-height: 300px;
+  overflow-y: auto;
 }
 .security-auditor-app .module-suggestion { color: #343a40; border-bottom-color: #dee2e6; }
 .security-auditor-app .module-suggestion:hover { background: #f4f6f9; }
@@ -704,7 +706,7 @@ async function openAuditWizard(){
   auditWizardStep=1;
   body.innerHTML=auditWizardMarkup();
   modal.hidden=false; modal.setAttribute("aria-hidden","false"); document.body.classList.add("modal-open");
-  window.__selectedModules=null; window.__projectModules=[]; window.__availableModules=[];
+  window.__selectedModules=new Set(); window.__projectModules=[]; window.__availableModules=[];
   renderAuditWizardStep(); bindModulePicker();
   try{
     const moduleData=await api("/api/modules");
