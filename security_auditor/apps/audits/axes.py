@@ -12,7 +12,6 @@ attached to the axis that owns it (and shows up as NOT_TESTED there).
 from __future__ import annotations
 
 from functools import lru_cache
-from pathlib import Path
 
 AXES = [
     ("Axe 1 — Code (SAST)", "sast"),
@@ -35,7 +34,6 @@ AXIS_SCANNERS = {
     "A3": ("dependencies",),
     "A4": ("endpoints", "app_start", "dast", "security_tests", "network"),
 }
-CATALOGUE = Path(__file__).resolve().parents[2] / "django_137_requirements.yml"
 
 
 def normalize_selected_axes(values) -> list[str]:
@@ -73,9 +71,8 @@ def _catalogue_axes() -> dict:
     """requirement id -> axis index, from scanner_mapping in the catalogue."""
     mapping: dict[str, int] = {}
     try:
-        import yaml
-        data = yaml.safe_load(CATALOGUE.read_text(encoding="utf-8"))
-        reqs = data["requirements"] if isinstance(data, dict) and "requirements" in data else data
+        from security_auditor.apps.requirements_engine.loader import catalogue_records
+        reqs = catalogue_records()
     except Exception:  # noqa: BLE001 - catalogue optional at runtime
         return mapping
     order = ("sast", "configuration", "dependencies", "network")
@@ -107,9 +104,8 @@ def _catalogue_axes_all() -> dict[str, tuple[int, ...]]:
     """
     mapping: dict[str, tuple[int, ...]] = {}
     try:
-        import yaml
-        data = yaml.safe_load(CATALOGUE.read_text(encoding="utf-8"))
-        reqs = data["requirements"] if isinstance(data, dict) and "requirements" in data else data
+        from security_auditor.apps.requirements_engine.loader import catalogue_records
+        reqs = catalogue_records()
     except Exception:  # noqa: BLE001 - catalogue optional at runtime
         return mapping
     for req in reqs or []:

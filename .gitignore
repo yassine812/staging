@@ -30,6 +30,7 @@ media/
 
 # Security Auditor local scan history and credentials
 .security-audits/
+security_auditor/requirements_overrides.yml
 
 # Local temporary/test artifacts
 tmp/

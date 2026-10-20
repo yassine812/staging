@@ -1116,11 +1116,96 @@ function pageSettings(){
     <p class="small muted">Authentification automatique via votre session Django actuelle.</p>
   </div>`;
 }
+const CAN_MANAGE_REQUIREMENTS = {% if request.user.is_superuser or request.user.is_staff %}true{% else %}false{% endif %};
+let catalogueRows=[];
+function catalogueAxes(r){
+  const mapping=r.scanner_mapping||{};
+  const ids=[];
+  if(mapping.sast)ids.push("A1");
+  if(mapping.configuration||mapping.internal)ids.push("A2");
+  if(mapping.dependencies)ids.push("A3");
+  if(mapping.network||mapping.dast||mapping.automated)ids.push("A4");
+  return ids.length?ids.join(", "):"Transverse";
+}
+function catalogueFiltered(){
+  const q=((document.getElementById("catalogueSearch")||{}).value||"").toLowerCase().trim();
+  const axis=(document.getElementById("catalogueAxis")||{}).value||"";
+  const severity=(document.getElementById("catalogueSeverity")||{}).value||"";
+  return catalogueRows.filter(r=>{
+    if(axis&&!catalogueAxes(r).split(", ").includes(axis))return false;
+    if(severity&&r.severity!==severity)return false;
+    if(q&&!([r.id,r.name,r.category,r.description,r.remediation,catalogueAxes(r)].join(" ").toLowerCase().includes(q)))return false;
+    return true;
+  });
+}
+function catalogueTable(){
+  const rows=catalogueFiltered();
+  const count=document.getElementById("catalogueCount");
+  if(count)count.textContent=`${rows.length} exigence(s) affichée(s) sur ${catalogueRows.length}`;
+  return `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Exigence</th><th>Axe(s)</th><th>Sévérité</th><th>Automatisation</th><th>Vérification</th>${CAN_MANAGE_REQUIREMENTS?"<th>Actions</th>":""}</tr></thead><tbody>
+    ${rows.map(r=>`<tr><td><b>${esc(r.id)}</b></td><td><b>${esc(r.name)}</b><div class="small muted">${esc(r.description||"")}</div></td>
+      <td>${esc(catalogueAxes(r))}</td><td>${sevPill(r.severity)}</td><td>${esc(r.automation_level||"—")}</td>
+      <td class="small">${esc((r.verification_method||[]).join(", ")||"—")}</td>
+      ${CAN_MANAGE_REQUIREMENTS?`<td><div class="table-actions"><button class="btn" onclick="editCatalogueRequirement(decodeURIComponent('${encodeURIComponent(r.id)}'))"><i class="fas fa-edit"></i> Modifier</button><button class="btn" style="background:#dc3545" onclick="deleteCatalogueRequirement(decodeURIComponent('${encodeURIComponent(r.id)}'))"><i class="fas fa-trash"></i> Supprimer</button></div></td>`:""}</tr>`).join("")||`<tr><td colspan="${CAN_MANAGE_REQUIREMENTS?7:6}" class="empty-state">Aucune exigence ne correspond aux filtres.</td></tr>`}</tbody></table></div>`;
+}
+function refreshCatalogueTable(){const el=document.getElementById("catalogueTable");if(el)el.innerHTML=catalogueTable();}
+function catalogueEditor(r){
+  const edit=!!r;
+  return `<section class="panel catalogue-editor" id="catalogueEditor"><div class="table-toolbar" style="padding:0 0 14px;border-bottom:0"><div><h2>${edit?"Modifier l’exigence":"Ajouter une exigence"}</h2><div class="small muted">Les champs sont enregistrés dans le catalogue personnalisé du projet.</div></div><button class="btn sec" type="button" onclick="closeCatalogueEditor()">Fermer</button></div>
+    <div class="row"><div><label>Identifiant *</label><input id="catId" value="${edit?esc(r.id):""}" ${edit?"readonly":""} placeholder="REQ-138"></div><div><label>Nom *</label><input id="catName" value="${edit?esc(r.name):""}"></div><div><label>Catégorie *</label><input id="catCategory" value="${edit?esc(r.category):""}"></div></div>
+    <div class="row"><div><label>Sévérité *</label><select id="catSeverity">${SEV_ORDER.map(s=>`<option ${edit&&r.severity===s?"selected":""}>${s}</option>`).join("")}</select></div><div><label>Niveau d’automatisation *</label><input id="catAutomation" value="${edit?esc(r.automation_level):"MANUAL"}" placeholder="AUTOMATED, MANUAL…"></div><div><label>Méthodes de vérification</label><input id="catVerification" value="${edit?esc((r.verification_method||[]).join(", ")):"manual"}" placeholder="sast, manual"></div></div>
+    <label>Description</label><textarea id="catDescription" rows="3">${edit?esc(r.description):""}</textarea><label>Remédiation</label><textarea id="catRemediation" rows="3">${edit?esc(r.remediation):""}</textarea>
+    <div class="row"><div><label>CWE (séparés par des virgules)</label><input id="catCwe" value="${edit?esc((r.cwe||[]).join(", ")):""}></div><div><label>OWASP</label><input id="catOwasp" value="${edit?esc(r.owasp):""}"></div></div>
+    <div class="row"><div><label>Scanner mapping (JSON)</label><textarea id="catMapping" rows="4">${edit?esc(JSON.stringify(r.scanner_mapping||{},null,2)):"{}"}</textarea></div><div><label>Définition du test (JSON tableau)</label><textarea id="catTestDefinition" rows="4">${edit?esc(JSON.stringify(r.test_definition||[],null,2)):"[]"}</textarea></div></div>
+    <div class="row" style="justify-content:flex-end"><span id="catalogueEditorError" class="sev-Critical"></span><button class="btn" type="button" onclick="saveCatalogueRequirement(${edit?`decodeURIComponent('${encodeURIComponent(r.id)}')`:"null"})"><i class="fas fa-save"></i> Enregistrer</button></div></section>`;
+}
+function openCatalogueEditor(r){
+  const host=document.getElementById("catalogueEditorHost");if(!host)return;
+  host.innerHTML=catalogueEditor(r||null);host.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function closeCatalogueEditor(){const host=document.getElementById("catalogueEditorHost");if(host)host.innerHTML="";}
+function editCatalogueRequirement(id){if(!CAN_MANAGE_REQUIREMENTS)return;openCatalogueEditor(catalogueRows.find(r=>r.id===id));}
+function jsonField(id,fallback){try{return JSON.parse(document.getElementById(id).value||JSON.stringify(fallback));}catch(e){throw new Error(`JSON invalide dans ${id}`);}}
+async function saveCatalogueRequirement(existingId){
+  const error=document.getElementById("catalogueEditorError");if(error)error.textContent="";
+  try{
+    const body={id:document.getElementById("catId").value.trim(),name:document.getElementById("catName").value.trim(),category:document.getElementById("catCategory").value.trim(),severity:document.getElementById("catSeverity").value,automation_level:document.getElementById("catAutomation").value.trim(),verification_method:document.getElementById("catVerification").value.split(",").map(x=>x.trim()).filter(Boolean),description:document.getElementById("catDescription").value,remediation:document.getElementById("catRemediation").value,cwe:document.getElementById("catCwe").value.split(",").map(x=>x.trim()).filter(Boolean),owasp:document.getElementById("catOwasp").value,scanner_mapping:jsonField("catMapping",{}),test_definition:jsonField("catTestDefinition",[])};
+    const url=existingId?`/api/requirements/catalogue/${encodeURIComponent(existingId)}`:"/api/requirements/catalogue";
+    const data=await api(url,{method:existingId?"PUT":"POST",body:JSON.stringify(body)});
+    const index=catalogueRows.findIndex(r=>r.id===data.requirement.id);if(index>=0)catalogueRows[index]=data.requirement;else catalogueRows.push(data.requirement);
+    closeCatalogueEditor();refreshCatalogueTable();
+  }catch(e){if(error)error.textContent=e.message;}
+}
+async function deleteCatalogueRequirement(id){
+  if(!CAN_MANAGE_REQUIREMENTS||!confirm(`Supprimer l’exigence ${id} ?`))return;
+  try{await api(`/api/requirements/catalogue/${encodeURIComponent(id)}`,{method:"DELETE"});catalogueRows=catalogueRows.filter(r=>r.id!==id);refreshCatalogueTable();}
+  catch(e){alert(e.message);}
+}
+async function pageRequirementsCatalogue(){
+  const data=await api("/api/requirements/catalogue");catalogueRows=data.requirements||[];
+  document.getElementById("app").innerHTML=`<section class="dashboard-hero"><div><div class="eyebrow">RÉFÉRENTIEL</div><h1>Exigences de sécurité</h1><p>Liste complète des exigences utilisées par les audits. Filtrez par axe et consultez ou gérez chaque exigence.</p></div>${CAN_MANAGE_REQUIREMENTS?`<button class="btn" onclick="openCatalogueEditor()"><i class="fas fa-plus"></i> Ajouter une exigence</button>`:""}</section>
+    ${CAN_MANAGE_REQUIREMENTS?`<div id="catalogueEditorHost"></div>`:""}<section class="panel table-panel"><div class="table-toolbar"><div><h2>Catalogue des exigences</h2><div id="catalogueCount" class="small muted"></div></div></div><div class="history-filters"><label>Recherche<input id="catalogueSearch" placeholder="ID, nom, description…" oninput="refreshCatalogueTable()"></label><label>Axe<select id="catalogueAxis" onchange="refreshCatalogueTable()"><option value="">Tous les axes</option>${AXES.map(a=>`<option value="${a.id}">${a.id} · ${a.tools}</option>`).join("")}</select></label><label>Sévérité<select id="catalogueSeverity" onchange="refreshCatalogueTable()"><option value="">Toutes</option>${SEV_ORDER.map(s=>`<option value="${s}">${sevFr(s)}</option>`).join("")}</select></label></div><div id="catalogueTable"></div></section>`;
+  refreshCatalogueTable();
+}
+async function pageAxes(){
+  const data=await api("/api/audits"),audits=data.audits||[];window.__globalAudits=audits;
+  const cards=AXES.map(a=>{const mine=audits.filter(x=>(x.axes||[]).includes(a.id)||!(x.axes||[]).length);return `<div class="card"><div class="num">${mine.length}</div><div class="lbl">${a.id} · ${a.tools}</div><div class="small muted">${axisDescription(a)}</div></div>`;}).join("");
+  document.getElementById("app").innerHTML=`<section class="dashboard-hero"><div><div class="eyebrow">VUE TRANSVERSE</div><h1>Axes de sécurité</h1><p>Vue synthétique des audits réalisés par domaine de contrôle.</p></div></section><div class="grid cards">${cards}</div><section class="panel table-panel"><div class="table-toolbar"><div><h2>Audits par axe</h2><div class="small muted">Ouvrez un audit pour consulter ses constats et exigences.</div></div><select id="globalAxisFilter" onchange="filterGlobalAxes()"><option value="">Tous les axes</option>${AXES.map(a=>`<option value="${a.id}">${a.id} · ${a.tools}</option>`).join("")}</select></div><div id="globalAxesTable">${globalAxesTable(audits)}</div></section>`;
+}
+function globalAxesTable(audits){const axis=(document.getElementById("globalAxisFilter")||{}).value||"";const rows=(audits||[]).filter(a=>!axis||!(a.axes||[]).length||(a.axes||[]).includes(axis));return `<div class="table-wrap"><table><thead><tr><th>Audit</th><th>Projet</th><th>Date</th><th>Statut</th><th>Axes</th><th>Actions</th></tr></thead><tbody>${rows.map(a=>`<tr><td><a href="#/audits/${esc(a.id)}">${esc(a.id)}</a></td><td>${esc(a.project||"")}</td><td>${esc(shortDate(a.created_at||""))}</td><td>${pill(a.status||"")}</td><td>${esc((a.axes||[]).join(", ")||"A1–A4")}</td><td><a class="btn" href="#/audits/${esc(a.id)}/axes">Voir les axes</a></td></tr>`).join("")||`<tr><td colspan="6" class="empty-state">Aucun audit pour ce filtre.</td></tr>`}</tbody></table></div>`;}
+function filterGlobalAxes(){const el=document.getElementById("globalAxesTable");if(el&&window.__globalAudits)el.innerHTML=globalAxesTable(window.__globalAudits);}
+async function pageReports(){
+  const data=await api("/api/audits"),audits=data.audits||[];window.__globalAudits=audits;
+  document.getElementById("app").innerHTML=`<section class="dashboard-hero"><div><div class="eyebrow">TRAÇABILITÉ</div><h1>Rapports des audits</h1><p>Retrouvez les rapports générés pour chaque audit et ouvrez le format adapté à votre besoin.</p></div></section><section class="panel table-panel"><div class="table-toolbar"><div><h2>Rapports disponibles</h2><div class="small muted">Les liens sont actifs lorsque l’audit a terminé sa génération de rapports.</div></div></div><div class="table-wrap"><table><thead><tr><th>Audit</th><th>Projet</th><th>Statut</th><th>Date</th><th>Formats</th></tr></thead><tbody>${audits.map(a=>{const base=`${API}/api/reports/${encodeURIComponent(a.id)}`;return `<tr><td><b>${esc(a.id)}</b></td><td>${esc(a.project||"")}</td><td>${pill(a.status||"")}</td><td>${esc(shortDate(a.created_at||""))}</td><td><div class="table-actions">${a.status==="COMPLETE"?`<a class="btn" target="_blank" href="${base}/html"><i class="fas fa-eye"></i> HTML</a><a class="btn" style="background:#dc3545" target="_blank" href="${base}/pdf"><i class="fas fa-file-pdf"></i> PDF</a><a class="btn sec" href="${base}/csv-req"><i class="fas fa-file-csv"></i> CSV exigences</a>`:`<span class="small muted">Rapport en attente</span>`}</div></td></tr>`;}).join("")||`<tr><td colspan="5" class="empty-state">Aucun audit enregistré.</td></tr>`}</tbody></table></div></section>`;
+}
 /* ------------------------------ router ------------------------------ */
 async function route(){
   const h=location.hash||"#/dashboard";
   try{
-    if(h.startsWith("#/projects"))await pageProjects();
+    if(h.startsWith("#/requirements"))await pageRequirementsCatalogue();
+    else if(h.startsWith("#/axes"))await pageAxes();
+    else if(h.startsWith("#/reports"))await pageReports();
+    else if(h.startsWith("#/projects"))await pageProjects();
     else if(h.startsWith("#/audits/")){const p=h.split("/");await pageAudit(p[2],p[3],p[4]&&decodeURIComponent(p[4]));}
     else if(h==="#/audits")await pageDashboard();
     else if(h.startsWith("#/settings"))pageSettings();

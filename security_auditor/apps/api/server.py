@@ -127,6 +127,47 @@ def build_app(store: AuditStore, config_path: str | None = None,
         auth(request)
         return {"modules": _discover_internal_modules(project_root)}
 
+    # ---- requirement catalogue -------------------------------------------
+    @app.get("/api/requirements/catalogue")
+    def requirement_catalogue(request: Request):
+        auth(request)
+        from security_auditor.apps.requirements_engine.loader import load_requirements
+        records = [item.to_dict() for item in load_requirements()]
+        return {"requirements": records, "total": len(records)}
+
+    @app.post("/api/requirements/catalogue")
+    def create_catalogue_requirement(body: dict, request: Request):
+        user, role = auth(request, "manage_requirements")
+        from security_auditor.apps.requirements_engine.loader import save_catalogue_requirement
+        try:
+            record = save_catalogue_requirement(body)
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        users.audit_log("requirement.create", {"user": user, "requirement_id": record["id"]})
+        return {"requirement": record}
+
+    @app.put("/api/requirements/catalogue/{requirement_id}")
+    def update_catalogue_requirement(requirement_id: str, body: dict, request: Request):
+        user, role = auth(request, "manage_requirements")
+        from security_auditor.apps.requirements_engine.loader import save_catalogue_requirement
+        try:
+            record = save_catalogue_requirement(body, requirement_id)
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        users.audit_log("requirement.update", {"user": user, "requirement_id": record["id"]})
+        return {"requirement": record}
+
+    @app.delete("/api/requirements/catalogue/{requirement_id}")
+    def delete_catalogue_requirement(requirement_id: str, request: Request):
+        user, role = auth(request, "manage_requirements")
+        from security_auditor.apps.requirements_engine.loader import delete_catalogue_requirement as remove_requirement
+        try:
+            remove_requirement(requirement_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="exigence introuvable") from exc
+        users.audit_log("requirement.delete", {"user": user, "requirement_id": requirement_id})
+        return {"status": "deleted", "requirement_id": requirement_id}
+
     @app.post("/api/projects")
     def create_project(body: dict, request: Request):
         user, role = auth(request, "create_audit")
@@ -249,9 +290,11 @@ def build_app(store: AuditStore, config_path: str | None = None,
         from security_auditor.apps.audits.axes import enrich
         data = enrich(audit.to_dict())
         results = data.get("requirement_results", [])
+        from security_auditor.apps.requirements_engine.loader import load_requirements
+        catalogue_total = len(load_requirements())
         return {"requirement_results": results, "total": len(results),
-                "catalogue_total": 137,
-                "complete": len(results) == 137}
+                "catalogue_total": catalogue_total,
+                "complete": len(results) == catalogue_total}
 
     @app.get("/api/audits/{audit_id}/findings")
     def audit_findings(audit_id: str, request: Request):

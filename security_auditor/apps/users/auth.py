@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROLES = ("admin", "analyst", "viewer")
 ROLE_PERMISSIONS = {
-    "admin": {"read", "create_audit", "retest", "manage_users"},
+    "admin": {"read", "create_audit", "retest", "manage_users", "manage_requirements"},
     "analyst": {"read", "create_audit", "retest"},
     "viewer": {"read"},
 }
