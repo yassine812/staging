@@ -152,14 +152,6 @@
 {% endblock %}
 {% block content %}
 <div class="security-auditor-app">
-  <header class="auditor-local-header">
-    <div class="logo">&#128737; Security <span>Auditor</span></div>
-    <nav id="nav" aria-label="Navigation Security Auditor">
-      <a href="#/audits">Dashboard</a>
-      <a href="#/audits">Nouvel audit / Historique</a>
-    </nav>
-    <a class="btn sec" href="/logout/">Se déconnecter</a>
-  </header>
   <main id="app"></main>
 </div>
 {% endblock %}
@@ -424,41 +416,32 @@ function dashboardAxisSummary(detail){
       <div class="small">${rs.length} exigences · <span class="${open?"sev-High":"st-PASS"}">${open} ouvertes</span></div></div>`;
   }).join("");
 }
-function dashboardHome(audits,latest){
+function dashboardHome(audits){
   const rows=audits||[];
   const complete=rows.filter(a=>a.status==="COMPLETE").length;
   const failed=rows.filter(a=>a.status==="FAILED").length;
   const totalFindings=rows.reduce((n,a)=>n+Number(a.findings||0),0);
   const scores=rows.map(a=>Number(a.score)).filter(n=>Number.isFinite(n));
   const average=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):"—";
-  const latestReq=latest&&latest.requirements_coverage?latest.requirements_coverage.evaluated:(rows[0]&&rows[0].requirements)||0;
-  const latestName=latest&&latest.project?latest.project.name:(rows[0]&&rows[0].project)||"Aucun projet analysé";
   const recent=rows.slice(0,10);
   return `<section class="dashboard-hero"><div><div class="eyebrow">CENTRE DE CONTRÔLE</div>
-    <h1>Synthèse des audits</h1><p>Vue rapide de l'activité sécurité et accès direct aux résultats détaillés.</p></div>
-    <div class="hero-actions"><a class="btn" href="#/audits">+ Nouvel audit</a><a class="btn sec" href="#/audits">Voir l'historique</a>${rows[0]?`<a class="btn sec" href="#/audits/${esc(rows[0].id)}/axes">4 axes</a><a class="btn sec" href="#/audits/${esc(rows[0].id)}/requirements">Exigences</a>`:""}</div></section>
+    <h1>Dashboard</h1><p>Statistiques des audits et accès aux résultats enregistrés.</p></div></section>
   <section class="summary-grid">
     <div class="card summary-card"><div class="num">${rows.length}</div><div class="caption">Audits enregistrés</div><div class="hint">${complete} terminés</div></div>
     <div class="card summary-card"><div class="num st-PASS">${average}</div><div class="caption">Score moyen</div><div class="hint">sur 100 · tous audits</div></div>
     <div class="card summary-card"><div class="num sev-High">${totalFindings}</div><div class="caption">Constats cumulés</div><div class="hint">${failed} audit(s) en échec</div></div>
-    <div class="card summary-card"><div class="num">${latestReq}/137</div><div class="caption">Dernière couverture</div><div class="hint">exigences évaluées</div></div>
+    <div class="card summary-card"><div class="num">${rows[0]&&rows[0].requirements||0}/137</div><div class="caption">Dernière couverture</div><div class="hint">exigences évaluées</div></div>
     <div class="card summary-card"><div class="num">4</div><div class="caption">Axes disponibles</div><div class="hint">SAST · config · CVE · DAST</div></div>
   </section>
-  <div class="latest-panel card"><div><div class="small muted">DERNIER AUDIT</div><div class="latest-id">${esc(latestName)}</div><div class="small muted">${rows[0]?esc(rows[0].created_at||""):"Lancez votre premier audit pour commencer"}</div></div>
-    ${rows[0]?`<div class="row" style="align-items:center"><div>${pill(rows[0].status||"")}</div><a class="btn sec" href="#/audits/${esc(rows[0].id)}">Ouvrir le détail</a></div>`:""}</div>
-  <h2>Répartition du dernier audit</h2><section class="axis-mini">${dashboardAxisSummary(latest)}</section>
   <h2>Audits récents</h2>
   <section class="panel table-panel"><div class="table-toolbar"><h2>Tableau de suivi</h2><input id="historyQ" placeholder="Rechercher un audit…" oninput="filterHistory()"></div>
     <div class="table-wrap"><table><thead><tr><th>ID</th><th>Projet</th><th>Date</th><th>Statut</th><th>Score</th><th>Exigences</th><th>Constats</th><th>Axes</th><th></th></tr></thead><tbody id="historyRows">${historyRows(recent)}</tbody></table></div></section>`;
 }
 async function pageDashboard(){
   const a=await api("/api/audits");
-  const latest=(a.audits||[])[0];
-  let detail=null; if(latest){try{detail=await api("/api/audits/"+latest.id);}catch(e){}}
   const el=document.getElementById("app");
   window.__historyAudits=a.audits||[];
-  el.innerHTML=dashboardHome(a.audits||[],detail);
-  if(detail&&detail.status!=="COMPLETE")setTimeout(route,4000);
+  el.innerHTML=dashboardHome(a.audits||[]);
 }
 function auditOverview(d,showHeader){
   const fs=d.findings||[],sc=d.score||{},rr=d.requirement_results||[];
@@ -572,7 +555,7 @@ function historyRows(rows){
     const axes=(a.axes||[]).length?(a.axes||[]).join(", "):"A1–A4";
     return `<tr><td><a class="history-id" href="#/audits/${esc(a.id)}">${esc(a.id)}</a></td><td><span class="history-project">${esc(a.project||"")}</span><div class="small muted">${esc(a.source_type||"local")}</div></td>
       <td class="history-date">${esc(shortDate(a.created_at||""))}</td><td>${pill(a.status||"")}</td><td>${a.score==null?"—":esc(a.score)+"/100"}</td>
-      <td class="small">${req}</td><td class="small">${findings}</td><td>${esc(axes)}</td><td><a href="#/audits/${esc(a.id)}">ouvrir</a></td></tr>`;
+      <td class="small">${req}</td><td class="small">${findings}</td><td>${esc(axes)}</td><td><div class="row table-actions"><a class="btn sec" href="#/audits/${esc(a.id)}">Voir</a><a class="btn sec" href="#/audits/${esc(a.id)}/axes">Axes</a><a class="btn sec" href="#/audits/${esc(a.id)}/requirements">Exigences</a></div></td></tr>`;
   }).join("");
 }
 function shortDate(value){
@@ -818,8 +801,7 @@ function pageSettings(){
 }
 /* ------------------------------ router ------------------------------ */
 async function route(){
-  const h=(location.hash&&location.hash!=="#/dashboard")?location.hash:"#/audits";
-  document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("active",a.getAttribute("href")===h.split("/").slice(0,2).join("/")));
+  const h=location.hash||"#/dashboard";
   try{
     if(h.startsWith("#/projects"))await pageProjects();
     else if(h.startsWith("#/audits/")){const p=h.split("/");await pageAudit(p[2],p[3],p[4]&&decodeURIComponent(p[4]));}

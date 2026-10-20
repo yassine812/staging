@@ -384,11 +384,25 @@
     <!-- ══════════════════════════════════════ -->
     <!-- MODULE : SECURITY AUDITOR              -->
     <!-- ══════════════════════════════════════ -->
-    <li class="nav-item">
-      <a href="{{ url_security_auditor }}" class="nav-link {% if ns == 'security_auditor' %}active{% endif %}">
+    <li class="nav-item {% if ns == 'security_auditor' %}menu-open{% endif %}">
+      <a href="#" class="nav-link {% if ns == 'security_auditor' %}active{% endif %}">
         <i class="nav-icon fas fa-shield-virus"></i>
-        <p>Security Auditor</p>
+        <p>Security Auditor<i class="right fas fa-angle-left"></i></p>
       </a>
+      <ul class="nav nav-treeview">
+        <li class="nav-item">
+          <a href="{{ url_security_auditor }}#/dashboard" class="nav-link {% if ns == 'security_auditor' %}active{% endif %}">
+            <i class="far fa-circle nav-icon"></i>
+            <p>Dashboard</p>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_security_auditor }}#/audits" class="nav-link">
+            <i class="far fa-circle nav-icon"></i>
+            <p>Nouvel audit</p>
+          </a>
+        </li>
+      </ul>
     </li>
 
     <!-- ══════════════════════════════════════ -->
