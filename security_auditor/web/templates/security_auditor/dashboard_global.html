@@ -350,14 +350,17 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .axis-detail-head h2 { margin: 0 0 2px; color: #1f2d3d; font-size: 17px; letter-spacing: 0; text-transform: none; }
 .security-auditor-app .axis-detail-head small { color: #6c757d; }
 .security-auditor-app .axis-detail-count { flex: 0 0 auto; padding: 5px 10px; color: #1f4f87; background: #e8f2ff; border: 1px solid #b8daff; border-radius: 99px; font-size: 12px; font-weight: 700; white-space: nowrap; }
-.security-auditor-app .axis-detail-block .table-wrap { overflow-x: auto; }
-.security-auditor-app .axis-detail-block table { min-width: 1020px; table-layout: fixed; border: 0; border-radius: 0; }
+.security-auditor-app .axis-detail-block .table-wrap { overflow-x: visible; }
+.security-auditor-app .axis-detail-block table { width: 100%; min-width: 0; table-layout: fixed; border: 0; border-radius: 0; }
 .security-auditor-app .axis-detail-block th,
 .security-auditor-app .axis-detail-block td { padding: 14px 15px; vertical-align: top; line-height: 1.5; overflow-wrap: anywhere; }
-.security-auditor-app .axis-detail-block th:nth-child(1) { width: 135px; }
-.security-auditor-app .axis-detail-block th:nth-child(2) { width: 310px; }
-.security-auditor-app .axis-detail-block th:nth-child(4) { width: 145px; }
-.security-auditor-app .axis-detail-block code { display: inline-block; max-width: 100%; white-space: normal; word-break: break-word; }
+.security-auditor-app .axis-detail-block th:nth-child(1) { width: 11%; }
+.security-auditor-app .axis-detail-block th:nth-child(2) { width: 27%; }
+.security-auditor-app .axis-detail-block th:nth-child(3) { width: 49%; }
+.security-auditor-app .axis-detail-block th:nth-child(4) { width: 13%; }
+.security-auditor-app .axis-detail-block code { display: block; max-width: 100%; padding: 7px 9px; color: #334155; background: #f8f9fa; border: 1px solid #e5e9ef; border-radius: 7px; white-space: normal; word-break: break-word; }
+.security-auditor-app .axis-detail-block td b { color: #1f2d3d; font-size: 14px; }
+.security-auditor-app .axis-detail-block td .small.muted { display: block; margin-top: 5px; }
 .security-auditor-app .requirements-filter-launch { position: static; display: flex; justify-content: flex-end; transform: none; z-index: auto; }
 .security-auditor-app .filter-trigger { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
 .security-auditor-app .filter-sidebar { top: 50%; left: 50%; right: auto; bottom: auto; width: min(560px, calc(100vw - 32px)); max-height: min(78vh, 680px); border: 1px solid #dee2e6; border-radius: 14px; box-shadow: 0 22px 65px rgba(0,0,0,.35); opacity: 0; visibility: hidden; transform: translate(-50%, -46%) scale(.96); transition: opacity .18s ease, transform .18s ease, visibility .18s ease; }
@@ -402,10 +405,24 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .detail-modal-followup { margin-top: 9px !important; padding: 9px 10px; background: #eef6ff; border: 1px solid #b8daff; border-radius: 7px; }
 .security-auditor-app .detail-button { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 7px 11px; border: 1px solid #80bdff; border-radius: 6px; background: #e8f2ff; color: #0056b3; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .security-auditor-app .detail-button:hover { background: #e8f2ff; border-color: #80bdff; color: #0056b3; }
-.security-auditor-app .requirements-filter-launch { position: fixed; right: 16px; top: 50%; transform: translateY(-50%); z-index: 18; display: block; padding: 0; }
+.security-auditor-app .requirements-filter-launch { position: fixed; right: 16px; top: 92px; transform: none; z-index: 18; display: block; padding: 0; }
 .security-auditor-app .filter-sidebar { top: 0; right: 0; left: auto; bottom: 0; width: min(410px, calc(100vw - 22px)); max-height: none; border-left: 1px solid #dee2e6; border-top: 0; border-right: 0; border-bottom: 0; border-radius: 14px 0 0 14px; opacity: 1; visibility: hidden; transform: translateX(105%); transition: transform .22s ease, visibility .22s ease; }
 .security-auditor-app .filter-sidebar.open { opacity: 1; visibility: visible; transform: translateX(0); }
 .security-auditor-app .filter-fab { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border: 0; border-radius: 10px; background: #007bff; color: #fff; font-size: 20px; line-height: 1; cursor: pointer; box-shadow: 0 10px 24px rgba(0,123,255,.3); }
+.security-auditor-app .finding-filter-controls { position: relative; min-height: 0; }
+@media (max-width: 980px) {
+  .security-auditor-app .axis-detail-block .table-wrap { overflow: visible; }
+  .security-auditor-app .axis-detail-block table,
+  .security-auditor-app .axis-detail-block tbody,
+  .security-auditor-app .axis-detail-block tr,
+  .security-auditor-app .axis-detail-block td { display: block; width: 100%; }
+  .security-auditor-app .axis-detail-block thead { display: none; }
+  .security-auditor-app .axis-detail-block tbody tr { margin: 0 12px 14px; padding: 8px 12px; background: #fff; border: 1px solid #dee2e6; border-radius: 10px; box-shadow: 0 .125rem .35rem rgba(31,45,61,.06); }
+  .security-auditor-app .axis-detail-block tbody tr:nth-child(even) { background: #fff; }
+  .security-auditor-app .axis-detail-block td { display: grid; grid-template-columns: minmax(105px, 30%) minmax(0, 1fr); gap: 10px; padding: 10px 4px; border-bottom: 1px solid #eef1f4; }
+  .security-auditor-app .axis-detail-block td:last-child { border-bottom: 0; }
+  .security-auditor-app .axis-detail-block td::before { content: attr(data-label); color: #6c757d; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+}
 .security-auditor-app .requirements-filter-panel .evidence-summary { min-width: 0; }
 @media (max-width: 980px) {
   .security-auditor-app .requirements-filter-panel .table-wrap {
@@ -883,10 +900,10 @@ function axisDetail(fs){
         <span class="axis-detail-count">${mine.length} constat(s)</span></div>
       <div class="table-wrap"><table><thead><tr><th>S\u00e9v\u00e9rit\u00e9</th><th>Emplacement</th>
         <th>Constat / correction</th><th>Moteurs</th></tr></thead><tbody>
-        ${mine.map(f=>`<tr><td>${sevPill(f.severity)}</td>
-          <td class="small"><code>${esc(loc(f))}</code></td>
-          <td><b>${esc(f.title)}</b><div class="small muted">${esc((f.remediation||"").slice(0,220))}</div></td>
-          <td class="small">${engines(f)}</td></tr>`).join("")
+        ${mine.map(f=>`<tr><td data-label="Sévérité">${sevPill(f.severity)}</td>
+          <td data-label="Emplacement" class="small"><code>${esc(loc(f))}</code></td>
+          <td data-label="Constat / correction"><b>${esc(f.title)}</b><div class="small muted">${esc((f.remediation||"").slice(0,220))}</div></td>
+          <td data-label="Moteurs" class="small">${engines(f)}</td></tr>`).join("")
           ||"<tr><td colspan=4 class='muted'>Aucun constat sur cet axe</td></tr>"}</tbody></table></div>
     </section>`;
   }).join("");
@@ -1297,8 +1314,7 @@ function findingsToolbar(){
     </aside><div class="small muted"><span id="fcount">${filterFindings(window.__audit||{}).length} constat(s) affiché(s)</span></div></section>`;
 }
 function findingsToolbar(){
-  return `<section class="panel finding-filter-panel"><div class="table-toolbar" style="padding:0 0 12px;border-bottom:0">
-    <div><h2>Filtres des constats</h2><div class="small muted">Affinez l’affichage par sévérité, axe ou mot-clé.</div></div></div>
+  return `<div class="finding-filter-controls">
     <div class="requirements-filter-launch"><button type="button" class="filter-fab" onclick="toggleFindingFilters()" title="Ouvrir les filtres" aria-label="Ouvrir les filtres"><i class="fas fa-filter"></i></button></div>
     <div id="findingFilterBackdrop" class="filter-backdrop" onclick="toggleFindingFilters(false)"></div>
     <aside id="findingFilterSidebar" class="filter-sidebar" aria-hidden="true"><div class="filter-sidebar-head"><div><div class="eyebrow">AFFICHAGE</div><h2>Filtrer les constats</h2></div><button type="button" class="filter-close" onclick="toggleFindingFilters(false)" aria-label="Fermer">×</button></div>
@@ -1309,7 +1325,7 @@ function findingsToolbar(){
         ${AXES.map(a=>`<option value="${a.id}" ${filter.axis===a.id?"selected":""}>${a.id} &middot; ${a.tools}</option>`).join("")}</select></label>
       <label>Recherche<input id="fq" placeholder="settings.py, CWE-89, REQ-004" value="${esc(filter.q)}" oninput="setFilter('q',this.value)"></label>
       <div class="filter-sidebar-actions"><button type="button" class="btn sec" onclick="clearFindingFilters()">Réinitialiser</button><button type="button" class="btn" onclick="toggleFindingFilters(false)">Voir les résultats</button></div>
-    </aside><div class="small muted"><span id="fcount">${filterFindings(window.__audit||{}).length} constat(s) affiché(s)</span></div></section>`;
+    </aside></div>`;
 }
 function axisResultsContent(d){
   const rows=filterFindings(d);
