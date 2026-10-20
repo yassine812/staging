@@ -226,6 +226,21 @@
 .security-auditor-app .audit-step.success { color: #1e7e34; border-color: #b7dfc1; }
 .security-auditor-app .audit-step.running { color: #0056b3; background: #e8f2ff; border-color: #80bdff; }
 .security-auditor-app .audit-step.failed { color: #bd2130; border-color: #f1b0b7; }
+.security-auditor-app .chart-panel { padding: 18px 20px; }
+.security-auditor-app .chart-panel h2 { margin: 0 0 6px; color: #343a40; text-transform: none; letter-spacing: 0; }
+.security-auditor-app .chart-panel .chart-subtitle { margin: 0 0 14px; color: #6c757d; font-size: 13px; }
+.security-auditor-app .chart-wrap { width: 100%; overflow: hidden; }
+.security-auditor-app .audit-chart { display: block; width: 100%; height: auto; min-height: 220px; }
+.security-auditor-app .audit-chart .grid-line { stroke: #dee2e6; stroke-width: 1; }
+.security-auditor-app .audit-chart .axis-label { fill: #6c757d; font-size: 11px; }
+.security-auditor-app .audit-chart .bar { fill: #007bff; }
+.security-auditor-app .audit-chart .bar:hover { fill: #0056b3; }
+.security-auditor-app .audit-chart .bar-value { fill: #343a40; font-size: 11px; font-weight: 700; text-anchor: middle; }
+@media (max-width: 620px) {
+  .security-auditor-app .chart-panel { padding: 14px; }
+  .security-auditor-app .audit-chart { min-width: 560px; }
+  .security-auditor-app .chart-wrap { overflow-x: auto; }
+}
 </style>
 {% endblock %}
 {% block content %}
@@ -494,6 +509,23 @@ function dashboardAxisSummary(detail){
       <div class="small">${rs.length} exigences · <span class="${open?"sev-High":"st-PASS"}">${open} ouvertes</span></div></div>`;
   }).join("");
 }
+function auditChart(audits){
+  const rows=(audits||[]).slice(0,8).reverse();
+  if(!rows.length)return `<section class="panel chart-panel"><h2>Évolution des constats</h2><p class="chart-subtitle">Le graphique apparaîtra après le premier audit.</p><div class="empty-state">Aucun audit enregistré.</div></section>`;
+  const max=Math.max(1,...rows.map(a=>Number(a.findings||0)));
+  const left=42, top=22, chartHeight=150, baseline=top+chartHeight, width=760, gap=14;
+  const slot=(width-left-18)/rows.length, barWidth=Math.max(18,slot-gap);
+  const grid=[0,.25,.5,.75,1].map(v=>{
+    const y=baseline-chartHeight*v;
+    return `<line class="grid-line" x1="${left}" y1="${y}" x2="${width-12}" y2="${y}"/><text class="axis-label" x="4" y="${y+4}">${Math.round(max*v)}</text>`;
+  }).join("");
+  const bars=rows.map((a,i)=>{
+    const value=Number(a.findings||0), height=value?Math.max(3,chartHeight*value/max):3;
+    const x=left+i*slot+gap/2, y=baseline-height;
+    return `<a href="#/audits/${esc(a.id)}" aria-label="Ouvrir ${esc(a.id)}"><rect class="bar" x="${x}" y="${y}" width="${barWidth}" height="${height}" rx="3"><title>${esc(a.id)} : ${value} constat(s)</title></rect><text class="bar-value" x="${x+barWidth/2}" y="${y-5}">${value}</text><text class="axis-label" x="${x+barWidth/2}" y="${baseline+20}" text-anchor="middle">${esc(String(a.id||"").slice(-8))}</text></a>`;
+  }).join("");
+  return `<section class="panel chart-panel"><h2>Évolution des constats</h2><p class="chart-subtitle">Nombre de constats par audit enregistré · cliquez sur une barre pour ouvrir le détail.</p><div class="chart-wrap"><svg class="audit-chart" viewBox="0 0 ${width} 215" role="img" aria-label="Évolution des constats par audit">${grid}<line class="grid-line" x1="${left}" y1="${baseline}" x2="${width-12}" y2="${baseline}"/>${bars}</svg></div></section>`;
+}
 function dashboardHome(audits){
   const rows=audits||[];
   const complete=rows.filter(a=>a.status==="COMPLETE").length;
@@ -501,7 +533,6 @@ function dashboardHome(audits){
   const totalFindings=rows.reduce((n,a)=>n+Number(a.findings||0),0);
   const scores=rows.map(a=>Number(a.score)).filter(n=>Number.isFinite(n));
   const average=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):"—";
-  const recent=rows.slice(0,10);
   return `<section class="dashboard-hero"><div><div class="eyebrow">CENTRE DE CONTRÔLE</div>
     <h1>Dashboard</h1><p>Statistiques des audits et accès aux résultats enregistrés.</p></div></section>
   <section class="summary-grid">
@@ -510,10 +541,7 @@ function dashboardHome(audits){
     <div class="card summary-card"><div class="num sev-High">${totalFindings}</div><div class="caption">Constats cumulés</div><div class="hint">${failed} audit(s) en échec</div></div>
     <div class="card summary-card"><div class="num">${rows[0]&&rows[0].requirements||0}/137</div><div class="caption">Dernière couverture</div><div class="hint">exigences évaluées</div></div>
     <div class="card summary-card"><div class="num">4</div><div class="caption">Axes disponibles</div><div class="hint">SAST · config · CVE · DAST</div></div>
-  </section>
-  <h2>Audits récents</h2>
-  <section class="panel table-panel"><div class="table-toolbar"><h2>Tableau de suivi</h2><input id="historyQ" placeholder="Rechercher un audit…" oninput="filterHistory()"></div>
-    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Projet</th><th>Date</th><th>Statut</th><th>Score</th><th>Exigences</th><th>Constats</th><th>Axes</th><th></th></tr></thead><tbody id="historyRows">${historyRows(recent)}</tbody></table></div></section>`;
+  </section>${auditChart(rows)}`;
 }
 async function pageDashboard(){
   const a=await api("/api/audits");
