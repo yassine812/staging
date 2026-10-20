@@ -294,6 +294,36 @@ body.security-auditor-body.modal-open { overflow: hidden; }
 .security-auditor-app .axis-summary-card.active { border-color:#007bff; box-shadow:0 0 0 2px rgba(0,123,255,.12),0 .35rem 1rem rgba(0,0,0,.1); transform:translateY(-2px); }
 .security-auditor-app .axis-results-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:18px 0 8px; }
 .security-auditor-app .axis-results-head h2 { margin:0; color:#343a40; font-size:18px; letter-spacing:0; text-transform:none; }
+.security-auditor-app .audit-detail-hero { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:22px 24px; margin-bottom:14px; background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%); border:1px solid #dbe4ef; border-radius:12px; box-shadow:0 .25rem .75rem rgba(31,45,61,.08); }
+.security-auditor-app .audit-detail-copy { min-width:0; }
+.security-auditor-app .audit-detail-copy h1 { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:4px 0 8px; font-size:30px; color:#1f2d3d; }
+.security-auditor-app .audit-detail-copy h1 .pill { font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+.security-auditor-app .audit-detail-id { color:#007bff; font-weight:700; }
+.security-auditor-app .audit-detail-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:#6c757d; font-size:13px; }
+.security-auditor-app .audit-detail-meta strong { color:#343a40; }
+.security-auditor-app .audit-detail-mark { display:grid; place-items:center; flex:0 0 58px; width:58px; height:58px; border-radius:16px; color:#fff; background:linear-gradient(135deg,#007bff,#0056b3); font-size:27px; box-shadow:0 8px 18px rgba(0,123,255,.25); }
+.security-auditor-app .audit-detail-tabs { display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin:0 0 16px; padding:6px; background:#e9eff7; border:1px solid #dbe4ef; border-radius:10px; }
+.security-auditor-app .audit-detail-tabs a { display:inline-flex; align-items:center; gap:7px; padding:9px 15px; border:1px solid transparent; border-radius:7px; color:#526274; font-weight:600; }
+.security-auditor-app .audit-detail-tabs a:hover { color:#0056b3; background:#fff; }
+.security-auditor-app .audit-detail-tabs a.active { color:#fff; background:#007bff; box-shadow:0 3px 8px rgba(0,123,255,.2); }
+.security-auditor-app .axis-overview-panel { display:flex; align-items:center; justify-content:space-between; gap:22px; padding:20px 22px; margin-bottom:14px; border-left:4px solid #007bff; }
+.security-auditor-app .axis-overview-copy { min-width:0; }
+.security-auditor-app .axis-overview-copy .eyebrow { color:#007bff; font-weight:800; letter-spacing:.08em; }
+.security-auditor-app .axis-overview-copy h2 { margin:4px 0 6px; color:#343a40; font-size:19px; letter-spacing:0; text-transform:none; }
+.security-auditor-app .axis-overview-copy p { margin:0; max-width:920px; color:#6c757d; }
+.security-auditor-app .axis-overview-panel .btn { flex:0 0 auto; white-space:nowrap; }
+.security-auditor-app .finding-filter-panel { margin-bottom:16px; padding:14px 16px; }
+.security-auditor-app .finding-filter-panel .row { align-items:flex-end; }
+.security-auditor-app .finding-filter-panel label { color:#495057; font-weight:600; }
+@media (max-width: 620px) {
+  .security-auditor-app .audit-detail-hero { align-items:flex-start; padding:17px; }
+  .security-auditor-app .audit-detail-mark { flex-basis:44px; width:44px; height:44px; border-radius:12px; font-size:20px; }
+  .security-auditor-app .audit-detail-copy h1 { font-size:23px; }
+  .security-auditor-app .audit-overview-panel,
+  .security-auditor-app .axis-overview-panel { display:block; }
+  .security-auditor-app .axis-overview-panel .btn { display:inline-flex; margin-top:14px; }
+  .security-auditor-app .audit-detail-tabs a { flex:1 1 calc(50% - 7px); justify-content:center; padding:8px 9px; }
+}
 .security-auditor-app .module-suggestions {
   background: #ffffff;
   border-color: #ced4da;
@@ -955,7 +985,7 @@ function renderFindingRows(d){
   if(c)c.textContent=`${filterFindings(d).length} of ${(d.findings||[]).length} findings shown`;
 }
 function findingsToolbar(){
-  return `<div class="panel"><div class="row">
+  return `<div class="panel finding-filter-panel"><div class="row">
     <div style="flex:0 0 180px"><label>S\u00e9v\u00e9rit\u00e9</label>
       <select id="axisFindingSeverity" onchange="setFilter('sev',this.value)">
         <option value="">Toutes les s\u00e9v\u00e9rit\u00e9s</option>
@@ -1082,10 +1112,10 @@ async function pageAudit(id,tab,sev){
   if(!tabs.includes(tab))tab="axes";
   let body="";
   if(tab==="axes"){
-    body=`<div class="panel"><div class="eyebrow">LECTURE PAR MOTEUR</div>
-      <h2 style="margin-top:6px">Constats répartis sur les 4 axes</h2>
-      <p class="small muted">Cette vue est dédiée aux résultats des scanners : sévérité, emplacement, constat et correction. Le détail des 137 exigences est centralisé dans l’onglet Exigences.</p>
-      <a class="btn sec" href="#/audits/${esc(id)}/requirements">Voir les exigences détaillées</a></div>
+    body=`<section class="panel axis-overview-panel"><div class="axis-overview-copy"><div class="eyebrow">LECTURE PAR MOTEUR</div>
+      <h2>Constats répartis sur les 4 axes</h2>
+      <p class="small muted">Sévérité, emplacement, constat et correction sont regroupés ici. Le détail des exigences est disponible dans l’onglet dédié.</p></div>
+      <a class="btn sec" href="#/audits/${esc(id)}/requirements"><i class="fas fa-clipboard-check"></i> Voir les exigences</a></section>
     ${findingsToolbar()}<div id="axisResults">${axisResultsContent(d)}</div>`;
   }else if(tab==="requirements"){
     body=requirementsPanel(d);
@@ -1099,10 +1129,10 @@ async function pageAudit(id,tab,sev){
       <tbody id="historyRows">${historyRows(history.audits||[])}</tbody></table>`;
   }
   document.getElementById("app").innerHTML=`
-  <h1>Audit ${esc(id)} ${pill(d.status)}</h1>
-  <p class="small muted">Projet : <b>${esc((d.project||{}).name)}</b> &mdash; ${esc((d.project||{}).source_type)}
-  ${(d.project||{}).commit_sha?` &mdash; commit <code>${esc(d.project.commit_sha.slice(0,12))}</code>`:""}</p>
-  <div class="tabs">${navTabs.map(t=>`<a class="${t===tab?"active":""}" href="${t==="dashboard"?"#/audits":`#/audits/${id}/${t}`}">${TAB_FR[t]||t}</a>`).join("")}</div>
+  <section class="audit-detail-hero"><div class="audit-detail-mark"><i class="fas fa-shield-alt"></i></div><div class="audit-detail-copy"><div class="eyebrow">RAPPORT D’AUDIT</div><h1>Audit <span class="audit-detail-id">${esc(id)}</span> ${pill(d.status)}</h1>
+  <div class="audit-detail-meta"><span>Projet : <strong>${esc((d.project||{}).name)}</strong></span><span>•</span><span>${esc((d.project||{}).source_type||"internal")}</span>
+  ${(d.project||{}).commit_sha?`<span>•</span><span>commit <code>${esc(d.project.commit_sha.slice(0,12))}</code></span>`:""}</div></div></section>
+  <div class="tabs audit-detail-tabs">${navTabs.map(t=>`<a class="${t===tab?"active":""}" href="${t==="dashboard"?"#/audits":`#/audits/${id}/${t}`}" ${t===tab?`aria-current="page"`:""}><i class="fas ${t==="dashboard"?"fa-tachometer-alt":t==="axes"?"fa-project-diagram":t==="requirements"?"fa-clipboard-check":"fa-history"}"></i>${TAB_FR[t]||t}</a>`).join("")}</div>
   ${d.status!=="COMPLETE"?auditProgress(d):""}
   ${body}`;
   if(tab==="axes")renderAxisResults(d);
