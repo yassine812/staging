@@ -26,10 +26,6 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-secret-key-change-me")
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",") if h.strip()]
 
-# Optional isolated host for the removable client-account form.
-CLIENT_ACCOUNTS_ENABLED = os.getenv("CLIENT_ACCOUNTS_ENABLED", "1") == "1"
-CLIENT_ACCOUNTS_PUBLIC_HOST = os.getenv("CLIENT_ACCOUNTS_PUBLIC_HOST", "").strip().lower()
-
 # ── Sage Web Services ────────────────────────────────────────────────────────
 SAGE_API_TOKEN = os.getenv("SAGE_API_TOKEN", "")
 SAGE_API_HOST  = os.getenv("SAGE_API_HOST", "http://185.17.241.250:52345")
@@ -42,7 +38,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "accounts",
-    "client_accounts",
     "audit",
     "accident_travail",
     "achats",
@@ -65,7 +60,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "client_accounts.middleware.ClientAccountHostMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -92,7 +86,6 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "client_accounts.context_processors.module_visibility",
                 # ── Prospection ──────────────────────────────────────────────
                 "prospection.context_processors.firebase_config",
                 "prospection.context_processors.notifications",

@@ -54,7 +54,6 @@
 {% url 'administration:sections' as url_adm_sections %}
 {% url 'administration:sites' as url_adm_sites %}
 {% url 'administration:customers' as url_adm_customers %}
-{% url 'client_accounts:manage' as url_client_accounts %}
 {% with ns=request.resolver_match.namespace un=request.resolver_match.url_name %}
 <nav class="mt-2">
   <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
@@ -63,7 +62,7 @@
     <!-- MODULE : ADMINISTRATION                -->
     <!-- ══════════════════════════════════════ -->
     {% if request.user.is_superuser %}
-    <li class="nav-item {% if ns == 'administration' or ns == 'client_accounts' %}menu-open{% endif %}">
+    <li class="nav-item {% if ns == 'administration' %}menu-open{% endif %}">
       <a href="#" class="nav-link">
         <i class="nav-icon fas fa-user-shield"></i>
         <p>Administration<i class="right fas fa-angle-left"></i></p>
@@ -79,13 +78,6 @@
             <i class="nav-icon fas fa-users"></i><p>Utilisateurs</p>
           </a>
         </li>
-        {% if client_accounts_enabled %}
-        <li class="nav-item">
-          <a href="{{ url_client_accounts }}" class="nav-link {% if ns == 'client_accounts' %}active{% endif %}">
-            <i class="nav-icon fas fa-user-plus"></i><p>Création de comptes clients</p>
-          </a>
-        </li>
-        {% endif %}
         <li class="nav-item">
           <a href="{{ url_adm_societes }}" class="nav-link {% if ns == 'administration' and un == 'societes' %}active{% endif %}">
             <i class="nav-icon fas fa-building"></i><p>Sociétés</p>

@@ -5,19 +5,11 @@ from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.views import serve
-from django.views.generic import RedirectView
 from core_views import login_view, logout_view, home_view, profile_view, update_profile, change_password
 
 urlpatterns = [
     # ── Racine ───────────────────────────────────────────────────────────────
     path("", home_view, name="home"),
-    path(
-        "essai-comptes-clients/",
-        RedirectView.as_view(pattern_name="client_accounts:manage", permanent=False),
-        name="essai_comptes_clients",
-    ),
-    path("creation-comptes-clients/", include("client_accounts.urls")),
-    path("creer-compte/", include("client_accounts.public_urls")),
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
     path("profile/", profile_view, name="profile"),
