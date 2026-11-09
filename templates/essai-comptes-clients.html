@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'none'; base-uri 'none'">
   <meta name="robots" content="noindex, nofollow">
   <title>Création de compte client</title>
   <style>
@@ -38,7 +38,7 @@
     @media (max-width: 34rem) { main { margin-top: 1.25rem; } .fields { grid-template-columns: 1fr; } }
   </style>
 </head>
-<body>
+<body data-section-search-url="{% url 'client_section_search' %}">
   <main>
     <header>
       <h1>Création de compte client</h1>
@@ -104,9 +104,9 @@
     const sectionOptions = document.querySelector('#section-options');
     const creationError = document.querySelector('#creation-error');
     const result = document.querySelector('#result');
-    const sections = [
-      { id: '405-scania', code: '405', label: '405 F SCANIA' },
-    ];
+    let sections = [];
+    let sectionRequest;
+    let sectionTimer;
     const countries = [
       { names: ['france'], code: 'FR', timezone: 'Europe/Paris' },
       { names: ['allemagne', 'germany', 'deutschland'], code: 'GR', timezone: 'Europe/Berlin' },
@@ -116,30 +116,60 @@
     const usedMatricules = new Set(['CLT405FR0032']);
 
     function updateSectionMatches() {
+      clearTimeout(sectionTimer);
+      if (sectionRequest) sectionRequest.abort();
+      sections = [];
       const code = sectionCode.value.trim();
-      const matches = sections.filter((section) => section.code === code);
       sectionOptions.replaceChildren();
-      sectionMatches.hidden = matches.length === 0;
+      sectionMatches.hidden = true;
+      result.hidden = true;
       sectionCode.setCustomValidity('');
       sectionStatus.textContent = '';
-
-      if (code && matches.length === 0) {
-        const message = 'Aucune section vérifiée pour ce code.';
-        sectionCode.setCustomValidity(message);
-        sectionStatus.textContent = message;
+      if (!code) return;
+      if (!/^[0-9]{1,20}$/.test(code)) {
+        sectionCode.setCustomValidity('Saisissez un code de section numérique.');
+        sectionStatus.textContent = sectionCode.validationMessage;
+        return;
       }
+      sectionCode.setCustomValidity('Recherche des sections en cours.');
+      sectionStatus.textContent = 'Recherche des sections…';
+      const controller = new AbortController();
+      sectionRequest = controller;
+      sectionTimer = setTimeout(() => searchSections(code, controller), 250);
+    }
 
-      for (const section of matches) {
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'section';
-        radio.value = section.id;
-        radio.required = true;
+    async function searchSections(code, controller) {
+      try {
+        const url = new URL(document.body.dataset.sectionSearchUrl, location.origin);
+        url.searchParams.set('code', code);
+        const response = await fetch(url, {
+          credentials: 'same-origin',
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        const data = await response.json();
+        if (controller.signal.aborted) return;
+        if (!response.ok) throw new Error(data.error || 'Recherche indisponible.');
+        sections = data.sections;
+        sectionCode.setCustomValidity(sections.length ? '' : 'Aucune section trouvée pour ce code.');
+        sectionStatus.textContent = sectionCode.validationMessage;
+        sectionMatches.hidden = sections.length === 0;
+        for (const section of sections) {
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'section';
+          radio.value = section.id;
+          radio.required = true;
 
-        const label = document.createElement('label');
-        label.className = 'section-option';
-        label.append(radio, section.label);
-        sectionOptions.append(label);
+          const label = document.createElement('label');
+          label.className = 'section-option';
+          label.append(radio, section.label);
+          sectionOptions.append(label);
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        sectionCode.setCustomValidity('La recherche des sections est indisponible.');
+        sectionStatus.textContent = 'La recherche des sections est indisponible. Vérifiez votre connexion et reconnectez-vous si nécessaire.';
       }
     }
 
