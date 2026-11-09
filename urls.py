@@ -5,7 +5,7 @@ from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.views import serve
-from accounts.client_trial import client_form, search_sections
+from django.views.generic import RedirectView
 from core_views import login_view, logout_view, home_view, profile_view, update_profile, change_password
 
 urlpatterns = [
@@ -13,10 +13,10 @@ urlpatterns = [
     path("", home_view, name="home"),
     path(
         "essai-comptes-clients/",
-        client_form,
+        RedirectView.as_view(pattern_name="client_accounts:manage", permanent=False),
         name="essai_comptes_clients",
     ),
-    path("essai-comptes-clients/sections/", search_sections, name="client_section_search"),
+    path("creation-comptes-clients/", include("client_accounts.urls")),
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
     path("profile/", profile_view, name="profile"),

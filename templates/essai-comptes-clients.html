@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'self'; base-uri 'none'">
   <meta name="robots" content="noindex, nofollow">
   <title>Création de compte client</title>
   <style>
@@ -38,30 +38,32 @@
     @media (max-width: 34rem) { main { margin-top: 1.25rem; } .fields { grid-template-columns: 1fr; } }
   </style>
 </head>
-<body data-section-search-url="{% url 'client_section_search' %}">
+<body data-section-search-url="{{ section_search_url }}">
   <main>
     <header>
       <h1>Création de compte client</h1>
+      <p>{{ societe.nom }}</p>
     </header>
 
-    <form class="card" id="client-form">
+    <form class="card" id="client-form" method="post" action="{{ create_account_url }}">
+      {% csrf_token %}
       <div class="fields">
         <div>
           <label for="first-name">Prénom</label>
-          <input id="first-name" maxlength="150" pattern=".*\S.*" required>
+          <input name="first_name" id="first-name" maxlength="150" pattern=".*\S.*" required>
         </div>
         <div>
           <label for="last-name">Nom</label>
-          <input id="last-name" maxlength="150" pattern=".*\S.*" required>
+          <input name="last_name" id="last-name" maxlength="150" pattern=".*\S.*" required>
         </div>
         <div class="wide">
           <label for="email">Adresse e-mail</label>
-          <input id="email" type="email" maxlength="254" aria-describedby="email-error" required>
+          <input name="email" id="email" type="email" maxlength="254" aria-describedby="email-error" required>
           <p id="email-error" class="error" role="alert"></p>
         </div>
         <div>
           <label for="country">Pays</label>
-          <input id="country" placeholder="Ex. France" autocomplete="off" maxlength="100" aria-describedby="country-error" required>
+          <input name="pays" id="country" placeholder="Ex. France" autocomplete="off" maxlength="100" aria-describedby="country-error" required>
           <p id="country-error" class="error" role="alert"></p>
         </div>
         <div class="wide">
@@ -74,14 +76,14 @@
           </fieldset>
         </div>
       </div>
-      <button type="submit">Valider</button>
+      <button type="submit">Créer le compte</button>
       <p id="creation-error" class="error" role="alert"></p>
     </form>
 
     <section class="card result" id="result" tabindex="-1" aria-labelledby="result-title" hidden>
-      <h2 id="result-title">Aperçu du compte</h2>
+      <h2 id="result-title">Compte créé</h2>
       <dl>
-        <div><dt>Username proposé</dt><dd id="result-username"></dd></div>
+        <div><dt>Username</dt><dd id="result-username"></dd></div>
         <div><dt>Section</dt><dd id="result-section"></dd></div>
         <div><dt>Matricule</dt><dd id="result-matricule"></dd></div>
         <div><dt>Fuseau horaire</dt><dd id="result-timezone"></dd></div>
@@ -107,14 +109,6 @@
     let sections = [];
     let sectionRequest;
     let sectionTimer;
-    const countries = [
-      { names: ['france'], code: 'FR', timezone: 'Europe/Paris' },
-      { names: ['allemagne', 'germany', 'deutschland'], code: 'GR', timezone: 'Europe/Berlin' },
-      { names: ['pologne', 'poland', 'polska'], code: 'PL', timezone: 'Europe/Warsaw' },
-    ];
-    const usedEmails = new Set(['client.existant@example.test']);
-    const usedMatricules = new Set(['CLT405FR0032']);
-
     function updateSectionMatches() {
       clearTimeout(sectionTimer);
       if (sectionRequest) sectionRequest.abort();
@@ -173,17 +167,6 @@
       }
     }
 
-    function nextMatricule(prefix) {
-      const suffixCount = 10000;
-      const start = Math.floor(Math.random() * suffixCount);
-      for (let offset = 0; offset < suffixCount; offset += 1) {
-        const suffix = String((start + offset) % suffixCount).padStart(4, '0');
-        const matricule = `${prefix}${suffix}`;
-        if (!usedMatricules.has(matricule)) return matricule;
-      }
-      return null;
-    }
-
     emailInput.addEventListener('input', () => {
       emailError.textContent = '';
       emailInput.removeAttribute('aria-invalid');
@@ -195,47 +178,49 @@
     sectionCode.addEventListener('input', updateSectionMatches);
     updateSectionMatches();
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
+      const button = form.querySelector('button[type="submit"]');
+      if (button.disabled) return;
+      button.disabled = true;
       result.hidden = true;
       creationError.textContent = '';
-
-      const email = emailInput.value.trim().toLowerCase();
-      if (usedEmails.has(email)) {
-        emailError.textContent = 'Cette adresse e-mail est déjà utilisée.';
-        emailInput.setAttribute('aria-invalid', 'true');
-        emailInput.focus();
-        return;
+      emailError.textContent = '';
+      countryError.textContent = '';
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          credentials: 'same-origin',
+          body: new FormData(form),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          const errors = data.errors || {};
+          if (errors.email) {
+            emailError.textContent = errors.email.map((error) => error.message).join(' ');
+            emailInput.setAttribute('aria-invalid', 'true');
+          }
+          if (errors.pays) {
+            countryError.textContent = errors.pays.map((error) => error.message).join(' ');
+            countryInput.setAttribute('aria-invalid', 'true');
+          }
+          creationError.textContent = data.error || Object.values(errors)
+            .flat().map((error) => error.message).join(' ');
+          return;
+        }
+        document.querySelector('#result-username').textContent = data.username;
+        document.querySelector('#result-section').textContent = data.section;
+        document.querySelector('#result-matricule').textContent = data.matricule;
+        document.querySelector('#result-timezone').textContent = data.timezone;
+        form.reset();
+        updateSectionMatches();
+        result.hidden = false;
+        result.focus();
+      } catch (error) {
+        creationError.textContent = 'Impossible de confirmer la création. Vérifiez votre connexion et reconnectez-vous si nécessaire.';
+      } finally {
+        button.disabled = false;
       }
-
-      const countryName = countryInput.value.trim().toLowerCase();
-      const country = countries.find((option) => option.names.includes(countryName));
-      if (!country) {
-        countryError.textContent = 'Pays non configuré.';
-        countryInput.setAttribute('aria-invalid', 'true');
-        countryInput.focus();
-        return;
-      }
-
-      const selectedSection = sectionOptions.querySelector('input:checked');
-      const section = sections.find((option) => option.id === selectedSection.value);
-      const matricule = nextMatricule(`CLT${section.code}${country.code}`);
-      if (!matricule) {
-        creationError.textContent = 'Tous les matricules sont déjà utilisés pour ce numéro de section et ce pays.';
-        return;
-      }
-
-      const username = `clt-${String(usedEmails.size).padStart(4, '0')}`;
-      usedEmails.add(email);
-      usedMatricules.add(matricule);
-      document.querySelector('#result-username').textContent = username;
-      document.querySelector('#result-section').textContent = section.label;
-      document.querySelector('#result-matricule').textContent = matricule;
-      document.querySelector('#result-timezone').textContent = country.timezone;
-      form.reset();
-      updateSectionMatches();
-      result.hidden = false;
-      result.focus();
     });
   </script>
 </body>
