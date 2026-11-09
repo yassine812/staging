@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'none'; base-uri 'none'">
   <meta name="robots" content="noindex, nofollow">
-  <title>Création de compte client · Essai</title>
+  <title>Création de compte client</title>
   <style>
     :root { font: 16px/1.5 system-ui, sans-serif; color: #162437; background: #f1f5f9; }
     * { box-sizing: border-box; }
@@ -13,7 +13,6 @@
     h1 { font-size: clamp(1.65rem, 5vw, 2.2rem); line-height: 1.2; margin: .5rem 0; }
     h2 { font-size: 1.15rem; margin: 0 0 .5rem; }
     p { margin: .5rem 0; }
-    .badge { display: inline-block; padding: .25rem .65rem; border-radius: 1rem; background: #dbeafe; color: #163a72; font-size: .85rem; font-weight: 700; }
     .card { margin-top: 1.25rem; padding: clamp(1rem, 4vw, 1.75rem); border: 1px solid #d4dfeb; border-radius: .9rem; background: #fff; }
     .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
     .wide { grid-column: 1 / -1; }
@@ -42,9 +41,7 @@
 <body>
   <main>
     <header>
-      <span class="badge">Démo pour les RS</span>
       <h1>Création de compte client</h1>
-      <p>Teste le formulaire avec des données fictives. Les essais sont effacés au rechargement de la page.</p>
     </header>
 
     <form class="card" id="client-form">
@@ -59,14 +56,12 @@
         </div>
         <div class="wide">
           <label for="email">Adresse e-mail</label>
-          <input id="email" type="email" maxlength="254" aria-describedby="email-hint email-error" required>
-          <p id="email-hint" class="hint">Pour tester le doublon, utilise <strong>client.existant@example.test</strong>.</p>
+          <input id="email" type="email" maxlength="254" aria-describedby="email-error" required>
           <p id="email-error" class="error" role="alert"></p>
         </div>
         <div>
           <label for="country">Pays</label>
-          <input id="country" placeholder="Ex. France" autocomplete="off" maxlength="100" aria-describedby="country-hint country-error" required>
-          <p id="country-hint" class="hint">Pour l’essai, saisis France, Allemagne ou Pologne.</p>
+          <input id="country" placeholder="Ex. France" autocomplete="off" maxlength="100" aria-describedby="country-error" required>
           <p id="country-error" class="error" role="alert"></p>
         </div>
         <div class="wide">
@@ -79,14 +74,14 @@
           </fieldset>
         </div>
       </div>
-      <button type="submit">Simuler la création</button>
+      <button type="submit">Valider</button>
       <p id="creation-error" class="error" role="alert"></p>
     </form>
 
     <section class="card result" id="result" tabindex="-1" aria-labelledby="result-title" hidden>
-      <h2 id="result-title">Création simulée</h2>
+      <h2 id="result-title">Aperçu du compte</h2>
       <dl>
-        <div><dt>Username fictif</dt><dd id="result-username"></dd></div>
+        <div><dt>Username proposé</dt><dd id="result-username"></dd></div>
         <div><dt>Section</dt><dd id="result-section"></dd></div>
         <div><dt>Matricule</dt><dd id="result-matricule"></dd></div>
         <div><dt>Fuseau horaire</dt><dd id="result-timezone"></dd></div>
@@ -111,8 +106,8 @@
     const result = document.querySelector('#result');
     const sections = [
       { id: '405-scania', code: '405', label: '405 F SCANIA' },
-      { id: '405-autre', code: '405', label: '405 · Autre site (démo)' },
-      { id: '303-demo', code: '303', label: '303 · Site de démonstration' },
+      { id: '405-autre', code: '405', label: '405 · Autre site' },
+      { id: '303-principal', code: '303', label: '303 · Site principal' },
     ];
     const countries = [
       { names: ['france'], code: 'FR', timezone: 'Europe/Paris' },
@@ -188,7 +183,7 @@
       const countryName = countryInput.value.trim().toLowerCase();
       const country = countries.find((option) => option.names.includes(countryName));
       if (!country) {
-        countryError.textContent = 'Ce pays n’est pas configuré pour la démo.';
+        countryError.textContent = 'Pays non configuré.';
         countryInput.setAttribute('aria-invalid', 'true');
         countryInput.focus();
         return;
@@ -202,7 +197,7 @@
         return;
       }
 
-      const username = `demo-clt-${String(usedEmails.size).padStart(4, '0')}`;
+      const username = `clt-${String(usedEmails.size).padStart(4, '0')}`;
       usedEmails.add(email);
       usedMatricules.add(matricule);
       document.querySelector('#result-username').textContent = username;
