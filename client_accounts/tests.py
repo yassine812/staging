@@ -1,11 +1,47 @@
 from unittest.mock import patch
 
 from django.db import IntegrityError
-from django.test import Client, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 from django.urls import reverse
 
 from accounts.models import Section, Societe, User
 from .models import ClientAccountModule, CreatedClientAccount
+from .countries import resolve_country
+
+
+class CountryResolutionTests(SimpleTestCase):
+    def test_free_text_names_and_common_spellings(self):
+        for name, iso in [
+            ("Maroc", "MA"), ("Morocco", "MA"), ("  CANADA  ", "CA"),
+            ("Cote d'Ivoire", "CI"), ("Côte d’Ivoire", "CI"), ("USA", "US"),
+            ("Etats Unis", "US"), ("Deutschland", "DE"), ("Polska", "PL"),
+            ("المغرب", "MA"), ("Brasil", "BR"), ("Royaume Uni", "GB"),
+        ]:
+            with self.subTest(country=name):
+                self.assertEqual(resolve_country(name)["iso"], iso)
+
+    def test_capital_timezone_for_countries_with_multiple_zones(self):
+        for name, timezone in [
+            ("États-Unis", "America/New_York"), ("Canada", "America/Toronto"),
+            ("Australie", "Australia/Sydney"), ("Brésil", "America/Sao_Paulo"),
+            ("Russie", "Europe/Moscow"), ("Maroc", "Africa/Casablanca"),
+        ]:
+            with self.subTest(country=name):
+                self.assertEqual(resolve_country(name)["timezone"], timezone)
+
+    def test_all_dataset_codes_are_recognized_and_zones_are_valid(self):
+        import csv
+        from pathlib import Path
+        import pytz
+        with Path(__file__).with_name("data").joinpath("countries.csv").open(encoding="utf-8") as file:
+            countries = list(csv.DictReader(file))
+        self.assertEqual(len(countries), 250)
+        for country in countries:
+            with self.subTest(country=country["iso"]):
+                self.assertEqual(resolve_country(country["iso"]), country)
+                if country["timezone"]:
+                    self.assertIn(country["timezone"], pytz.all_timezones_set)
+        self.assertIsNone(resolve_country("pays inventé"))
 
 
 class ClientAccountModuleTests(TestCase):
@@ -126,3 +162,18 @@ class ClientAccountModuleTests(TestCase):
         self.data["pays"] = "inconnu"
         self.assertEqual(self.client.post(self.create_url, self.data).status_code, 400)
         self.assertFalse(CreatedClientAccount.objects.exists())
+
+    def test_new_countries_create_accounts_from_typed_names(self):
+        for country, code, timezone in [
+            ("Maroc", "MA", "Africa/Casablanca"),
+            ("CANADA", "CA", "America/Toronto"),
+            ("Germany", "GR", "Europe/Berlin"),
+        ]:
+            with self.subTest(country=country):
+                self.data.update(pays=country, email=f"client-{code}@example.test")
+                response = self.client.post(self.create_url, self.data)
+                self.assertEqual(response.status_code, 201, response.content)
+                user = User.objects.get(username=response.json()["username"])
+                self.assertEqual(user.pays, country)
+                self.assertEqual(user.timezone, timezone)
+                self.assertTrue(response.json()["matricule"].startswith(f"CLT405{code}"))

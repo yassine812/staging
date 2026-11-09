@@ -3,14 +3,7 @@ import re
 from django import forms
 
 from accounts.models import Section, User
-
-
-COUNTRIES = [
-    (("france",), "FR", "Europe/Paris"),
-    (("allemagne", "germany", "deutschland"), "GR", "Europe/Berlin"),
-    (("pologne", "poland", "polska"), "PL", "Europe/Warsaw"),
-    (("tunisie", "tunisia"), "TN", "Africa/Tunis"),
-]
+from .countries import resolve_country
 
 
 class ClientDetailsForm(forms.Form):
@@ -32,12 +25,14 @@ class ClientDetailsForm(forms.Form):
 
     def clean_pays(self):
         country = self.cleaned_data["pays"]
-        for names, code, timezone in COUNTRIES:
-            if country.lower() in names:
-                self.cleaned_data["country_code"] = code
-                self.cleaned_data["timezone"] = timezone
-                return country
-        raise forms.ValidationError("Pays non configuré. Contactez votre administrateur.")
+        profile = resolve_country(country)
+        if profile is None:
+            raise forms.ValidationError("Pays non reconnu. Saisissez son nom complet, par exemple Maroc ou Canada.")
+        if not profile["timezone"]:
+            raise forms.ValidationError("Ce territoire nécessite un fuseau horaire précisé par l’administrateur.")
+        self.cleaned_data["country_code"] = "GR" if profile["iso"] == "DE" else profile["iso"]
+        self.cleaned_data["timezone"] = profile["timezone"]
+        return country
 
     def clean_section(self):
         section = self.cleaned_data["section"]
