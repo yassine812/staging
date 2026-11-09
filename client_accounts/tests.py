@@ -58,9 +58,9 @@ class ClientAccountModuleTests(TestCase):
         self.client.force_login(self.admin)
         self.client.post(self.configure_url, {"action": "activate"})
         self.module = ClientAccountModule.objects.get(admin=self.admin, societe=self.company)
-        self.form_url = reverse("client_accounts:form", args=[self.module.token])
-        self.search_url = reverse("client_accounts:sections", args=[self.module.token])
-        self.create_url = reverse("client_accounts:create", args=[self.module.token])
+        self.form_url = reverse("client_accounts_public:form", args=[self.module.token])
+        self.search_url = reverse("client_accounts_public:sections", args=[self.module.token])
+        self.create_url = reverse("client_accounts_public:create", args=[self.module.token])
         self.data = {
             "first_name": "Artur", "last_name": "Witus", "email": "artur@example.test",
             "pays": "Pologne", "section": self.section.pk,
@@ -108,6 +108,17 @@ class ClientAccountModuleTests(TestCase):
         self.assertFalse(self.rs.is_superuser or self.rs.is_staff)
         self.assertEqual(str(self.client.session["_auth_user_id"]), str(self.rs.pk))
 
+    def test_public_address_is_separate_from_admin_and_old_address_is_closed(self):
+        self.assertEqual(self.form_url, f"/creer-compte/{self.module.token}/")
+        self.client.logout()
+        self.assertEqual(self.client.get(self.form_url).status_code, 200)
+        old_url = f"/creation-comptes-clients/rs/{self.module.token}/"
+        self.assertEqual(self.client.get(old_url).status_code, 404)
+        self.assertEqual(self.client.get(old_url + "sections/", {"code": "405"}).status_code, 404)
+        self.assertEqual(self.client.post(old_url + "creer/", self.data).status_code, 404)
+        self.assertEqual(self.client.get("/creer-compte/").status_code, 404)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
     def test_duplicate_email_keeps_a_single_account(self):
         self.assertEqual(self.client.post(self.create_url, self.data).status_code, 201)
         self.data["email"] = "ARTUR@EXAMPLE.TEST"
@@ -131,7 +142,7 @@ class ClientAccountModuleTests(TestCase):
         ).status_code, 404)
         self.client.logout()
         for name in ("form", "sections", "create"):
-            url = reverse(f"client_accounts:{name}", args=[legacy_module.token])
+            url = reverse(f"client_accounts_public:{name}", args=[legacy_module.token])
             with self.subTest(endpoint=name):
                 response = self.client.post(url, self.data) if name == "create" else self.client.get(url)
                 self.assertEqual(response.status_code, 404)
@@ -213,9 +224,9 @@ class ClientAccountModuleTests(TestCase):
     def test_unknown_or_inactive_owner_link_is_rejected(self):
         self.client.logout()
         token = uuid.uuid4()
-        self.assertEqual(self.client.get(reverse("client_accounts:form", args=[token])).status_code, 404)
-        self.assertEqual(self.client.get(reverse("client_accounts:sections", args=[token]), {"code": "405"}).status_code, 404)
-        self.assertEqual(self.client.post(reverse("client_accounts:create", args=[token]), self.data).status_code, 404)
+        self.assertEqual(self.client.get(reverse("client_accounts_public:form", args=[token])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("client_accounts_public:sections", args=[token]), {"code": "405"}).status_code, 404)
+        self.assertEqual(self.client.post(reverse("client_accounts_public:create", args=[token]), self.data).status_code, 404)
         self.admin.is_active = False
         self.admin.save(update_fields=["is_active"])
         self.assertEqual(self.client.get(self.form_url).status_code, 404)

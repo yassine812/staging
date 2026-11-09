@@ -36,7 +36,7 @@ def manage(request):
         module = modules.get(societe.pk)
         link = ""
         if module and module.enabled:
-            link = request.build_absolute_uri(reverse("client_accounts:form", args=[module.token]))
+            link = request.build_absolute_uri(reverse("client_accounts_public:form", args=[module.token]))
         rows.append({"societe": societe, "link": link})
     return render(request, "client_accounts/manage.html", {"rows": rows})
 
@@ -81,8 +81,8 @@ def client_form(request, token):
     module = _active_module(token)
     response = render(request, "essai-comptes-clients.html", {
         "societe": module.societe,
-        "section_search_url": reverse("client_accounts:sections", args=[module.token]),
-        "create_account_url": reverse("client_accounts:create", args=[module.token]),
+        "section_search_url": reverse("client_accounts_public:sections", args=[module.token]),
+        "create_account_url": reverse("client_accounts_public:create", args=[module.token]),
     })
     response["Referrer-Policy"] = "no-referrer"
     return response

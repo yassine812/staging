@@ -17,6 +17,7 @@ urlpatterns = [
         name="essai_comptes_clients",
     ),
     path("creation-comptes-clients/", include("client_accounts.urls")),
+    path("creer-compte/", include("client_accounts.public_urls")),
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
     path("profile/", profile_view, name="profile"),
