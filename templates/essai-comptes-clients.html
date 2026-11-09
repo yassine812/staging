@@ -106,8 +106,6 @@
     const result = document.querySelector('#result');
     const sections = [
       { id: '405-scania', code: '405', label: '405 F SCANIA' },
-      { id: '405-autre', code: '405', label: '405 · Autre site' },
-      { id: '303-principal', code: '303', label: '303 · Site principal' },
     ];
     const countries = [
       { names: ['france'], code: 'FR', timezone: 'Europe/Paris' },
@@ -126,7 +124,7 @@
       sectionStatus.textContent = '';
 
       if (code && matches.length === 0) {
-        const message = 'Aucune section ne correspond à ce code.';
+        const message = 'Aucune section vérifiée pour ce code.';
         sectionCode.setCustomValidity(message);
         sectionStatus.textContent = message;
       }
