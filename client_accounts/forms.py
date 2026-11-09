@@ -11,11 +11,7 @@ class ClientDetailsForm(forms.Form):
     last_name = forms.CharField(max_length=150)
     email = forms.EmailField(max_length=254)
     pays = forms.CharField(max_length=100)
-    section = forms.ModelChoiceField(queryset=Section.objects.none())
-
-    def __init__(self, societe, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["section"].queryset = Section.objects.filter(societe=societe)
+    section = forms.ModelChoiceField(queryset=Section.objects.all())
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower()

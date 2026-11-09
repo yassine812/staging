@@ -27,30 +27,22 @@ def _require_admin(user):
 @never_cache
 def manage(request):
     _require_admin(request.user)
-    modules = {
-        module.societe_id: module
-        for module in ClientAccountModule.objects.filter(admin=request.user)
-    }
-    rows = []
-    for societe in Societe.objects.exclude(nom__iexact="Client"):
-        module = modules.get(societe.pk)
-        link = ""
-        if module and module.enabled:
-            link = request.build_absolute_uri(reverse("client_accounts_public:form", args=[module.token]))
-        rows.append({"societe": societe, "link": link})
-    return render(request, "client_accounts/manage.html", {"rows": rows})
+    module = ClientAccountModule.objects.filter(is_shared=True).first()
+    link = ""
+    if module and module.enabled:
+        link = request.build_absolute_uri(reverse("client_accounts_public:form", args=[module.token]))
+    return render(request, "client_accounts/manage.html", {"link": link})
 
 
 @login_required
 @require_POST
-def configure(request, societe_id):
+def configure(request):
     _require_admin(request.user)
-    societe = get_object_or_404(Societe.objects.exclude(nom__iexact="Client"), pk=societe_id)
     action = request.POST.get("action")
     if action not in ("activate", "deactivate"):
         return JsonResponse({"error": "Action invalide."}, status=400)
     with transaction.atomic():
-        module, _ = ClientAccountModule.objects.get_or_create(admin=request.user, societe=societe)
+        module, _ = ClientAccountModule.objects.get_or_create(is_shared=True)
         module = ClientAccountModule.objects.select_for_update().get(pk=module.pk)
         enabled = action == "activate"
         if enabled:
@@ -67,11 +59,10 @@ def _active_module(token):
     # The unguessable, revocable link grants access only to this module's form.
     # Never authenticate its visitor as the module owner or a generated account.
     return get_object_or_404(
-        ClientAccountModule.objects.select_related("societe", "admin").exclude(societe__nom__iexact="Client"),
+        ClientAccountModule.objects,
         token=token,
         enabled=True,
-        admin__is_active=True,
-        admin__is_superuser=True,
+        is_shared=True,
     )
 
 
@@ -80,7 +71,6 @@ def _active_module(token):
 def client_form(request, token):
     module = _active_module(token)
     response = render(request, "essai-comptes-clients.html", {
-        "societe": module.societe,
         "section_search_url": reverse("client_accounts_public:sections", args=[module.token]),
         "create_account_url": reverse("client_accounts_public:create", args=[module.token]),
     })
@@ -91,15 +81,16 @@ def client_form(request, token):
 @require_GET
 @never_cache
 def search_sections(request, token):
-    module = _active_module(token)
+    _active_module(token)
     code = request.GET.get("code", "").strip()
     if not re.fullmatch(r"[0-9]{1,20}", code):
         return JsonResponse({"error": "Saisissez un code de section numérique."}, status=400)
     sections = Section.objects.filter(
-        societe=module.societe, Nom__regex=rf"^\s*{code}([^0-9]|$)"
-    ).order_by("Nom", "pk")
+        Nom__regex=rf"^\s*{code}([^0-9]|$)"
+    ).select_related("societe").order_by("Nom", "pk")
     return JsonResponse({"sections": [
-        {"id": str(section.pk), "code": code, "label": section.Nom}
+        {"id": str(section.pk), "code": code,
+         "label": f"{section.Nom} — {section.societe.nom}" if section.societe_id else section.Nom}
         for section in sections
     ]})
 
@@ -116,7 +107,7 @@ def create_account(request, token):
             # Serialize module creations across companies before checking email and identifiers.
             client_societe = Societe.objects.select_for_update().get(nom="Client")
             group = Group.objects.get(name="CLT")
-            form = ClientDetailsForm(module.societe, request.POST)
+            form = ClientDetailsForm(request.POST)
             if not form.is_valid():
                 return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
             actor = request.user if request.user.is_authenticated else None

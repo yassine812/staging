@@ -3,25 +3,23 @@
 {% block admin_content %}
 <div class="content-header"><div class="container-fluid">
   <h1>Création automatique de comptes</h1>
-  <p>Activez le module pour une société, puis transmettez son lien aux RS de cette société.</p>
+  <p>Activez le module, puis partagez le même lien avec tous les RS.</p>
 </div></div>
 <section class="content"><div class="container-fluid">
-  {% for row in rows %}
   <div class="card">
     <div class="card-body">
-      <h2 class="h5">{{ row.societe.nom }}</h2>
-      {% if row.link %}
+      {% if link %}
         <p class="text-success">Module actif</p>
-        <label for="link-{{ row.societe.pk }}">Lien à partager aux RS</label>
-        <p>Ce lien ouvre uniquement le formulaire, sans connexion au logiciel. Toute personne qui le possède peut créer un compte client pour cette société.</p>
-        <input id="link-{{ row.societe.pk }}" class="form-control mb-2" type="url" readonly value="{{ row.link }}">
-        <a href="{{ row.link }}" class="btn btn-outline-primary mb-2">Ouvrir le formulaire</a>
+        <label for="shared-link">Lien commun à tous les RS</label>
+        <p>Ce lien ouvre uniquement le formulaire, sans connexion au logiciel. Toute personne qui le possède peut créer un compte client.</p>
+        <input id="shared-link" class="form-control mb-2" type="url" readonly value="{{ link }}">
+        <a href="{{ link }}" class="btn btn-outline-primary mb-2">Ouvrir le formulaire</a>
       {% else %}
         <p>Module désactivé</p>
       {% endif %}
-      <form method="post" action="{% url 'client_accounts:configure' row.societe.pk %}">
+      <form method="post" action="{% url 'client_accounts:configure' %}">
         {% csrf_token %}
-        {% if row.link %}
+        {% if link %}
           <button class="btn btn-outline-danger" name="action" value="deactivate">Désactiver le module et son lien</button>
         {% else %}
           <button class="btn btn-primary" name="action" value="activate">Activer et générer le lien</button>
@@ -29,6 +27,5 @@
       </form>
     </div>
   </div>
-  {% empty %}<p>Ajoutez une société dans l’administration pour activer le module.</p>{% endfor %}
 </div></section>
 {% endblock %}

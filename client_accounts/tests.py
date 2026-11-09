@@ -1,7 +1,10 @@
 from unittest.mock import patch
 import uuid
+from importlib import import_module
+from types import SimpleNamespace
 
-from django.db import IntegrityError
+from django.apps import apps
+from django.db import IntegrityError, connection, transaction
 from django.test import Client, SimpleTestCase, TestCase
 from django.urls import reverse
 
@@ -54,10 +57,10 @@ class ClientAccountModuleTests(TestCase):
         self.admin = User.objects.create_user(username="admin", is_superuser=True)
         self.rs = User.objects.create_user(username="rs", is_RS=True, societe=self.company)
         self.outsider = User.objects.create_user(username="rs-b", is_RS=True, societe=self.other_company)
-        self.configure_url = reverse("client_accounts:configure", args=[self.company.pk])
+        self.configure_url = reverse("client_accounts:configure")
         self.client.force_login(self.admin)
         self.client.post(self.configure_url, {"action": "activate"})
-        self.module = ClientAccountModule.objects.get(admin=self.admin, societe=self.company)
+        self.module = ClientAccountModule.objects.get(is_shared=True)
         self.form_url = reverse("client_accounts_public:form", args=[self.module.token])
         self.search_url = reverse("client_accounts_public:sections", args=[self.module.token])
         self.create_url = reverse("client_accounts_public:create", args=[self.module.token])
@@ -127,33 +130,61 @@ class ClientAccountModuleTests(TestCase):
         self.assertIn("email", response.json()["errors"])
         self.assertEqual(CreatedClientAccount.objects.count(), 1)
 
-    def test_client_destination_company_cannot_publish_a_form(self):
-        destination = Societe.objects.get(nom="Client")
-        legacy_module = ClientAccountModule.objects.create(
-            admin=self.admin, societe=destination, enabled=True,
-        )
-        self.client.force_login(self.admin)
+    def test_all_admins_manage_one_link_and_legacy_links_are_closed(self):
+        legacy = ClientAccountModule.objects.create(admin=self.admin, societe=self.company, enabled=True)
+        second_admin = User.objects.create_user(username="admin-2", is_superuser=True)
+        self.client.force_login(second_admin)
         response = self.client.get(reverse("client_accounts:manage"))
-        self.assertEqual([row["societe"] for row in response.context["rows"]],
-                         [self.company, self.other_company])
-        self.assertEqual(self.client.post(
-            reverse("client_accounts:configure", args=[destination.pk]),
-            {"action": "activate"},
-        ).status_code, 404)
+        self.assertContains(response, self.form_url)
+        self.assertContains(response, 'id="shared-link"', count=1)
+        self.assertNotContains(response, self.company.nom)
+        self.assertNotContains(response, self.other_company.nom)
+        self.client.post(self.configure_url, {"action": "activate"})
+        self.module.refresh_from_db()
+        self.assertEqual(reverse("client_accounts_public:form", args=[self.module.token]), self.form_url)
+        self.assertEqual(ClientAccountModule.objects.filter(is_shared=True).count(), 1)
+        self.client.post(self.configure_url, {"action": "deactivate"})
         self.client.logout()
+        self.assertEqual(self.client.get(self.form_url).status_code, 404)
         for name in ("form", "sections", "create"):
-            url = reverse(f"client_accounts_public:{name}", args=[legacy_module.token])
-            with self.subTest(endpoint=name):
-                response = self.client.post(url, self.data) if name == "create" else self.client.get(url)
-                self.assertEqual(response.status_code, 404)
-        self.assertFalse(CreatedClientAccount.objects.exists())
-        self.assertTrue(Societe.objects.filter(pk=destination.pk).exists())
+            url = reverse(f"client_accounts_public:{name}", args=[legacy.token])
+            response = self.client.post(url, self.data) if name == "create" else self.client.get(url)
+            self.assertEqual(response.status_code, 404)
 
     def test_existing_account_email_is_rejected(self):
         User.objects.create_user(username="legacy", email="ARTUR@example.test")
         response = self.client.post(self.create_url, self.data)
         self.assertEqual(response.status_code, 400)
         self.assertFalse(CreatedClientAccount.objects.exists())
+
+    def test_only_one_shared_module_can_exist(self):
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ClientAccountModule.objects.create(is_shared=True)
+
+    def test_shared_module_transition_preserves_existing_accounts(self):
+        self.assertEqual(self.client.post(self.create_url, self.data).status_code, 201)
+        record = CreatedClientAccount.objects.get()
+        legacy = ClientAccountModule.objects.create(admin=self.admin, societe=self.company, enabled=True)
+        record.module = legacy
+        record.save(update_fields=["module"])
+        self.module.delete()
+        migration = import_module("client_accounts.migrations.0003_shared_module")
+        editor = SimpleNamespace(connection=connection)
+        migration.create_shared_module(apps, editor)
+        migration.create_shared_module(apps, editor)
+        shared = ClientAccountModule.objects.get(is_shared=True)
+        self.assertFalse(shared.enabled)
+        legacy.refresh_from_db()
+        self.assertFalse(legacy.enabled)
+        record.refresh_from_db()
+        self.assertEqual(record.module_id, legacy.pk)
+        self.assertTrue(User.objects.filter(pk=record.user_id).exists())
+        record.module = shared
+        record.save(update_fields=["module"])
+        migration.remove_shared_module(apps, editor)
+        record.refresh_from_db()
+        self.assertIsNone(record.module_id)
+        self.assertTrue(User.objects.filter(pk=record.user_id).exists())
 
     def test_existing_username_with_different_case_gets_a_suffix(self):
         User.objects.create_user(username="awitus")
@@ -170,14 +201,14 @@ class ClientAccountModuleTests(TestCase):
         self.assertEqual(second.json()["matricule"], "CLT405PL0033")
         self.assertEqual(second.json()["username"], "AWitus1")
 
-    def test_search_uses_current_company_data_and_exact_code(self):
+    def test_search_uses_all_real_sections_and_exact_code(self):
         Section.objects.create(Nom="4050", societe=self.company)
         second = Section.objects.create(Nom="405 Deuxième", societe=self.company)
         results = self.client.get(self.search_url, {"code": "405"}).json()["sections"]
-        self.assertEqual({item["id"] for item in results}, {str(self.section.pk), str(second.pk)})
+        self.assertEqual({item["id"] for item in results}, {str(self.section.pk), str(second.pk), str(self.other_section.pk)})
         self.data["section"] = self.other_section.pk
-        self.assertEqual(self.client.post(self.create_url, self.data).status_code, 400)
-        self.assertFalse(CreatedClientAccount.objects.exists())
+        self.assertEqual(self.client.post(self.create_url, self.data).status_code, 201)
+        self.assertEqual(CreatedClientAccount.objects.get().user.section, self.other_section)
 
     def test_management_stays_admin_only(self):
         self.assertEqual(self.client.get(reverse("client_accounts:manage")).status_code, 403)
@@ -193,7 +224,7 @@ class ClientAccountModuleTests(TestCase):
         self.assertEqual(response["Referrer-Policy"], "no-referrer")
         self.assertNotContains(response, 'nav-sidebar')
         results = client.get(self.search_url, {"code": "405"}).json()["sections"]
-        self.assertEqual([item["id"] for item in results], [str(self.section.pk)])
+        self.assertEqual({item["id"] for item in results}, {str(self.section.pk), str(self.other_section.pk)})
         csrf = client.cookies["csrftoken"].value
         response = client.post(self.create_url, self.data, HTTP_X_CSRFTOKEN=csrf)
         self.assertEqual(response.status_code, 201, response.content)
@@ -210,9 +241,9 @@ class ClientAccountModuleTests(TestCase):
         self.module.refresh_from_db()
         self.assertTrue(self.module.enabled)
 
-    def test_anonymous_visitor_cannot_select_another_company_or_grant_roles(self):
+    def test_anonymous_visitor_cannot_select_invalid_section_or_grant_roles(self):
         self.client.logout()
-        self.data["section"] = self.other_section.pk
+        self.data["section"] = 999999
         self.assertEqual(self.client.post(self.create_url, self.data).status_code, 400)
         self.data.update(section=self.section.pk, is_staff=True, is_superuser=True,
                          is_RS=True, societe=self.other_company.pk)
@@ -221,17 +252,12 @@ class ClientAccountModuleTests(TestCase):
         self.assertFalse(user.is_staff or user.is_superuser or user.is_RS)
         self.assertEqual(user.societe.nom, "Client")
 
-    def test_unknown_or_inactive_owner_link_is_rejected(self):
+    def test_unknown_link_is_rejected(self):
         self.client.logout()
         token = uuid.uuid4()
         self.assertEqual(self.client.get(reverse("client_accounts_public:form", args=[token])).status_code, 404)
         self.assertEqual(self.client.get(reverse("client_accounts_public:sections", args=[token]), {"code": "405"}).status_code, 404)
         self.assertEqual(self.client.post(reverse("client_accounts_public:create", args=[token]), self.data).status_code, 404)
-        self.admin.is_active = False
-        self.admin.save(update_fields=["is_active"])
-        self.assertEqual(self.client.get(self.form_url).status_code, 404)
-        self.assertEqual(self.client.get(self.search_url, {"code": "405"}).status_code, 404)
-        self.assertEqual(self.client.post(self.create_url, self.data).status_code, 404)
         self.assertFalse(CreatedClientAccount.objects.exists())
 
     def test_disabled_and_reactivated_module_revokes_old_links(self):

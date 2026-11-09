@@ -5,14 +5,17 @@ from django.db import models
 
 
 class ClientAccountModule(models.Model):
-    admin = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    societe = models.ForeignKey("accounts.Societe", on_delete=models.CASCADE)
+    admin = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    societe = models.ForeignKey("accounts.Societe", on_delete=models.CASCADE, null=True, blank=True)
+    is_shared = models.BooleanField(default=False)
     enabled = models.BooleanField(default=False)
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=("admin", "societe"), name="unique_client_module_admin_societe")
+            models.UniqueConstraint(fields=("admin", "societe"), name="unique_client_module_admin_societe"),
+            models.UniqueConstraint(fields=("is_shared",), condition=models.Q(is_shared=True),
+                                    name="unique_shared_client_module"),
         ]
 
 
