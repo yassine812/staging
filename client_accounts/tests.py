@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 from django.apps import apps
 from django.db import IntegrityError, connection, transaction
-from django.test import Client, SimpleTestCase, TestCase
+from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import Section, Societe, User
@@ -121,6 +121,62 @@ class ClientAccountModuleTests(TestCase):
         self.assertEqual(self.client.post(old_url + "creer/", self.data).status_code, 404)
         self.assertEqual(self.client.get("/creer-compte/").status_code, 404)
         self.assertNotIn("_auth_user_id", self.client.session)
+
+    @override_settings(CLIENT_ACCOUNTS_PUBLIC_HOST="creation.example.test",
+                       ALLOWED_HOSTS=["testserver", "creation.example.test"])
+    def test_separate_host_exposes_only_public_form_and_admin_generates_its_link(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("client_accounts:manage"))
+        self.assertEqual(response.context["link"], "https://creation.example.test" + self.form_url)
+        for path in ("/", "/login/", "/admin/", "/administration/", "/profile/",
+                     "/audit/", "/creation-comptes-clients/", self.configure_url):
+            with self.subTest(path=path):
+                response = self.client.get(path, HTTP_HOST="creation.example.test")
+                self.assertEqual(response.status_code, 404)
+                self.assertEqual(response.content.decode(), "Page indisponible.")
+        self.assertEqual(self.client.get(self.form_url).status_code, 404)
+        self.assertEqual(self.client.get(self.search_url, {"code": "405"}).status_code, 404)
+        self.assertEqual(self.client.post(self.create_url, self.data).status_code, 404)
+
+    @override_settings(CLIENT_ACCOUNTS_PUBLIC_HOST="creation.example.test",
+                       ALLOWED_HOSTS=["testserver", "creation.example.test"])
+    def test_separate_host_ignores_admin_session_and_supports_csrf_protected_creation(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.admin)
+        session_key = client.cookies["sessionid"].value
+        response = client.get(self.form_url, HTTP_HOST="creation.example.test", secure=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
+        self.assertEqual(response["X-Frame-Options"], "DENY")
+        self.assertNotContains(response, 'nav-sidebar')
+        self.assertEqual(client.post(self.create_url, self.data, HTTP_HOST="creation.example.test",
+                                     secure=True).status_code, 403)
+        response = client.post(self.create_url, self.data, HTTP_HOST="creation.example.test", secure=True,
+                               HTTP_ORIGIN="https://creation.example.test",
+                               HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value)
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertIsNone(CreatedClientAccount.objects.get().created_by)
+        self.assertEqual(client.cookies["sessionid"].value, session_key)
+        self.assertEqual(client.get(reverse("client_accounts:manage")).status_code, 200)
+
+    @override_settings(CLIENT_ACCOUNTS_ENABLED=False, CLIENT_ACCOUNTS_PUBLIC_HOST="creation.example.test",
+                       ALLOWED_HOSTS=["testserver", "creation.example.test"])
+    def test_removal_switch_hides_module_and_blocks_every_entry_point(self):
+        self.client.force_login(self.admin)
+        for host in ("testserver", "creation.example.test"):
+            for path in (self.form_url, self.search_url, reverse("client_accounts:manage"),
+                         "/essai-comptes-clients/"):
+                with self.subTest(host=host, path=path):
+                    self.assertEqual(self.client.get(path, HTTP_HOST=host).status_code, 404)
+            self.assertEqual(self.client.post(self.create_url, self.data, HTTP_HOST=host).status_code, 404)
+            self.assertEqual(self.client.post(self.configure_url, {"action": "activate"}, HTTP_HOST=host).status_code, 404)
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, reverse("client_accounts:manage"))
+        response = self.client.get(reverse("administration:dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, reverse("client_accounts:manage"))
+        self.assertFalse(CreatedClientAccount.objects.exists())
 
     def test_duplicate_email_keeps_a_single_account(self):
         self.assertEqual(self.client.post(self.create_url, self.data).status_code, 201)

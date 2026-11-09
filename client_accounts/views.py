@@ -1,6 +1,7 @@
 import re
 import uuid
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -30,7 +31,9 @@ def manage(request):
     module = ClientAccountModule.objects.filter(is_shared=True).first()
     link = ""
     if module and module.enabled:
-        link = request.build_absolute_uri(reverse("client_accounts_public:form", args=[module.token]))
+        path = reverse("client_accounts_public:form", args=[module.token])
+        link = (f"https://{settings.CLIENT_ACCOUNTS_PUBLIC_HOST}{path}"
+                if settings.CLIENT_ACCOUNTS_PUBLIC_HOST else request.build_absolute_uri(path))
     return render(request, "client_accounts/manage.html", {"link": link})
 
 

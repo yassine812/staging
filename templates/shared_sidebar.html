@@ -79,11 +79,13 @@
             <i class="nav-icon fas fa-users"></i><p>Utilisateurs</p>
           </a>
         </li>
+        {% if client_accounts_enabled %}
         <li class="nav-item">
           <a href="{{ url_client_accounts }}" class="nav-link {% if ns == 'client_accounts' %}active{% endif %}">
             <i class="nav-icon fas fa-user-plus"></i><p>Création de comptes clients</p>
           </a>
         </li>
+        {% endif %}
         <li class="nav-item">
           <a href="{{ url_adm_societes }}" class="nav-link {% if ns == 'administration' and un == 'societes' %}active{% endif %}">
             <i class="nav-icon fas fa-building"></i><p>Sociétés</p>
