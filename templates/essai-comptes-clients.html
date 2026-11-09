@@ -11,7 +11,6 @@
     * { box-sizing: border-box; }
     main { max-width: 45rem; margin: 2.5rem auto; padding: 0 1rem; }
     h1 { font-size: clamp(1.65rem, 5vw, 2.2rem); line-height: 1.2; margin: .5rem 0; }
-    h2 { font-size: 1.15rem; margin: 0 0 .5rem; }
     p { margin: .5rem 0; }
     .card { margin-top: 1.25rem; padding: clamp(1rem, 4vw, 1.75rem); border: 1px solid #d4dfeb; border-radius: .9rem; background: #fff; }
     .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
@@ -30,11 +29,6 @@
     .section-option input { width: auto; min-height: auto; margin: 0; }
     .error { color: #a71927; font-weight: 600; }
     .error:empty { display: none; }
-    .result { border-color: #9acdb5; background: #effaf4; }
-    dl { margin: 0; }
-    dl div { display: flex; flex-wrap: wrap; gap: .15rem .6rem; }
-    dt { font-weight: 650; }
-    dd { margin: 0; }
     @media (max-width: 34rem) { main { margin-top: 1.25rem; } .fields { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -80,18 +74,6 @@
       <p id="creation-error" class="error" role="alert"></p>
     </form>
 
-    <section class="card result" id="result" tabindex="-1" aria-labelledby="result-title" hidden>
-      <h2 id="result-title">Compte créé</h2>
-      <dl>
-        <div><dt>Username</dt><dd id="result-username"></dd></div>
-        <div><dt>Section</dt><dd id="result-section"></dd></div>
-        <div><dt>Matricule</dt><dd id="result-matricule"></dd></div>
-        <div><dt>Fuseau horaire</dt><dd id="result-timezone"></dd></div>
-        <div><dt>Société</dt><dd>Client</dd></div>
-        <div><dt>Cases cochées</dt><dd>Actif et CLT</dd></div>
-        <div><dt>Groupe</dt><dd>CLT</dd></div>
-      </dl>
-    </section>
   </main>
 
   <script>
@@ -105,7 +87,6 @@
     const sectionMatches = document.querySelector('#section-matches');
     const sectionOptions = document.querySelector('#section-options');
     const creationError = document.querySelector('#creation-error');
-    const result = document.querySelector('#result');
     let sections = [];
     let sectionRequest;
     let sectionTimer;
@@ -116,7 +97,6 @@
       const code = sectionCode.value.trim();
       sectionOptions.replaceChildren();
       sectionMatches.hidden = true;
-      result.hidden = true;
       sectionCode.setCustomValidity('');
       sectionStatus.textContent = '';
       if (!code) return;
@@ -183,7 +163,6 @@
       const button = form.querySelector('button[type="submit"]');
       if (button.disabled) return;
       button.disabled = true;
-      result.hidden = true;
       creationError.textContent = '';
       emailError.textContent = '';
       countryError.textContent = '';
@@ -208,14 +187,9 @@
             .flat().map((error) => error.message).join(' ');
           return;
         }
-        document.querySelector('#result-username').textContent = data.username;
-        document.querySelector('#result-section').textContent = data.section;
-        document.querySelector('#result-matricule').textContent = data.matricule;
-        document.querySelector('#result-timezone').textContent = data.timezone;
         form.reset();
         updateSectionMatches();
-        result.hidden = false;
-        result.focus();
+        window.alert('Username : ' + data.username);
       } catch (error) {
         creationError.textContent = 'Impossible de confirmer la création. Vérifiez votre connexion et reconnectez-vous si nécessaire.';
       } finally {
