@@ -116,6 +116,28 @@ class ClientAccountModuleTests(TestCase):
         self.assertIn("email", response.json()["errors"])
         self.assertEqual(CreatedClientAccount.objects.count(), 1)
 
+    def test_client_destination_company_cannot_publish_a_form(self):
+        destination = Societe.objects.get(nom="Client")
+        legacy_module = ClientAccountModule.objects.create(
+            admin=self.admin, societe=destination, enabled=True,
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("client_accounts:manage"))
+        self.assertEqual([row["societe"] for row in response.context["rows"]],
+                         [self.company, self.other_company])
+        self.assertEqual(self.client.post(
+            reverse("client_accounts:configure", args=[destination.pk]),
+            {"action": "activate"},
+        ).status_code, 404)
+        self.client.logout()
+        for name in ("form", "sections", "create"):
+            url = reverse(f"client_accounts:{name}", args=[legacy_module.token])
+            with self.subTest(endpoint=name):
+                response = self.client.post(url, self.data) if name == "create" else self.client.get(url)
+                self.assertEqual(response.status_code, 404)
+        self.assertFalse(CreatedClientAccount.objects.exists())
+        self.assertTrue(Societe.objects.filter(pk=destination.pk).exists())
+
     def test_existing_account_email_is_rejected(self):
         User.objects.create_user(username="legacy", email="ARTUR@example.test")
         response = self.client.post(self.create_url, self.data)

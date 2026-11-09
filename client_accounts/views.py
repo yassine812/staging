@@ -32,7 +32,7 @@ def manage(request):
         for module in ClientAccountModule.objects.filter(admin=request.user)
     }
     rows = []
-    for societe in Societe.objects.all():
+    for societe in Societe.objects.exclude(nom__iexact="Client"):
         module = modules.get(societe.pk)
         link = ""
         if module and module.enabled:
@@ -45,7 +45,7 @@ def manage(request):
 @require_POST
 def configure(request, societe_id):
     _require_admin(request.user)
-    societe = get_object_or_404(Societe, pk=societe_id)
+    societe = get_object_or_404(Societe.objects.exclude(nom__iexact="Client"), pk=societe_id)
     action = request.POST.get("action")
     if action not in ("activate", "deactivate"):
         return JsonResponse({"error": "Action invalide."}, status=400)
@@ -67,7 +67,7 @@ def _active_module(token):
     # The unguessable, revocable link grants access only to this module's form.
     # Never authenticate its visitor as the module owner or a generated account.
     return get_object_or_404(
-        ClientAccountModule.objects.select_related("societe", "admin"),
+        ClientAccountModule.objects.select_related("societe", "admin").exclude(societe__nom__iexact="Client"),
         token=token,
         enabled=True,
         admin__is_active=True,
