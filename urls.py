@@ -5,11 +5,17 @@ from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.views import serve
+from django.views.generic import TemplateView
 from core_views import login_view, logout_view, home_view, profile_view, update_profile, change_password
 
 urlpatterns = [
     # ── Racine ───────────────────────────────────────────────────────────────
     path("", home_view, name="home"),
+    path(
+        "essai-comptes-clients/",
+        TemplateView.as_view(template_name="essai-comptes-clients.html"),
+        name="essai_comptes_clients",
+    ),
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),
     path("profile/", profile_view, name="profile"),

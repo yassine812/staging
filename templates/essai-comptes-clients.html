@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'none'; base-uri 'none'">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Création de compte client · Essai</title>
+  <style>
+    :root { font: 16px/1.5 system-ui, sans-serif; color: #162437; background: #f1f5f9; }
+    * { box-sizing: border-box; }
+    main { max-width: 45rem; margin: 2.5rem auto; padding: 0 1rem; }
+    h1 { font-size: clamp(1.65rem, 5vw, 2.2rem); line-height: 1.2; margin: .5rem 0; }
+    h2 { font-size: 1.15rem; margin: 0 0 .5rem; }
+    p { margin: .5rem 0; }
+    .badge { display: inline-block; padding: .25rem .65rem; border-radius: 1rem; background: #dbeafe; color: #163a72; font-size: .85rem; font-weight: 700; }
+    .card { margin-top: 1.25rem; padding: clamp(1rem, 4vw, 1.75rem); border: 1px solid #d4dfeb; border-radius: .9rem; background: #fff; }
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .wide { grid-column: 1 / -1; }
+    label { display: block; margin-bottom: .25rem; font-weight: 650; }
+    input, select, button { font: inherit; }
+    input, select { width: 100%; min-height: 2.75rem; padding: .5rem .65rem; border: 1px solid #8697ab; border-radius: .45rem; color: inherit; background: #fff; }
+    input[aria-invalid="true"] { border-color: #a71927; }
+    :focus-visible { outline: 3px solid #1765cf; outline-offset: 2px; }
+    button { margin-top: 1.25rem; padding: .65rem 1rem; border: 0; border-radius: .45rem; background: #16498c; color: #fff; cursor: pointer; font-weight: 700; }
+    button:hover { background: #123970; }
+    .hint { color: #475a70; font-size: .9rem; }
+    .section-matches { margin: .75rem 0 0; padding: 0; border: 0; }
+    .section-matches legend { margin-bottom: .35rem; font-weight: 650; }
+    .section-option { display: flex; align-items: center; gap: .65rem; padding: .6rem; border: 1px solid #d4dfeb; border-radius: .45rem; cursor: pointer; }
+    .section-option input { width: auto; min-height: auto; margin: 0; }
+    .error { color: #a71927; font-weight: 600; }
+    .error:empty { display: none; }
+    .result { border-color: #9acdb5; background: #effaf4; }
+    dl { margin: 0; }
+    dl div { display: flex; flex-wrap: wrap; gap: .15rem .6rem; }
+    dt { font-weight: 650; }
+    dd { margin: 0; }
+    @media (max-width: 34rem) { main { margin-top: 1.25rem; } .fields { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <span class="badge">Démo pour les RS</span>
+      <h1>Création de compte client</h1>
+      <p>Teste le formulaire avec des données fictives. Les essais sont effacés au rechargement de la page.</p>
+    </header>
+
+    <form class="card" id="client-form">
+      <div class="fields">
+        <div>
+          <label for="first-name">Prénom</label>
+          <input id="first-name" maxlength="150" pattern=".*\S.*" required>
+        </div>
+        <div>
+          <label for="last-name">Nom</label>
+          <input id="last-name" maxlength="150" pattern=".*\S.*" required>
+        </div>
+        <div class="wide">
+          <label for="email">Adresse e-mail</label>
+          <input id="email" type="email" maxlength="254" aria-describedby="email-hint email-error" required>
+          <p id="email-hint" class="hint">Pour tester le doublon, utilise <strong>client.existant@example.test</strong>.</p>
+          <p id="email-error" class="error" role="alert"></p>
+        </div>
+        <div>
+          <label for="country">Pays</label>
+          <select id="country" required>
+            <option value="">Choisir un pays</option>
+            <option value="France" data-code="FR" data-timezone="Europe/Paris">France</option>
+            <option value="Allemagne" data-code="GR" data-timezone="Europe/Berlin">Allemagne</option>
+            <option value="Pologne" data-code="PL" data-timezone="Europe/Warsaw">Pologne</option>
+          </select>
+        </div>
+        <div class="wide">
+          <label for="section-code">Code de section</label>
+          <input id="section-code" inputmode="numeric" pattern="\s*[0-9]+\s*" placeholder="Ex. 405" aria-controls="section-matches" aria-describedby="section-status" required>
+          <p id="section-status" class="hint" role="status"></p>
+          <fieldset id="section-matches" class="section-matches" hidden>
+            <legend>Choisir la section exacte</legend>
+            <div id="section-options"></div>
+          </fieldset>
+        </div>
+      </div>
+      <button type="submit">Simuler la création</button>
+      <p id="creation-error" class="error" role="alert"></p>
+    </form>
+
+    <section class="card result" id="result" tabindex="-1" aria-labelledby="result-title" hidden>
+      <h2 id="result-title">Création simulée</h2>
+      <dl>
+        <div><dt>Username fictif</dt><dd id="result-username"></dd></div>
+        <div><dt>Section</dt><dd id="result-section"></dd></div>
+        <div><dt>Matricule</dt><dd id="result-matricule"></dd></div>
+        <div><dt>Fuseau horaire</dt><dd id="result-timezone"></dd></div>
+        <div><dt>Société</dt><dd>Client</dd></div>
+        <div><dt>Cases cochées</dt><dd>Actif et CLT</dd></div>
+        <div><dt>Groupe</dt><dd>CLT</dd></div>
+      </dl>
+    </section>
+  </main>
+
+  <script>
+    const form = document.querySelector('#client-form');
+    const emailInput = document.querySelector('#email');
+    const emailError = document.querySelector('#email-error');
+    const sectionCode = document.querySelector('#section-code');
+    const sectionStatus = document.querySelector('#section-status');
+    const sectionMatches = document.querySelector('#section-matches');
+    const sectionOptions = document.querySelector('#section-options');
+    const creationError = document.querySelector('#creation-error');
+    const result = document.querySelector('#result');
+    const sections = [
+      { id: '405-scania', code: '405', label: '405 F SCANIA' },
+      { id: '405-autre', code: '405', label: '405 · Autre site (démo)' },
+      { id: '303-demo', code: '303', label: '303 · Site de démonstration' },
+    ];
+    const usedEmails = new Set(['client.existant@example.test']);
+    const usedMatricules = new Set(['CLT405FR0032']);
+
+    function updateSectionMatches() {
+      const code = sectionCode.value.trim();
+      const matches = sections.filter((section) => section.code === code);
+      sectionOptions.replaceChildren();
+      sectionMatches.hidden = matches.length === 0;
+      sectionCode.setCustomValidity('');
+      sectionStatus.textContent = '';
+
+      if (code && matches.length === 0) {
+        const message = 'Aucune section ne correspond à ce code.';
+        sectionCode.setCustomValidity(message);
+        sectionStatus.textContent = message;
+      }
+
+      for (const section of matches) {
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'section';
+        radio.value = section.id;
+        radio.required = true;
+
+        const label = document.createElement('label');
+        label.className = 'section-option';
+        label.append(radio, section.label);
+        sectionOptions.append(label);
+      }
+    }
+
+    function nextMatricule(prefix) {
+      const suffixCount = 10000;
+      const start = Math.floor(Math.random() * suffixCount);
+      for (let offset = 0; offset < suffixCount; offset += 1) {
+        const suffix = String((start + offset) % suffixCount).padStart(4, '0');
+        const matricule = `${prefix}${suffix}`;
+        if (!usedMatricules.has(matricule)) return matricule;
+      }
+      return null;
+    }
+
+    emailInput.addEventListener('input', () => {
+      emailError.textContent = '';
+      emailInput.removeAttribute('aria-invalid');
+    });
+    sectionCode.addEventListener('input', updateSectionMatches);
+    updateSectionMatches();
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      result.hidden = true;
+      creationError.textContent = '';
+
+      const email = emailInput.value.trim().toLowerCase();
+      if (usedEmails.has(email)) {
+        emailError.textContent = 'Cette adresse e-mail est déjà utilisée.';
+        emailInput.setAttribute('aria-invalid', 'true');
+        emailInput.focus();
+        return;
+      }
+
+      const selectedSection = sectionOptions.querySelector('input:checked');
+      const section = sections.find((option) => option.id === selectedSection.value);
+      const country = document.querySelector('#country').selectedOptions[0];
+      const matricule = nextMatricule(`CLT${section.code}${country.dataset.code}`);
+      if (!matricule) {
+        creationError.textContent = 'Tous les matricules sont déjà utilisés pour ce numéro de section et ce pays.';
+        return;
+      }
+
+      const username = `demo-clt-${String(usedEmails.size).padStart(4, '0')}`;
+      usedEmails.add(email);
+      usedMatricules.add(matricule);
+      document.querySelector('#result-username').textContent = username;
+      document.querySelector('#result-section').textContent = section.label;
+      document.querySelector('#result-matricule').textContent = matricule;
+      document.querySelector('#result-timezone').textContent = country.dataset.timezone;
+      form.reset();
+      updateSectionMatches();
+      result.hidden = false;
+      result.focus();
+    });
+  </script>
+</body>
+</html>
