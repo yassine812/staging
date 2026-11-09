@@ -38,8 +38,21 @@ tmp/
 # ── IDE / Editor ─────────────────────────────────────────────────────────────
 .vscode/
 .idea/
+.freebuff/
 *.swp
 *~
+
+# Local connection credentials: never commit private keys or SSH configuration.
+.ssh/
+*.pem
+*.key
+*.ppk
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+id_ecdsa
+id_dsa
 
 # ── OS ───────────────────────────────────────────────────────────────────────
 .DS_Store
