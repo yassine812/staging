@@ -65,12 +65,9 @@
         </div>
         <div>
           <label for="country">Pays</label>
-          <select id="country" required>
-            <option value="">Choisir un pays</option>
-            <option value="France" data-code="FR" data-timezone="Europe/Paris">France</option>
-            <option value="Allemagne" data-code="GR" data-timezone="Europe/Berlin">Allemagne</option>
-            <option value="Pologne" data-code="PL" data-timezone="Europe/Warsaw">Pologne</option>
-          </select>
+          <input id="country" placeholder="Ex. France" autocomplete="off" maxlength="100" aria-describedby="country-hint country-error" required>
+          <p id="country-hint" class="hint">Pour l’essai, saisis France, Allemagne ou Pologne.</p>
+          <p id="country-error" class="error" role="alert"></p>
         </div>
         <div class="wide">
           <label for="section-code">Code de section</label>
@@ -104,6 +101,8 @@
     const form = document.querySelector('#client-form');
     const emailInput = document.querySelector('#email');
     const emailError = document.querySelector('#email-error');
+    const countryInput = document.querySelector('#country');
+    const countryError = document.querySelector('#country-error');
     const sectionCode = document.querySelector('#section-code');
     const sectionStatus = document.querySelector('#section-status');
     const sectionMatches = document.querySelector('#section-matches');
@@ -114,6 +113,11 @@
       { id: '405-scania', code: '405', label: '405 F SCANIA' },
       { id: '405-autre', code: '405', label: '405 · Autre site (démo)' },
       { id: '303-demo', code: '303', label: '303 · Site de démonstration' },
+    ];
+    const countries = [
+      { names: ['france'], code: 'FR', timezone: 'Europe/Paris' },
+      { names: ['allemagne', 'germany', 'deutschland'], code: 'GR', timezone: 'Europe/Berlin' },
+      { names: ['pologne', 'poland', 'polska'], code: 'PL', timezone: 'Europe/Warsaw' },
     ];
     const usedEmails = new Set(['client.existant@example.test']);
     const usedMatricules = new Set(['CLT405FR0032']);
@@ -161,6 +165,10 @@
       emailError.textContent = '';
       emailInput.removeAttribute('aria-invalid');
     });
+    countryInput.addEventListener('input', () => {
+      countryError.textContent = '';
+      countryInput.removeAttribute('aria-invalid');
+    });
     sectionCode.addEventListener('input', updateSectionMatches);
     updateSectionMatches();
 
@@ -177,10 +185,18 @@
         return;
       }
 
+      const countryName = countryInput.value.trim().toLowerCase();
+      const country = countries.find((option) => option.names.includes(countryName));
+      if (!country) {
+        countryError.textContent = 'Ce pays n’est pas configuré pour la démo.';
+        countryInput.setAttribute('aria-invalid', 'true');
+        countryInput.focus();
+        return;
+      }
+
       const selectedSection = sectionOptions.querySelector('input:checked');
       const section = sections.find((option) => option.id === selectedSection.value);
-      const country = document.querySelector('#country').selectedOptions[0];
-      const matricule = nextMatricule(`CLT${section.code}${country.dataset.code}`);
+      const matricule = nextMatricule(`CLT${section.code}${country.code}`);
       if (!matricule) {
         creationError.textContent = 'Tous les matricules sont déjà utilisés pour ce numéro de section et ce pays.';
         return;
@@ -192,7 +208,7 @@
       document.querySelector('#result-username').textContent = username;
       document.querySelector('#result-section').textContent = section.label;
       document.querySelector('#result-matricule').textContent = matricule;
-      document.querySelector('#result-timezone').textContent = country.dataset.timezone;
+      document.querySelector('#result-timezone').textContent = country.timezone;
       form.reset();
       updateSectionMatches();
       result.hidden = false;
