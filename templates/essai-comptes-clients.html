@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'self'; base-uri 'none'">
   <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
   <title>Création de compte client</title>
   <style>
     :root { font: 16px/1.5 system-ui, sans-serif; color: #162437; background: #f1f5f9; }
@@ -143,7 +144,7 @@
       } catch (error) {
         if (controller.signal.aborted) return;
         sectionCode.setCustomValidity('La recherche des sections est indisponible.');
-        sectionStatus.textContent = 'La recherche des sections est indisponible. Vérifiez votre connexion et reconnectez-vous si nécessaire.';
+        sectionStatus.textContent = 'La recherche des sections est indisponible. Vérifiez votre connexion ou demandez un nouveau lien au responsable.';
       }
     }
 
@@ -191,7 +192,7 @@
         updateSectionMatches();
         window.alert('Username : ' + data.username);
       } catch (error) {
-        creationError.textContent = 'Impossible de confirmer la création. Vérifiez votre connexion et reconnectez-vous si nécessaire.';
+        creationError.textContent = 'Impossible de confirmer la création. Vérifiez votre connexion ou demandez un nouveau lien au responsable.';
       } finally {
         button.disabled = false;
       }

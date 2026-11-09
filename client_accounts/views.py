@@ -63,44 +63,35 @@ def configure(request, societe_id):
     return redirect("client_accounts:manage")
 
 
-def _accessible_module(user, token):
-    module = get_object_or_404(
+def _active_module(token):
+    # The unguessable, revocable link grants access only to this module's form.
+    # Never authenticate its visitor as the module owner or a generated account.
+    return get_object_or_404(
         ClientAccountModule.objects.select_related("societe", "admin"),
         token=token,
         enabled=True,
         admin__is_active=True,
         admin__is_superuser=True,
     )
-    if not user.is_active:
-        raise PermissionDenied
-    if user.pk == module.admin_id:
-        return module
-    belongs_to_societe = user.societe_id == module.societe_id
-    if user.section_id:
-        belongs_to_societe = belongs_to_societe or user.section.societe_id == module.societe_id
-    if not user.is_RS or not belongs_to_societe:
-        raise PermissionDenied
-    return module
 
 
-@login_required
 @require_GET
 @never_cache
 def client_form(request, token):
-    module = _accessible_module(request.user, token)
-    return render(request, "essai-comptes-clients.html", {
+    module = _active_module(token)
+    response = render(request, "essai-comptes-clients.html", {
         "societe": module.societe,
         "section_search_url": reverse("client_accounts:sections", args=[module.token]),
         "create_account_url": reverse("client_accounts:create", args=[module.token]),
     })
+    response["Referrer-Policy"] = "no-referrer"
+    return response
 
 
 @require_GET
 @never_cache
 def search_sections(request, token):
-    if not request.user.is_authenticated:
-        return JsonResponse({"error": "Reconnectez-vous pour rechercher les sections."}, status=401)
-    module = _accessible_module(request.user, token)
+    module = _active_module(token)
     code = request.GET.get("code", "").strip()
     if not re.fullmatch(r"[0-9]{1,20}", code):
         return JsonResponse({"error": "Saisissez un code de section numérique."}, status=400)
@@ -116,11 +107,9 @@ def search_sections(request, token):
 @require_POST
 @never_cache
 def create_account(request, token):
-    if not request.user.is_authenticated:
-        return JsonResponse({"error": "Reconnectez-vous avant de créer le compte."}, status=401)
     try:
         with transaction.atomic():
-            module = _accessible_module(request.user, token)
+            module = _active_module(token)
             module = get_object_or_404(
                 ClientAccountModule.objects.select_for_update(), pk=module.pk, token=token, enabled=True,
             )
@@ -130,7 +119,8 @@ def create_account(request, token):
             form = ClientDetailsForm(module.societe, request.POST)
             if not form.is_valid():
                 return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
-            account = save_client(module, request.user, form.cleaned_data, client_societe, group)
+            actor = request.user if request.user.is_authenticated else None
+            account = save_client(module, actor, form.cleaned_data, client_societe, group)
             return JsonResponse({
                 "username": account.user.username,
                 "matricule": account.matricule,

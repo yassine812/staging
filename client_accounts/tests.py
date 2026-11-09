@@ -1,4 +1,5 @@
 from unittest.mock import patch
+import uuid
 
 from django.db import IntegrityError
 from django.test import Client, SimpleTestCase, TestCase
@@ -88,9 +89,24 @@ class ClientAccountModuleTests(TestCase):
         self.assertContains(response, self.search_url)
         self.assertContains(response, self.create_url)
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        self.assertNotContains(response, 'nav-sidebar')
+        self.assertNotContains(response, reverse("administration:utilisateurs"))
         self.client.force_login(self.admin)
-        self.assertContains(self.client.get(reverse("client_accounts:manage")), self.form_url)
+        response = self.client.get(reverse("client_accounts:manage"))
+        self.assertContains(response, self.form_url)
+        self.assertContains(response, 'Création de comptes clients')
+        self.assertContains(response, 'class="nav-link active"')
         self.assertContains(self.client.get(reverse("home")), reverse("client_accounts:manage"))
+
+    def test_shared_form_does_not_grant_administration_access(self):
+        self.assertEqual(self.client.get(self.form_url).status_code, 200)
+        for name in ("administration:dashboard", "administration:utilisateurs",
+                     "client_accounts:manage"):
+            with self.subTest(page=name):
+                self.assertEqual(self.client.get(reverse(name)).status_code, 403)
+        self.rs.refresh_from_db()
+        self.assertFalse(self.rs.is_superuser or self.rs.is_staff)
+        self.assertEqual(str(self.client.session["_auth_user_id"]), str(self.rs.pk))
 
     def test_duplicate_email_keeps_a_single_account(self):
         self.assertEqual(self.client.post(self.create_url, self.data).status_code, 201)
@@ -130,27 +146,76 @@ class ClientAccountModuleTests(TestCase):
         self.assertEqual(self.client.post(self.create_url, self.data).status_code, 400)
         self.assertFalse(CreatedClientAccount.objects.exists())
 
-    def test_only_company_rs_and_owner_can_use_the_link(self):
+    def test_management_stays_admin_only(self):
         self.assertEqual(self.client.get(reverse("client_accounts:manage")).status_code, 403)
         self.assertEqual(self.client.post(self.configure_url, {"action": "activate"}).status_code, 403)
-        self.client.force_login(self.outsider)
-        self.assertEqual(self.client.get(self.search_url, {"code": "405"}).status_code, 403)
-        self.assertEqual(self.client.post(self.create_url, self.data).status_code, 403)
         self.client.logout()
-        self.assertEqual(self.client.get(self.form_url).status_code, 302)
-        self.assertEqual(self.client.post(self.create_url, self.data).status_code, 401)
+        self.assertEqual(self.client.get(reverse("client_accounts:manage")).status_code, 302)
+        self.assertEqual(self.client.post(self.configure_url, {"action": "activate"}).status_code, 302)
+
+    def test_anonymous_link_creates_client_without_logging_visitor_in(self):
+        client = Client(enforce_csrf_checks=True)
+        response = client.get(self.form_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Referrer-Policy"], "no-referrer")
+        self.assertNotContains(response, 'nav-sidebar')
+        results = client.get(self.search_url, {"code": "405"}).json()["sections"]
+        self.assertEqual([item["id"] for item in results], [str(self.section.pk)])
+        csrf = client.cookies["csrftoken"].value
+        response = client.post(self.create_url, self.data, HTTP_X_CSRFTOKEN=csrf)
+        self.assertEqual(response.status_code, 201, response.content)
+        record = CreatedClientAccount.objects.get()
+        self.assertIsNone(record.created_by)
+        self.assertFalse(record.user.is_staff or record.user.is_superuser or record.user.is_RS)
+        self.assertNotIn("_auth_user_id", client.session)
+        for name in ("administration:dashboard", "administration:utilisateurs",
+                     "client_accounts:manage"):
+            with self.subTest(page=name):
+                self.assertEqual(client.get(reverse(name)).status_code, 302)
+        self.assertEqual(client.post(self.configure_url, {"action": "deactivate"},
+                                     HTTP_X_CSRFTOKEN=csrf).status_code, 302)
+        self.module.refresh_from_db()
+        self.assertTrue(self.module.enabled)
+
+    def test_anonymous_visitor_cannot_select_another_company_or_grant_roles(self):
+        self.client.logout()
+        self.data["section"] = self.other_section.pk
+        self.assertEqual(self.client.post(self.create_url, self.data).status_code, 400)
+        self.data.update(section=self.section.pk, is_staff=True, is_superuser=True,
+                         is_RS=True, societe=self.other_company.pk)
+        self.assertEqual(self.client.post(self.create_url, self.data).status_code, 201)
+        user = CreatedClientAccount.objects.get().user
+        self.assertFalse(user.is_staff or user.is_superuser or user.is_RS)
+        self.assertEqual(user.societe.nom, "Client")
+
+    def test_unknown_or_inactive_owner_link_is_rejected(self):
+        self.client.logout()
+        token = uuid.uuid4()
+        self.assertEqual(self.client.get(reverse("client_accounts:form", args=[token])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("client_accounts:sections", args=[token]), {"code": "405"}).status_code, 404)
+        self.assertEqual(self.client.post(reverse("client_accounts:create", args=[token]), self.data).status_code, 404)
+        self.admin.is_active = False
+        self.admin.save(update_fields=["is_active"])
+        self.assertEqual(self.client.get(self.form_url).status_code, 404)
+        self.assertEqual(self.client.get(self.search_url, {"code": "405"}).status_code, 404)
+        self.assertEqual(self.client.post(self.create_url, self.data).status_code, 404)
+        self.assertFalse(CreatedClientAccount.objects.exists())
 
     def test_disabled_and_reactivated_module_revokes_old_links(self):
         self.client.force_login(self.admin)
         self.client.post(self.configure_url, {"action": "deactivate"})
+        self.client.logout()
+        self.assertEqual(self.client.get(self.form_url).status_code, 404)
+        self.assertEqual(self.client.get(self.search_url, {"code": "405"}).status_code, 404)
         self.assertEqual(self.client.post(self.create_url, self.data).status_code, 404)
+        self.client.force_login(self.admin)
         self.client.post(self.configure_url, {"action": "activate"})
+        self.client.logout()
         self.assertEqual(self.client.get(self.form_url).status_code, 404)
         self.assertFalse(CreatedClientAccount.objects.exists())
 
     def test_creation_requires_csrf(self):
         client = Client(enforce_csrf_checks=True)
-        client.force_login(self.rs)
         self.assertEqual(client.post(self.create_url, self.data).status_code, 403)
 
     @patch("client_accounts.creation.CreatedClientAccount.objects.create", side_effect=IntegrityError)

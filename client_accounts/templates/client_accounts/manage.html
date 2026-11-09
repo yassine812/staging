@@ -13,6 +13,7 @@
       {% if row.link %}
         <p class="text-success">Module actif</p>
         <label for="link-{{ row.societe.pk }}">Lien à partager aux RS</label>
+        <p>Ce lien ouvre uniquement le formulaire, sans connexion au logiciel. Toute personne qui le possède peut créer un compte client pour cette société.</p>
         <input id="link-{{ row.societe.pk }}" class="form-control mb-2" type="url" readonly value="{{ row.link }}">
         <a href="{{ row.link }}" class="btn btn-outline-primary mb-2">Ouvrir le formulaire</a>
       {% else %}
