@@ -11,6 +11,7 @@ from .models import (
     DossierDocumentaire,
     FichierBibliotheque,
     Indicateur,
+    IndicateurQuotidien,
     Processus,
     RegleAccesDossier,
     VersionDocument,
@@ -437,5 +438,18 @@ class IndicateurForm(forms.ModelForm):
         if not val:
             return Indicateur.ModeCalcul.AUTOMATIQUE
         return val
+
+
+class IndicateurQuotidienForm(forms.ModelForm):
+    class Meta:
+        model = IndicateurQuotidien
+        fields = ["code", "nom", "description", "unite", "is_active"]
+        widgets = {
+            "code": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex : ADH-01"}),
+            "nom": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex : Taux d'adhérence"}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "unite": forms.TextInput(attrs={"class": "form-control", "placeholder": "%"}),
+            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
 
 

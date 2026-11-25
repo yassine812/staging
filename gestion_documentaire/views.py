@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import io
 import json
@@ -51,6 +52,7 @@ from .forms import (
     DossierParametresForm,
     FichierBibliothequeForm,
     IndicateurForm,
+    IndicateurQuotidienForm,
     NouvelleRegleAccesFormSet,
     ProcessusForm,
     RegleAccesDossierFormSet,
@@ -62,6 +64,7 @@ from .models import (
     DossierDocumentaire,
     FichierBibliotheque,
     Indicateur,
+    IndicateurQuotidien,
     MesureIndicateur,
     ObjectifIndicateur,
     Processus,
@@ -70,6 +73,7 @@ from .models import (
     ValidationDocument,
     ValeurComposanteIndicateur,
     VersionDocument,
+    SuiviIndicateurQuotidien,
 )
 from .permissions import (
     DirectionOuHabiliteRequiredMixin,
@@ -94,6 +98,7 @@ from .permissions import (
     tdb_acces_required,
     user_peut_utiliser_indicateurs_smqs,
     user_peut_voir_tdb,
+    indicateurs_quotidiens_access_required,
 )
 from .utils_formule import evaluer_formule_securisee, valider_formule_securisee
 
@@ -498,6 +503,161 @@ class DocumentUpdateView(ModificationBibliothequeRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return reverse("gestion_documentaire:document_detail", kwargs={"pk": self.object.pk})
+
+
+def _parse_suivi_date(value, fallback):
+    try:
+        return date.fromisoformat(value) if value else fallback
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _resume_suivis_quotidiens(suivis, periode, date_debut, date_fin):
+    """Construit les compilations demandées à partir des valeurs journalières."""
+    if periode == "jour":
+        return [
+            {
+                "libelle": suivi.jour.strftime("%d/%m/%Y"),
+                "moyenne": suivi.valeur,
+                "minimum": suivi.valeur,
+                "maximum": suivi.valeur,
+                "nombre": 1,
+                "commentaire": suivi.commentaire,
+            }
+            for suivi in suivis
+        ]
+
+    groupes = {}
+    for suivi in suivis:
+        jour = suivi.jour
+        if periode == "mois":
+            cle = (jour.year, jour.month)
+            libelle = f"{jour.month:02d}/{jour.year}"
+        elif periode == "trimestre":
+            trimestre = ((jour.month - 1) // 3) + 1
+            cle = (jour.year, trimestre)
+            libelle = f"T{trimestre} {jour.year}"
+        elif periode == "semestre":
+            semestre = 1 if jour.month <= 6 else 2
+            cle = (jour.year, semestre)
+            libelle = f"S{semestre} {jour.year}"
+        else:
+            cle = (date_debut, date_fin)
+            libelle = f"Du {date_debut:%d/%m/%Y} au {date_fin:%d/%m/%Y}"
+        groupes.setdefault(cle, {"libelle": libelle, "valeurs": [], "commentaires": []})
+        groupes[cle]["valeurs"].append(suivi.valeur)
+        if suivi.commentaire:
+            groupes[cle]["commentaires"].append(suivi.commentaire)
+
+    resultats = []
+    for groupe in groupes.values():
+        valeurs = groupe["valeurs"]
+        moyenne = (sum(valeurs, Decimal("0")) / Decimal(len(valeurs))).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        resultats.append(
+            {
+                "libelle": groupe["libelle"],
+                "moyenne": moyenne,
+                "minimum": min(valeurs),
+                "maximum": max(valeurs),
+                "nombre": len(valeurs),
+                "commentaire": " — ".join(groupe["commentaires"][:2]),
+            }
+        )
+    return resultats
+
+
+@login_required
+@indicateurs_quotidiens_access_required
+def indicateurs_quotidiens_dashboard(request):
+    """Écran séparé de suivi et de compilation des indicateurs quotidiens."""
+    indicateurs = list(IndicateurQuotidien.objects.filter(is_active=True))
+    selected_id = request.GET.get("indicateur") or (str(indicateurs[0].pk) if indicateurs else "")
+    indicateur = next((item for item in indicateurs if str(item.pk) == str(selected_id)), None)
+    today = timezone.localdate()
+    date_debut = _parse_suivi_date(request.GET.get("date_debut"), date(today.year, 1, 1))
+    date_fin = _parse_suivi_date(request.GET.get("date_fin"), today)
+    if date_debut > date_fin:
+        date_debut, date_fin = date_fin, date_debut
+    periode = request.GET.get("periode", "jour")
+    if periode not in {"jour", "mois", "trimestre", "semestre", "date_a_date"}:
+        periode = "jour"
+
+    suivis = []
+    resume = []
+    if indicateur:
+        suivis = list(
+            SuiviIndicateurQuotidien.objects.filter(
+                indicateur=indicateur,
+                jour__range=(date_debut, date_fin),
+            ).order_by("-jour")
+        )
+        resume = _resume_suivis_quotidiens(suivis, periode, date_debut, date_fin)
+
+    return render(
+        request,
+        "gestion_documentaire/indicateurs_quotidiens.html",
+        {
+            "indicateurs": indicateurs,
+            "indicateur_selectionne": indicateur,
+            "suivis": suivis,
+            "resume": resume,
+            "periode": periode,
+            "date_debut": date_debut.isoformat(),
+            "date_fin": date_fin.isoformat(),
+            "date_debut_obj": date_debut,
+            "date_fin_obj": date_fin,
+            "form_indicateur": IndicateurQuotidienForm(),
+            "today": today.isoformat(),
+        },
+    )
+
+
+@login_required
+@indicateurs_quotidiens_access_required
+@require_POST
+def indicateur_quotidien_create(request):
+    form = IndicateurQuotidienForm(request.POST)
+    if form.is_valid():
+        form.save()
+        messages.success(request, "L’indicateur quotidien a été créé.")
+    else:
+        messages.error(request, "Veuillez corriger les informations de l’indicateur.")
+    return redirect("gestion_documentaire:indicateurs_quotidiens")
+
+
+@login_required
+@indicateurs_quotidiens_access_required
+@require_POST
+def suivi_indicateur_quotidien_save(request):
+    indicateur = get_object_or_404(
+        IndicateurQuotidien,
+        pk=request.POST.get("indicateur"),
+        is_active=True,
+    )
+    jour = _parse_suivi_date(request.POST.get("jour"), None)
+    raw_value = (request.POST.get("valeur") or "").strip().replace(",", ".")
+    try:
+        valeur = Decimal(raw_value)
+    except (InvalidOperation, ValueError):
+        valeur = None
+    if jour is None or valeur is None:
+        messages.error(request, "La date et la valeur du jour sont obligatoires.")
+    else:
+        SuiviIndicateurQuotidien.objects.update_or_create(
+            indicateur=indicateur,
+            jour=jour,
+            defaults={
+                "valeur": valeur,
+                "commentaire": (request.POST.get("commentaire") or "").strip(),
+                "saisie_par": request.user,
+            },
+        )
+        messages.success(request, "La valeur quotidienne a été enregistrée.")
+    return redirect(
+        f"{reverse('gestion_documentaire:indicateurs_quotidiens')}?indicateur={indicateur.pk}"
+    )
 
 
 class DashboardQSEView(ModuleDocumentaireRequiredMixin, TemplateView):

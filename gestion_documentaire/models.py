@@ -1041,5 +1041,67 @@ class ValeurComposanteIndicateur(models.Model):
         return f"{self.composante} - {self.mois:02d}/{self.annee} : {self.valeur}"
 
 
+class IndicateurQuotidien(models.Model):
+    """Définition d'un indicateur suivi au jour le jour."""
+
+    code = models.CharField(max_length=30, unique=True, verbose_name="Code")
+    nom = models.CharField(max_length=255, verbose_name="Nom de l'indicateur")
+    description = models.TextField(blank=True, verbose_name="Description")
+    unite = models.CharField(max_length=40, default="%", verbose_name="Unité")
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Indicateur quotidien"
+        verbose_name_plural = "Indicateurs quotidiens"
+        ordering = ["code"]
+
+    def __str__(self) -> str:
+        return f"{self.code} – {self.nom}"
+
+
+class SuiviIndicateurQuotidien(models.Model):
+    """Valeur manuellement recopiée et commentée pour une date donnée."""
+
+    indicateur = models.ForeignKey(
+        IndicateurQuotidien,
+        on_delete=models.CASCADE,
+        related_name="suivis",
+        verbose_name="Indicateur",
+    )
+    jour = models.DateField(verbose_name="Date")
+    valeur = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        verbose_name="Valeur du jour",
+    )
+    commentaire = models.TextField(blank=True, verbose_name="Commentaire du jour")
+    saisie_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="suivis_indicateurs_quotidiens_saisis",
+        verbose_name="Saisie par",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Suivi quotidien"
+        verbose_name_plural = "Suivis quotidiens"
+        ordering = ["-jour"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["indicateur", "jour"],
+                name="unique_suivi_indicateur_quotidien",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.indicateur} - {self.jour} : {self.valeur}"
+
+
 
 

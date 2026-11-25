@@ -45,6 +45,7 @@
 {% url 'gestion_documentaire:document_list' as url_gd_documents %}
 {% url 'gestion_documentaire:dashboard_qse' as url_gd_dashboard %}
 {% url 'gestion_documentaire:tdb_dashboard' as url_gd_tdb_indicateurs %}
+{% url 'gestion_documentaire:indicateurs_quotidiens' as url_gd_indicateurs_quotidiens %}
 {% url 'plan_prevention:dashboard' as url_pdp_dash %}
 {% url 'plan_prevention:liste' as url_pdp_liste %}
 {% url 'plan_prevention:create' as url_pdp_new %}
@@ -291,6 +292,13 @@
           {% if request.user.is_superuser or request.user.is_RS or request.user.is_RO or request.user.is_CE %}
           <a href="{{ url_gd_tdb_indicateurs }}" class="nav-link {% if ns == 'gestion_documentaire' and un == 'tdb_processus_list' or ns == 'gestion_documentaire' and un == 'tdb_dashboard' or ns == 'gestion_documentaire' and un == 'tdb_saisie_mesures' %}active{% endif %}">
             <i class="nav-icon fas fa-chart-line"></i><p>Indicateurs SMQS</p>
+          </a>
+          {% endif %}
+        </li>
+        <li class="nav-item">
+          {% if request.user.is_superuser or request.user.is_RS or request.user.is_RO %}
+          <a href="{{ url_gd_indicateurs_quotidiens }}" class="nav-link {% if ns == 'gestion_documentaire' and un == 'indicateurs_quotidiens' %}active{% endif %}">
+            <i class="nav-icon fas fa-calendar-check"></i><p>Indicateurs quotidiens</p>
           </a>
           {% endif %}
         </li>

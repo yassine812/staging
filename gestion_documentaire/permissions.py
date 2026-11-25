@@ -271,6 +271,22 @@ def user_peut_utiliser_indicateurs_smqs(user) -> bool:
     return user_est_rs_ro_ce(user) or user_a_au_moins_un_processus_smqs(user)
 
 
+def indicateurs_quotidiens_access_required(view_func):
+    """Accès aux indicateurs quotidiens réservé aux RS, RO et superutilisateurs."""
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        user = request.user
+        if not getattr(user, "is_authenticated", False):
+            return redirect_to_login(request.get_full_path())
+        if not getattr(user, "is_superuser", False) and not any(
+            getattr(user, flag, False) for flag in ("is_RS", "is_RO")
+        ):
+            raise PermissionDenied("Accès réservé aux RS et RO.")
+        return view_func(request, *args, **kwargs)
+
+    return _wrapped
+
+
 def processus_perimetre_smqs_qs(user):
     """Queryset du PÉRIMÈTRE de données SMQS de `user`.
 

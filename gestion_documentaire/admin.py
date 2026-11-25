@@ -9,16 +9,20 @@ from .models import (
     DossierDocumentaire,
     FichierBibliotheque,
     Indicateur,
+    IndicateurQuotidien,
     MesureIndicateur,
     ObjectifIndicateur,
     Processus,
     RealiseConsolideIndicateur,
+    SuiviIndicateurQuotidien,
     ValidationDocument,
     VersionDocument,
 )
 
 admin.site.register(DossierDocumentaire)
 admin.site.register(FichierBibliotheque)
+admin.site.register(IndicateurQuotidien)
+admin.site.register(SuiviIndicateurQuotidien)
 
 
 class VersionDocumentInline(admin.TabularInline):

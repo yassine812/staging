@@ -32,6 +32,9 @@ from .views import (
     tdb_saisie_mesures,
     tdb_saisie_mesures_indicateur,
     tdb_supprimer_mesure,
+    indicateurs_quotidiens_dashboard,
+    indicateur_quotidien_create,
+    suivi_indicateur_quotidien_save,
     telecharger_fichier_bibliotheque,
     uploader_fichiers,
     visualiser_fichier_bibliotheque,
@@ -67,6 +70,9 @@ urlpatterns = [
     # MODULE TABLEAU DE BORD DES INDICATEURS SMQS
     # ============================================================
     path("tableau-de-bord/", TdbDashboardView.as_view(), name="tdb_dashboard"),
+    path("indicateurs-quotidiens/", indicateurs_quotidiens_dashboard, name="indicateurs_quotidiens"),
+    path("indicateurs-quotidiens/nouveau/", indicateur_quotidien_create, name="indicateur_quotidien_create"),
+    path("indicateurs-quotidiens/suivi/enregistrer/", suivi_indicateur_quotidien_save, name="suivi_indicateur_quotidien_save"),
     path("tableau-de-bord/export-excel/", tdb_export_excel, name="tdb_export_excel"),
     path("tableau-de-bord/processus/nouveau/", ProcessusCreateView.as_view(), name="tdb_processus_create"),
     path("tableau-de-bord/processus/<int:processus_id>/json/", tdb_processus_detail_json, name="tdb_processus_detail_json"),

@@ -1,0 +1,148 @@
+{% extends "gestion_documentaire/base_gestion_documentaire.html" %}
+
+{% block title %}Indicateurs quotidiens{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+  .daily-page { max-width: 1500px; margin: 0 auto; }
+  .daily-hero { border: 1px solid #dbe4f1; border-radius: 16px; background: linear-gradient(135deg, #123b5d, #1769aa); color: #fff; padding: 1.5rem; box-shadow: 0 12px 30px rgba(15, 59, 93, .16); }
+  .daily-card { border: 1px solid #dfe6f5; border-radius: 14px; background: #fff; box-shadow: 0 8px 24px rgba(15, 23, 42, .06); }
+  .daily-card-header { padding: 1rem 1.25rem; border-bottom: 1px solid #e8edf5; }
+  .daily-card-body { padding: 1.25rem; }
+  .daily-kpi { height: 100%; border: 1px solid #dbe4f1; border-radius: 12px; background: #f8fbff; padding: 1rem; }
+  .daily-kpi-label { color: #64748b; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+  .daily-kpi-value { color: #123b5d; font-size: 1.55rem; font-weight: 800; }
+  .daily-table th { white-space: nowrap; color: #38516b; font-size: .78rem; text-transform: uppercase; }
+  .daily-table td { vertical-align: middle; }
+  .daily-value { color: #1769aa; font-weight: 800; }
+  .daily-note { min-width: 260px; color: #526078; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="daily-page py-3">
+  <div class="daily-hero mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <div class="small text-uppercase font-weight-bold opacity-75 mb-1">Pilotage</div>
+      <h1 class="h3 mb-2">Indicateurs quotidiens</h1>
+      <p class="mb-0 opacity-75">Saisissez une valeur par jour, ajoutez son explication et consultez son évolution.</p>
+    </div>
+    <button type="button" class="btn btn-light font-weight-bold" data-toggle="modal" data-target="#newDailyIndicatorModal">
+      <i class="fas fa-plus mr-1"></i>Créer un indicateur
+    </button>
+  </div>
+
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+  {% endfor %}
+  {% endif %}
+
+  <div class="daily-card mb-4">
+    <div class="daily-card-body">
+      <form method="get" class="row align-items-end">
+        <div class="col-12 col-lg-4 mb-3 mb-lg-0">
+          <label for="indicatorSelect" class="font-weight-bold">Indicateur</label>
+          <select id="indicatorSelect" name="indicateur" class="form-control" onchange="this.form.submit()">
+            {% for item in indicateurs %}
+            <option value="{{ item.pk }}" {% if indicateur_selectionne.pk == item.pk %}selected{% endif %}>{{ item.code }} — {{ item.nom }}</option>
+            {% empty %}
+            <option value="">Aucun indicateur créé</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-4 col-lg-2 mb-3 mb-lg-0">
+          <label for="periodSelect" class="font-weight-bold">Compilation</label>
+          <select id="periodSelect" name="periode" class="form-control">
+            <option value="jour" {% if periode == 'jour' %}selected{% endif %}>Jour</option>
+            <option value="mois" {% if periode == 'mois' %}selected{% endif %}>Mois</option>
+            <option value="trimestre" {% if periode == 'trimestre' %}selected{% endif %}>Trimestre</option>
+            <option value="semestre" {% if periode == 'semestre' %}selected{% endif %}>Semestre</option>
+            <option value="date_a_date" {% if periode == 'date_a_date' %}selected{% endif %}>Date à date</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-4 col-lg-2 mb-3 mb-lg-0">
+          <label for="startDate" class="font-weight-bold">Du</label>
+          <input id="startDate" type="date" name="date_debut" value="{{ date_debut }}" class="form-control">
+        </div>
+        <div class="col-12 col-md-4 col-lg-2 mb-3 mb-lg-0">
+          <label for="endDate" class="font-weight-bold">Au</label>
+          <input id="endDate" type="date" name="date_fin" value="{{ date_fin }}" class="form-control">
+        </div>
+        <div class="col-12 col-lg-2 mb-0">
+          <button class="btn btn-primary btn-block font-weight-bold" type="submit"><i class="fas fa-filter mr-1"></i>Afficher</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if indicateur_selectionne %}
+  <div class="row mb-4">
+    <div class="col-12 col-md-4 mb-3 mb-md-0"><div class="daily-kpi"><div class="daily-kpi-label">Indicateur</div><div class="daily-kpi-value h5 mb-0">{{ indicateur_selectionne.nom }}</div><div class="text-muted small">{{ indicateur_selectionne.code }} · unité : {{ indicateur_selectionne.unite }}</div></div></div>
+    <div class="col-12 col-md-4 mb-3 mb-md-0"><div class="daily-kpi"><div class="daily-kpi-label">Jours renseignés</div><div class="daily-kpi-value">{{ suivis|length }}</div><div class="text-muted small">sur la période sélectionnée</div></div></div>
+    <div class="col-12 col-md-4"><div class="daily-kpi"><div class="daily-kpi-label">Compilation affichée</div><div class="daily-kpi-value h5 mb-0">{{ periode|title }}</div><div class="text-muted small">du {{ date_debut_obj|date:'d/m/Y' }} au {{ date_fin_obj|date:'d/m/Y' }}</div></div></div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 col-xl-8 mb-4">
+      <div class="daily-card h-100">
+        <div class="daily-card-header d-flex justify-content-between align-items-center">
+          <div><h2 class="h5 mb-1">Évolution</h2><div class="text-muted small">Moyenne, minimum et maximum par période.</div></div>
+          <span class="badge badge-light border">{{ resume|length }} période(s)</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table daily-table mb-0">
+            <thead class="thead-light"><tr><th>Période</th><th class="text-right">Moyenne</th><th class="text-right">Min.</th><th class="text-right">Max.</th><th class="text-right">Jours</th><th>Explication</th></tr></thead>
+            <tbody>
+              {% for row in resume %}
+              <tr><td class="font-weight-bold">{{ row.libelle }}</td><td class="text-right daily-value">{{ row.moyenne|floatformat:2 }} {{ indicateur_selectionne.unite }}</td><td class="text-right">{{ row.minimum|floatformat:2 }}</td><td class="text-right">{{ row.maximum|floatformat:2 }}</td><td class="text-right">{{ row.nombre }}</td><td class="daily-note">{{ row.commentaire|default:'—' }}</td></tr>
+              {% empty %}<tr><td colspan="6" class="text-center text-muted py-5">Aucune valeur sur cette période.</td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-4 mb-4">
+      <div class="daily-card h-100">
+        <div class="daily-card-header"><h2 class="h5 mb-1">Saisie du jour</h2><div class="text-muted small">Recopiez la valeur observée et expliquez-la.</div></div>
+        <div class="daily-card-body">
+          <form method="post" action="{% url 'gestion_documentaire:suivi_indicateur_quotidien_save' %}">
+            {% csrf_token %}
+            <input type="hidden" name="indicateur" value="{{ indicateur_selectionne.pk }}">
+            <div class="form-group"><label for="dailyDate" class="font-weight-bold">Date</label><input id="dailyDate" type="date" name="jour" value="{{ today }}" class="form-control" required></div>
+            <div class="form-group"><label for="dailyValue" class="font-weight-bold">Valeur du jour ({{ indicateur_selectionne.unite }})</label><input id="dailyValue" type="number" step="0.01" name="valeur" class="form-control" placeholder="Ex : 94,50" required></div>
+            <div class="form-group"><label for="dailyComment" class="font-weight-bold">Commentaire du jour</label><textarea id="dailyComment" name="commentaire" rows="5" class="form-control" placeholder="Expliquez pourquoi cette valeur a été obtenue."></textarea></div>
+            <button class="btn btn-success btn-block font-weight-bold" type="submit"><i class="fas fa-save mr-1"></i>Enregistrer la valeur</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="daily-card mb-4">
+    <div class="daily-card-header"><h2 class="h5 mb-1">Détail des valeurs quotidiennes</h2><div class="text-muted small">Une ligne par date, avec l'explication saisie.</div></div>
+    <div class="table-responsive">
+      <table class="table daily-table mb-0">
+        <thead class="thead-light"><tr><th>Date</th><th>Valeur</th><th>Commentaire</th><th>Dernière modification</th></tr></thead>
+        <tbody>
+          {% for suivi in suivis %}<tr><td class="font-weight-bold">{{ suivi.jour|date:'d/m/Y' }}</td><td class="daily-value">{{ suivi.valeur|floatformat:2 }} {{ indicateur_selectionne.unite }}</td><td class="daily-note">{{ suivi.commentaire|default:'—' }}</td><td class="text-muted small">{{ suivi.updated_at|date:'d/m/Y H:i' }}</td></tr>{% empty %}<tr><td colspan="4" class="text-center text-muted py-4">Aucune saisie quotidienne.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="daily-card"><div class="daily-card-body text-center py-5"><i class="fas fa-calendar-check fa-3x text-muted mb-3"></i><h2 class="h5">Aucun indicateur quotidien</h2><p class="text-muted mb-3">Créez le premier indicateur pour commencer la saisie journalière.</p><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#newDailyIndicatorModal">Créer un indicateur</button></div></div>
+  {% endif %}
+</div>
+
+<div class="modal fade" id="newDailyIndicatorModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow">
+    <div class="modal-header bg-primary text-white"><h5 class="modal-title">Créer un indicateur quotidien</h5><button type="button" class="close text-white" data-dismiss="modal" aria-label="Fermer"><span aria-hidden="true">&times;</span></button></div>
+    <form method="post" action="{% url 'gestion_documentaire:indicateur_quotidien_create' %}">{% csrf_token %}<div class="modal-body">
+      {% for field in form_indicateur %}<div class="form-group">{{ field.label_tag }}{{ field }}{% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>{% endfor %}
+    </div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button><button type="submit" class="btn btn-primary">Créer</button></div></form>
+  </div></div>
+</div>
+{% endblock %}
