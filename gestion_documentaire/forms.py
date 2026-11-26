@@ -444,11 +444,18 @@ class IndicateurQuotidienForm(forms.ModelForm):
     class Meta:
         model = IndicateurQuotidien
         fields = ["code", "nom", "description", "unite", "is_active"]
+        help_texts = {
+            "unite": "Remplacez % par l’unité de la valeur saisie, par exemple h, pièces ou dossiers.",
+        }
         widgets = {
             "code": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex : ADH-01"}),
             "nom": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex : Taux d'adhérence"}),
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-            "unite": forms.TextInput(attrs={"class": "form-control", "placeholder": "%"}),
+            "unite": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "%, h, pièces…",
+                "aria-describedby": "daily-indicator-unit-help",
+            }),
             "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
